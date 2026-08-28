@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+<title>矩阵的秩 · 3D 交互演示</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { width: 100%; height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f0f9ff; color: #1e293b; user-select: none; -webkit-user-select: none; }
+#app { position: relative; width: 100vw; height: 100vh; }
+#scene { width: 100%; height: 100%; display: block; touch-action: none; position: absolute; top: 0; left: 0; z-index: 1; }
+.panel { position: relative; background: rgba(255,255,255,0.93); border: 1px solid rgba(59,130,246,0.22); border-radius: 16px; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); padding: 14px 16px; box-shadow: 0 8px 32px rgba(59,130,246,0.08); }
+.panel-title { font-size: 14px; font-weight: 700; color: #1e3a5f; margin-bottom: 8px; border-bottom: 2px solid #dbeafe; padding-bottom: 4px; }
+#left-sidebar { top: 12px; left: 12px; width: 310px; max-height: calc(100vh - 130px); overflow-y: auto; display: flex; flex-direction: column; gap: 10px; position: absolute; z-index: 10; }
+#right-sidebar { top: 12px; right: 12px; width: 270px; max-height: calc(100vh - 130px); overflow-y: auto; display: flex; flex-direction: column; gap: 10px; position: absolute; z-index: 10; }
+#left-sidebar::-webkit-scrollbar, #right-sidebar::-webkit-scrollbar { width: 5px; }
+#left-sidebar::-webkit-scrollbar-thumb, #right-sidebar::-webkit-scrollbar-thumb { background: rgba(59,130,246,0.3); border-radius: 3px; }
+#title-bar h1 { font-size: 18px; color: #1e3a5f; margin-bottom: 4px; }
+.subtitle { font-size: 12px; color: #64748b; margin-bottom: 8px; }
+.desc { font-size: 12px; line-height: 1.6; color: #334155; }
+.desc b { color: #1e3a5f; }
+.formula-box { background: #eff6ff; border: 1px solid #dbeafe; border-radius: 8px; padding: 8px 10px; margin: 6px 0; font-size: 12px; color: #1e3a5f; font-family: "Cambria Math", serif; }
+.mcell { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 32px; font-size: 13px; border: 1px solid #cbd5e1; border-radius: 4px; background: #fff; color: #1e293b; }
+.mcell.zero { color: #94a3b8; background: #f1f5f9; }
+.mcell.neg { color: #dc2626; }
+.mcell.pos { color: #16a34a; }
+.rank-display { font-size: 32px; font-weight: 800; color: #3b82f6; text-align: center; margin: 8px 0; }
+.rank-label { font-size: 12px; color: #64748b; text-align: center; }
+.sl-row { display: flex; align-items: center; gap: 6px; margin: 4px 0; }
+.sl-row label { font-size: 12px; width: 28px; color: #475569; flex-shrink: 0; }
+.sl-row input[type=range] { flex: 1; height: 4px; accent-color: #3b82f6; }
+.sl-row .val { font-size: 12px; width: 34px; text-align: right; color: #1e3a5f; font-weight: 600; }
+.toggle-row { display: flex; align-items: center; gap: 6px; margin: 4px 0; font-size: 12px; color: #475569; }
+.toggle-row input { width: 15px; height: 15px; accent-color: #3b82f6; }
+.step-card { margin: 6px 0; padding: 8px 10px; border-radius: 8px; background: #f8fafc; border-left: 3px solid #3b82f6; }
+.step-card.app { border-left-color: #f59e0b; background: #fffbeb; }
+.step-card.tangent { border-left-color: #16a34a; background: #f0fdf4; }
+.step-num { font-size: 10px; color: #94a3b8; font-weight: 700; }
+.step-title { font-size: 12px; font-weight: 700; color: #1e3a5f; margin: 2px 0; }
+.step-detail { font-size: 11px; color: #475569; line-height: 1.6; }
+.step-detail b { color: #1e3a5f; }
+.pos { color: #16a34a; } .neg { color: #dc2626; } .zer { color: #64748b; }
+#toolbar { bottom: 88px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; position: absolute; z-index: 10; }
+.btn { padding: 7px 16px; font-size: 13px; font-weight: 600; background: rgba(255,255,255,0.95); border: 1.5px solid #c7d2fe; border-radius: 10px; color: #1e3a5f; cursor: pointer; }
+.btn:hover { border-color: #7c3aed; background: #f5f3ff; }
+#toggle-bar { bottom: 52px; left: 8px; right: 8px; display: flex; align-items: center; gap: 4px; justify-content: center; flex-wrap: wrap; position: absolute; z-index: 10; }
+.tg { display: inline-flex; align-items: center; gap: 4px; padding: 5px 12px; font-size: 13px; background: rgba(255,255,255,0.92); border: 1.5px solid #c7d2fe; border-radius: 18px; cursor: pointer; color: #334155; white-space: nowrap; }
+.tg:hover { border-color: #818cf8; background: #f5f3ff; }
+.tg input { width: 15px; height: 15px; accent-color: #3b82f6; }
+#preset-bar { bottom: 8px; left: 8px; right: 8px; display: flex; align-items: center; gap: 6px; position: absolute; z-index: 10; background: rgba(255,255,255,0.95); border: 1px solid rgba(59,130,246,0.2); border-radius: 12px; padding: 5px 8px; box-shadow: 0 4px 20px rgba(59,130,246,0.15); }
+.preset-bar-label { font-size: 13px; font-weight: 700; color: #1e3a5f; white-space: nowrap; flex-shrink: 0; }
+.preset-bar-scroll { display: flex; gap: 5px; overflow-x: auto; flex: 1; padding: 2px 0; scrollbar-width: thin; }
+.preset-bar-scroll::-webkit-scrollbar { height: 4px; } .preset-bar-scroll::-webkit-scrollbar-thumb { background: rgba(59,130,246,0.3); border-radius: 2px; }
+.pbar-btn { padding: 6px 12px; font-size: 13px; background: #f1f5f9; border: 1.5px solid #cbd5e1; border-radius: 16px; color: #334155; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
+.pbar-btn:hover { background: #e0e7ff; border-color: #818cf8; }
+.pbar-btn.active { background: #3b82f6; color: #fff; border-color: #2563eb; font-weight: 600; }
+#loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 100; text-align: center; font-size: 14px; color: #64748b; }
+.spinner { width: 32px; height: 32px; border: 3px solid #dbeafe; border-top-color: #3b82f6; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 10px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (max-width: 900px) {
+  #left-sidebar { width: 200px; font-size: 12px; max-height: calc(100vh - 150px); }
+  #right-sidebar { display: none; }
+  #right-sidebar.show { display: flex; width: 220px; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+<canvas id="scene"></canvas>
+
+<div id="left-sidebar">
+  <div class="panel" id="title-bar">
+    <h1>📐 矩阵的秩</h1>
+    <div class="subtitle">列向量张成空间的维数 · 工程意义</div>
+    <div class="desc">
+      <b>秩 = 列空间的维数</b> = 线性无关列向量的最大个数<br>
+      秩决定矩阵能"承载"多少独立信息
+    </div>
+    <div class="formula-box">
+      rank(A) = dim(span{a₁, a₂, a₃})<br>
+      = 最大无关组中向量个数
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">矩阵 A 与列向量</div>
+    <div style="text-align:center; margin: 8px 0;">
+      <div style="display:inline-block; border:2px solid #3b82f6; border-radius:6px; padding:6px 8px; background:#eff6ff;">
+        <div id="mat-display"></div>
+      </div>
+    </div>
+    <div style="text-align:center; margin: 6px 0;">
+      <div class="rank-label">rank(A) =</div>
+      <div class="rank-display" id="rank-val">3</div>
+    </div>
+    <div id="col-status"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">几何意义与工程应用</div>
+    <div id="analysis-content"></div>
+  </div>
+</div>
+
+<div id="right-sidebar">
+  <div class="panel">
+    <div class="panel-title">矩阵元素调节</div>
+    <div id="sliders"></div>
+  </div>
+  <div class="panel">
+    <div class="panel-title">显示选项</div>
+    <div class="toggle-row"><input type="checkbox" id="show-span" checked><label for="show-span">张成空间</label></div>
+    <div class="toggle-row"><input type="checkbox" id="show-decomp" checked><label for="show-decomp">最大无关组高亮</label></div>
+    <div class="toggle-row"><input type="checkbox" id="show-cube" checked><label for="show-cube">平行六面体</label></div>
+    <div class="toggle-row"><input type="checkbox" id="show-rays"><label for="show-rays">投影分解线</label></div>
+  </div>
+</div>
+
+<div id="toolbar">
+  <button class="btn" id="btn-play">▶ 动画</button>
+  <button class="btn" id="btn-reset">重置</button>
+  <button class="btn" id="btn-toggle-right">📋 参数</button>
+</div>
+
+<div id="toggle-bar">
+  <label class="tg"><input type="checkbox" id="tg-span" checked>张成空间</label>
+  <label class="tg"><input type="checkbox" id="tg-decomp" checked>无关组高亮</label>
+  <label class="tg"><input type="checkbox" id="tg-cube" checked>平行六面体</label>
+  <label class="tg"><input type="checkbox" id="tg-rays">投影线</label>
+</div>
+
+<div id="preset-bar">
+  <div class="preset-bar-label">场景 ▸</div>
+  <div class="preset-bar-scroll">
+    <button class="pbar-btn active" data-preset="full">满秩 rank=3</button>
+    <button class="pbar-btn" data-preset="rank2">秩=2 共面</button>
+    <button class="pbar-btn" data-preset="rank1">秩=1 共线</button>
+    <button class="pbar-btn" data-preset="rank0">秩=0 全零</button>
+    <button class="pbar-btn" data-preset="parallel">两列共线</button>
+    <button class="pbar-btn" data-preset="dependent">第三列=1+2</button>
+    <button class="pbar-btn" data-preset="circuit">电路独立回路</button>
+    <button class="pbar-btn" data-preset="threephase">三相对称</button>
+  </div>
+</div>
+
+<div id="loading"><div class="spinner"></div><div>加载 3D 引擎...</div></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function() {
+'use strict';
+
+// ====== State ======
+var A = [[1,0.5,0.2],[0,1,0.3],[0.1,0.2,1]];
+var animProgress = 1;
+var isPlaying = false;
+var showSpan = true;
+var showDecomp = true;
+var showCube = true;
+var showRays = false;
+var camTheta = 0.6, camPhi = 0.5, camRadius = 9;
+
+var PRESETS = {
+  full:       { m: [[1,0.5,0.2],[0,1,0.3],[0.1,0.2,1]], name: '满秩 r=3' },
+  rank2:      { m: [[1,0,0.5],[0,1,0.5],[0,0,0]], name: '秩=2 (共面)' },
+  rank1:      { m: [[1,2,0.5],[0,0,0],[0,0,0]], name: '秩=1 (共线)' },
+  rank0:      { m: [[0,0,0],[0,0,0],[0,0,0]], name: '秩=0 (全零)' },
+  parallel:   { m: [[1,2,0.3],[0,0,0.1],[0,0,0.2]], name: '前两列共线' },
+  dependent:  { m: [[1,0,1],[0,1,1],[0,0,0]], name: '第3列=第1+2列' },
+  circuit:    { m: [[1,0,1],[0,1,1],[0,0,0]], name: '电路回路 r=2' },
+  threephase: { m: [[1,-0.5,-0.5],[0,0.866,-0.866],[0,0,0]], name: '三相对称 r=2' }
+};
+
+var scene, camera, renderer, canvas;
+var sceneGroup;
+var labels = [];
+
+// ====== Math ======
+function matVec(m, v) {
+  return [m[0][0]*v[0]+m[0][1]*v[1]+m[0][2]*v[2],
+          m[1][0]*v[0]+m[1][1]*v[1]+m[1][2]*v[2],
+          m[2][0]*v[0]+m[2][1]*v[1]+m[2][2]*v[2]];
+}
+function cross(a, b) {
+  return [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
+}
+function dot(a, b) { return a[0]*b[0]+a[1]*b[1]+a[2]*b[2]; }
+function vlen(a) { return Math.sqrt(dot(a,a)); }
+function normalize(a) { var l = vlen(a); return l > 0.001 ? [a[0]/l, a[1]/l, a[2]/l] : [0,0,0]; }
+function vadd(a, b) { return [a[0]+b[0], a[1]+b[1], a[2]+b[2]]; }
+function vmul(s, a) { return [s*a[0], s*a[1], s*a[2]]; }
+
+// Compute rank and find independent columns
+function computeRank(m) {
+  var c1 = [m[0][0], m[1][0], m[2][0]];
+  var c2 = [m[0][1], m[1][1], m[2][1]];
+  var c3 = [m[0][2], m[1][2], m[2][2]];
+  var cols = [c1, c2, c3];
+  var l1 = vlen(c1), l2 = vlen(c2), l3 = vlen(c3);
+  var rank = 0;
+  var indepIdx = [];
+  var depInfo = [];
+
+  // Try adding columns one by one
+  for (var i = 0; i < 3; i++) {
+    if (vlen(cols[i]) < 0.01) { depInfo.push({idx: i, type: 'zero'}); continue; }
+    if (rank === 0) { rank = 1; indepIdx.push(i); continue; }
+    if (rank === 1) {
+      var c1n = normalize(cols[indepIdx[0]]);
+      var ci_n = normalize(cols[i]);
+      if (Math.abs(Math.abs(dot(c1n, ci_n)) - 1) > 0.02) { rank = 2; indepIdx.push(i); continue; }
+      else { depInfo.push({idx: i, type: 'parallel'}); continue; }
+    }
+    if (rank === 2) {
+      var cr = cross(cols[indepIdx[0]], cols[indepIdx[1]]);
+      if (vlen(cr) < 0.01) {
+        // first two are parallel, try with current
+        var cr2 = cross(cols[indepIdx[0]], cols[i]);
+        if (vlen(cr2) > 0.02) { rank = 2; indepIdx.push(i); }
+        else { depInfo.push({idx: i, type: 'coplanar'}); }
+      } else {
+        var triple = Math.abs(dot(cr, cols[i]));
+        if (triple > 0.02) { rank = 3; indepIdx.push(i); }
+        else { depInfo.push({idx: i, type: 'coplanar'}); }
+      }
+    }
+  }
+  // Fix: if rank=2 but indepIdx has only 1, try to add another
+  if (rank === 1 && indepIdx.length === 1) {
+    for (var j = 0; j < 3; j++) {
+      if (j === indepIdx[0]) continue;
+      if (vlen(cols[j]) < 0.01) continue;
+      var cr3 = cross(cols[indepIdx[0]], cols[j]);
+      if (vlen(cr3) > 0.02) { rank = 2; indepIdx.push(j); depInfo = depInfo.filter(function(d) { return d.idx !== j; }); break; }
+    }
+  }
+  return { rank: rank, cols: cols, indepIdx: indepIdx, depInfo: depInfo };
+}
+
+// Express dependent column as combination of independent ones
+function decompose(m, rankInfo) {
+  var results = [];
+  rankInfo.depInfo.forEach(function(d) {
+    if (d.type === 'zero') { results.push({idx: d.idx, coeffs: [0,0,0]}); return; }
+    var target = rankInfo.cols[d.idx];
+    var indep = rankInfo.indepIdx.map(function(i) { return rankInfo.cols[i]; });
+    if (indep.length === 0) return;
+    if (indep.length === 1) {
+      var c = dot(target, indep[0]) / dot(indep[0], indep[0]);
+      results.push({idx: d.idx, coeffs: rankInfo.indepIdx.map(function() { return c; })});
+    } else {
+      // Solve target = a*indep[0] + b*indep[1]
+      var i0 = indep[0], i1 = indep[1];
+      var A11 = dot(i0,i0), A12 = dot(i0,i1), A22 = dot(i1,i1);
+      var b1 = dot(target, i0), b2 = dot(target, i1);
+      var det = A11*A22 - A12*A12;
+      if (Math.abs(det) < 0.001) { results.push({idx: d.idx, coeffs: [0,0]}); return; }
+      var a = (A22*b1 - A12*b2) / det;
+      var b = (A11*b2 - A12*b1) / det;
+      results.push({idx: d.idx, coeffs: [a, b]});
+    }
+  });
+  return results;
+}
+
+// ====== Three.js helpers ======
+function createArrow(from, to, color, radius) {
+  var group = new THREE.Group();
+  var start = new THREE.Vector3(from[0], from[1], from[2]);
+  var end = new THREE.Vector3(to[0], to[1], to[2]);
+  var dir = new THREE.Vector3().subVectors(end, start);
+  var len = dir.length();
+  if (len < 0.01) return group;
+  var mat = new THREE.MeshStandardMaterial({ color: color, emissive: color, emissiveIntensity: 0.2, metalness: 0.3, roughness: 0.5 });
+  var shaftLen = len * 0.82;
+  var shaft = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, shaftLen, 12), mat);
+  shaft.position.copy(start.clone().add(dir.clone().multiplyScalar(shaftLen/2/len)));
+  shaft.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.clone().normalize());
+  group.add(shaft);
+  var tipLen = len * 0.18;
+  var tip = new THREE.Mesh(new THREE.ConeGeometry(radius*2, tipLen, 12), mat);
+  tip.position.copy(start.clone().add(dir.clone().multiplyScalar((shaftLen+tipLen/2)/len)));
+  tip.quaternion.copy(shaft.quaternion);
+  group.add(tip);
+  return group;
+}
+
+function createLine(from, to, color, opacity, dashed) {
+  var geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute([from[0],from[1],from[2], to[0],to[1],to[2]], 3));
+  var matOpts = { color: color, transparent: true, opacity: opacity || 0.5 };
+  if (dashed) { matOpts.dashed = true; matOpts.dashSize = 0.12; matOpts.gapSize = 0.06; }
+  var mat = dashed ? new THREE.LineDashedMaterial(matOpts) : new THREE.LineBasicMaterial(matOpts);
+  var line = new THREE.Line(geo, mat);
+  if (dashed) line.computeLineDistances();
+  return line;
+}
+
+function createPoint(pos, color, size) {
+  var geo = new THREE.SphereGeometry(size || 0.05, 16, 12);
+  var mat = new THREE.MeshStandardMaterial({ color: color, emissive: color, emissiveIntensity: 0.3 });
+  var m = new THREE.Mesh(geo, mat);
+  m.position.set(pos[0], pos[1], pos[2]);
+  return m;
+}
+
+function createTextSprite(text, color, fontSize) {
+  var canvas = document.createElement('canvas');
+  canvas.width = 512; canvas.height = 96;
+  var ctx = canvas.getContext('2d');
+  ctx.fillStyle = color || '#1e293b';
+  ctx.font = 'bold ' + (fontSize || 28) + 'px sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(text, 256, 48);
+  var tex = new THREE.CanvasTexture(canvas);
+  var mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+  var s = new THREE.Sprite(mat);
+  s.scale.set(3, 0.56, 1);
+  return s;
+}
+
+function buildSpanSpace(rankInfo) {
+  var group = new THREE.Group();
+  var rank = rankInfo.rank;
+  var cols = rankInfo.cols;
+  var indep = rankInfo.indepIdx;
+
+  if (rank === 0) return group;
+  if (rank === 1) {
+    var d = normalize(cols[indep[0]]);
+    var mat = new THREE.LineBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.3 });
+    var geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute([-d[0]*4,-d[1]*4,-d[2]*4, d[0]*4,d[1]*4,d[2]*4], 3));
+    group.add(new THREE.Line(geo, mat));
+    return group;
+  }
+  if (rank === 2) {
+    var v1 = cols[indep[0]], v2 = cols[indep[1]];
+    var n = normalize(cross(v1, v2));
+    // Create a plane mesh
+    var planeGeo = new THREE.PlaneGeometry(6, 6, 8, 8);
+    var planeMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.12, side: THREE.DoubleSide, depthWrite: false });
+    var plane = new THREE.Mesh(planeGeo, planeMat);
+    plane.position.set(0,0,0);
+    plane.lookAt(new THREE.Vector3(n[0], n[1], n[2]));
+    group.add(plane);
+    // Grid on plane
+    var p1n = normalize(v1), p2n = normalize(cross(n, p1n));
+    for (var i = -3; i <= 3; i += 0.5) {
+      var a1 = vmul(i, p1n), a2 = vmul(3, p2n);
+      var b1 = vmul(3, p1n), b2 = vmul(i, p2n);
+      var mat2 = new THREE.LineBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.08 });
+      var g1 = new THREE.BufferGeometry();
+      g1.setAttribute('position', new THREE.Float32BufferAttribute([a1[0]-a2[0],a1[1]-a2[1],a1[2]-a2[2], a1[0]+a2[0],a1[1]+a2[1],a1[2]+a2[2]], 3));
+      group.add(new THREE.Line(g1, mat2));
+      var g2 = new THREE.BufferGeometry();
+      g2.setAttribute('position', new THREE.Float32BufferAttribute([b2[0]-b1[0],b2[1]-b1[1],b2[2]-b1[2], b2[0]+b1[0],b2[1]+b1[1],b2[2]+b1[2]], 3));
+      group.add(new THREE.Line(g2, mat2));
+    }
+    return group;
+  }
+  // rank === 3: entire space, no visualization needed
+  return group;
+}
+
+function buildParallelepiped(rankInfo) {
+  var group = new THREE.Group();
+  var cols = rankInfo.cols;
+  var rank = rankInfo.rank;
+  if (rank < 2) return group;
+
+  var v1 = cols[0], v2 = cols[1], v3 = cols[2];
+  var verts = [
+    [0,0,0], v1, v2, vadd(v1,v2),
+    v3, vadd(v1,v3), vadd(v2,v3), vadd(vadd(v1,v2),v3)
+  ];
+  var edges = [[0,1],[0,2],[0,4],[1,3],[1,5],[2,3],[2,6],[3,7],[4,5],[4,6],[5,7],[6,7]];
+  var vol = Math.abs(dot(cross(v1,v2), v3));
+  var edgeColor = vol > 0.01 ? 0x6366f1 : 0xef4444;
+
+  edges.forEach(function(e) {
+    group.add(createLine(verts[e[0]], verts[e[1]], edgeColor, 0.4, false));
+  });
+
+  // Fill faces
+  var faces = [[0,1,3,2],[4,5,7,6],[0,1,5,4],[2,3,7,6],[1,3,7,5],[0,2,6,4]];
+  faces.forEach(function(f) {
+    var pts = [];
+    for (var k = 0; k < 4; k++) pts.push(verts[f[k]][0], verts[f[k]][1], verts[f[k]][2]);
+    var geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+    geo.setIndex([0,1,2, 0,2,3]);
+    geo.computeVertexNormals();
+    var mat = new THREE.MeshStandardMaterial({ color: 0x6366f1, transparent: true, opacity: 0.06, side: THREE.DoubleSide, depthWrite: false });
+    group.add(new THREE.Mesh(geo, mat));
+  });
+
+  return group;
+}
+
+// ====== Build scene ======
+function buildScene() {
+  while (sceneGroup.children.length > 0) {
+    var c = sceneGroup.children[0];
+    sceneGroup.remove(c);
+    if (c.geometry) c.geometry.dispose();
+    if (c.material) c.material.dispose();
+  }
+  labels = [];
+
+  var rankInfo = computeRank(A);
+  var cols = rankInfo.cols;
+  var rank = rankInfo.rank;
+  var colColors = [0xef4444, 0x16a34a, 0x7c3aed]; // red, green, purple
+
+  // XYZ axes
+  var axLen = 3.5;
+  sceneGroup.add(createArrow([0,0,0], [axLen,0,0], 0x94a3b8, 0.015));
+  sceneGroup.add(createArrow([0,0,0], [0,axLen,0], 0x94a3b8, 0.015));
+  sceneGroup.add(createArrow([0,0,0], [0,0,axLen], 0x94a3b8, 0.015));
+
+  // Origin
+  sceneGroup.add(createPoint([0,0,0], 0x475569, 0.04));
+
+  // Span space
+  if (showSpan) {
+    var spanObj = buildSpanSpace(rankInfo);
+    sceneGroup.add(spanObj);
+  }
+
+  // Parallelepiped
+  if (showCube && rank >= 2) {
+    sceneGroup.add(buildParallelepiped(rankInfo));
+  }
+
+  // Column vectors
+  cols.forEach(function(c, i) {
+    var l = vlen(c);
+    if (l < 0.01) {
+      // Zero column - show small gray dot at origin
+      var zlbl = createTextSprite('a' + (i+1) + ' = 0 (零向量)', '#94a3b8', 16);
+      zlbl.position.set(0.3, 0.3 + i*0.15, 0.3);
+      sceneGroup.add(zlbl);
+      return;
+    }
+    var isIndep = rankInfo.indepIdx.indexOf(i) >= 0;
+    var color = colColors[i];
+    var scl = animProgress;
+    var v = vmul(scl, c);
+
+    // Arrow
+    sceneGroup.add(createArrow([0,0,0], v, color, 0.03));
+    sceneGroup.add(createPoint(v, color, 0.06));
+
+    // Label
+    var lblText = 'a' + (i+1) + (isIndep ? ' (无关)' : (rank === 0 ? ' (零)' : ' (可表出)'));
+    var lbl = createTextSprite(lblText, '#1e293b', 16);
+    lbl.position.set(v[0]*1.15, v[1]*1.15 + 0.15, v[2]*1.15);
+    sceneGroup.add(lbl);
+
+    // If independent, draw extended ray
+    if (isIndep && showDecomp) {
+      var dir = normalize(c);
+      sceneGroup.add(createLine([0,0,0], vmul(3.5, dir), color, 0.08, true));
+    }
+  });
+
+  // Decomposition arrows for dependent columns
+  if (showRays && rank > 0 && rank < 3) {
+    var decomp = decompose(A, rankInfo);
+    decomp.forEach(function(d) {
+      var target = cols[d.idx];
+      var chainStart = [0, 0, 0];
+      rankInfo.indepIdx.forEach(function(ii, k) {
+        var coeff = d.coeffs[k] || 0;
+        if (Math.abs(coeff) < 0.01) return;
+        var seg = vmul(coeff, cols[ii]);
+        var chainEnd = vadd(chainStart, seg);
+        var segLen = vlen(seg);
+        if (segLen > 0.02) {
+          sceneGroup.add(createArrow(chainStart, chainEnd, colColors[ii], 0.012));
+        }
+        chainStart = chainEnd;
+      });
+      // Target vector label
+      var tlbl = createTextSprite('a' + (d.idx+1) + ' = ' +
+        d.coeffs.map(function(c, k) { return c.toFixed(2) + '*a' + (rankInfo.indepIdx[k]+1); }).join(' + '),
+        '#b45309', 14);
+      tlbl.position.set(target[0]*1.1, target[1]*1.1 - 0.3, target[2]*1.1);
+      sceneGroup.add(tlbl);
+    });
+  }
+
+  updateCam();
+  updateUI(rankInfo);
+}
+
+function updateUI(rankInfo) {
+  // Matrix display
+  var matHtml = '<div style="display:flex;gap:4px;">';
+  for (var i = 0; i < 3; i++) {
+    matHtml += '<div>';
+    for (var j = 0; j < 3; j++) {
+      var v = A[i][j];
+      var cls = Math.abs(v) < 0.01 ? 'zero' : (v < 0 ? 'neg' : 'pos');
+      matHtml += '<div class="mcell ' + cls + '">' + v.toFixed(1) + '</div>';
+    }
+    matHtml += '</div>';
+  }
+  matHtml += '</div>';
+  document.getElementById('mat-display').innerHTML = matHtml;
+
+  // Rank
+  document.getElementById('rank-val').textContent = rankInfo.rank;
+
+  // Column status
+  var colNames = ['a₁', 'a₂', 'a₃'];
+  var colColors = ['pos', 'neg', ''];
+  var html = '';
+  rankInfo.cols.forEach(function(c, i) {
+    var l = vlen(c);
+    var isIndep = rankInfo.indepIdx.indexOf(i) >= 0;
+    var status = '';
+    if (l < 0.01) status = '<span class="zer">零向量</span>';
+    else if (isIndep) status = '<span class="pos">✓ 无关</span>';
+    else {
+      var dep = rankInfo.depInfo.find(function(d) { return d.idx === i; });
+      if (dep) {
+        if (dep.type === 'parallel') status = '<span class="neg">共线 (可表出)</span>';
+        else if (dep.type === 'coplanar') status = '<span class="neg">共面 (可表出)</span>';
+        else status = '<span class="neg">相关</span>';
+      }
+    }
+    html += '<div style="font-size:11px;margin:3px0;">' + colNames[i] + ' = (' +
+      c[0].toFixed(1) + ', ' + c[1].toFixed(1) + ', ' + c[2].toFixed(1) + ') ' + status + '</div>';
+  });
+  document.getElementById('col-status').innerHTML = html;
+
+  // Analysis
+  var rank = rankInfo.rank;
+  var det = A[0][0]*(A[1][1]*A[2][2]-A[1][2]*A[2][1]) - A[0][1]*(A[1][0]*A[2][2]-A[1][2]*A[2][0]) + A[0][2]*(A[1][0]*A[2][1]-A[1][1]*A[2][0]);
+  var html2 = '';
+
+  // Step 1: rank meaning
+  html2 += '<div class="step-card"><div class="step-num">概念</div>' +
+    '<div class="step-title">秩 = 列空间维数</div>' +
+    '<div class="step-detail">' +
+    'rank(A) = ' + rank + '<br>' +
+    '列向量 a₁, a₂, a₃ 中，<b>最大无关组</b>含 ' + rank + ' 个向量<br>' +
+    '张成空间：' + (rank===0 ? '仅原点 (0维)' : rank===1 ? '一条直线 (1维)' : rank===2 ? '一个平面 (2维)' : '整个 R³ (3维)') +
+    '</div></div>';
+
+  // Step 2: determinant
+  html2 += '<div class="step-card"><div class="step-num">行列式</div>' +
+    '<div class="step-title">det(A) = ' + det.toFixed(3) + '</div>' +
+    '<div class="step-detail">' +
+    (Math.abs(det) < 0.01 ?
+      'det = 0 → 列向量<b>线性相关</b>，平行六面体体积=0<br>' +
+      '<span class="neg">不满秩，不可逆</span>' :
+      'det ≠ 0 → 列向量<b>线性无关</b>，平行六面体有体积<br>' +
+      '<span class="pos">满秩，可逆</span>') +
+    '</div></div>';
+
+  // Step 3: engineering
+  html2 += '<div class="step-card app"><div class="step-num">工程意义</div>' +
+    '<div class="step-title">秩的工程应用</div>' +
+    '<div class="step-detail">' +
+    (rank === 3 ?
+      '<b>满秩 r=3</b>：信息量充足<br>' +
+      '• 电路：3个独立KVL方程<br>' +
+      '• 控制系统：能控/能观<br>' +
+      '• 3D坐标：3个无关基向量<br>' +
+      '• 方程组：唯一解' :
+     rank === 2 ?
+      '<b>秩 r=2</b>：有1个冗余<br>' +
+      '• 电路：3回路只2个独立KVL<br>' +
+      '• 三相对称：V_a+V_b+V_c=0<br>' +
+      '• 方程组：无穷多解(1自由度)<br>' +
+      '• 2瓦特计法：只需2个表' :
+     rank === 1 ?
+      '<b>秩 r=1</b>：只有1个独立<br>' +
+      '• 冗余测量：3传感器测同一量<br>' +
+      '• 方程组：2个自由度<br>' +
+      '• 退化：空间坍缩为线' :
+      '<b>秩 r=0</b>：零矩阵，无信息<br>' +
+      '• 所有列都是零向量<br>' +
+      '• 方程组 Ax=0 对任意 x 成立') +
+    '</div></div>';
+
+  html2 += '<div class="step-card tangent"><div class="step-num">本质</div>' +
+    '<div class="step-title">秩 = 矩阵携带的独立信息量</div>' +
+    '<div class="step-detail">' +
+    '秩越大 → 独立信息越多 → 能"区分"更多状态<br>' +
+    '秩 = r → 矩阵的像空间是 r 维子空间<br>' +
+    '<b>rank(AB) ≤ min(rank(A), rank(B))</b><br>' +
+    '乘法只会丢失信息，不会增加'
+    '</div></div>';
+
+  document.getElementById('analysis-content').innerHTML = html2;
+}
+
+function updateCam() {
+  var x = camRadius * Math.cos(camPhi) * Math.cos(camTheta);
+  var y = camRadius * Math.sin(camPhi);
+  var z = camRadius * Math.cos(camPhi) * Math.sin(camTheta);
+  camera.position.set(x, y, z);
+  camera.lookAt(0, 0, 0);
+}
+
+// ====== Init ======
+function init() {
+  canvas = document.getElementById('scene');
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xf0f9ff);
+  scene.fog = new THREE.FogExp2(0xf0f9ff, 0.02);
+
+  camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
+  updateCam();
+
+  renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(window.devicePixelRatio);
+
+  scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+  var dl = new THREE.DirectionalLight(0xffffff, 0.7); dl.position.set(5, 8, 5); scene.add(dl);
+  var fl = new THREE.DirectionalLight(0xbfdbfe, 0.3); fl.position.set(-5, 3, -5); scene.add(fl);
+
+  var floor = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), new THREE.MeshStandardMaterial({ color: 0xe0e7ff, transparent: true, opacity: 0.15 }));
+  floor.rotation.x = -Math.PI / 2; floor.position.y = -3; scene.add(floor);
+
+  sceneGroup = new THREE.Group();
+  scene.add(sceneGroup);
+
+  setupControls();
+  window.addEventListener('resize', function() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+
+  document.getElementById('loading').style.display = 'none';
+  buildScene();
+  animate();
+}
+
+function setupControls() {
+  // Sliders for matrix elements
+  var aIdx = [[0,0],[0,1],[0,2],[1,0],[1,1],[1,2],[2,0],[2,1],[2,2]];
+  var slHtml = '';
+  aIdx.forEach(function(idx) {
+    var id = 's-' + idx[0] + idx[1];
+    slHtml += '<div class="sl-row"><label>a' + (idx[0]+1) + (idx[1]+1) + '</label>' +
+      '<input type="range" id="' + id + '" min="-2" max="2" step="0.1" value="' + A[idx[0]][idx[1]] + '">' +
+      '<span class="val" id="v-' + idx[0] + idx[1] + '">' + A[idx[0]][idx[1]].toFixed(1) + '</span></div>';
+  });
+  document.getElementById('sliders').innerHTML = slHtml;
+
+  aIdx.forEach(function(idx) {
+    var sid = 's-' + idx[0] + idx[1];
+    var vid = 'v-' + idx[0] + idx[1];
+    var el = document.getElementById(sid);
+    if (!el) return;
+    el.addEventListener('input', function(e) {
+      var val = parseFloat(e.target.value);
+      document.getElementById(vid).textContent = val.toFixed(1);
+      A[idx[0]][idx[1]] = val;
+      buildScene();
+    });
+  });
+
+  // Toggles - sidebar
+  function bindToggle(id, setter, mirrorId) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('change', function(e) {
+      setter(e.target.checked);
+      if (mirrorId) document.getElementById(mirrorId).checked = e.target.checked;
+      buildScene();
+    });
+  }
+  function bindToggleBar(id, setter, mirrorId) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('change', function(e) {
+      setter(e.target.checked);
+      if (mirrorId) document.getElementById(mirrorId).checked = e.target.checked;
+      buildScene();
+    });
+  }
+
+  bindToggle('show-span', function(v) { showSpan = v; }, 'tg-span');
+  bindToggle('show-decomp', function(v) { showDecomp = v; }, 'tg-decomp');
+  bindToggle('show-cube', function(v) { showCube = v; }, 'tg-cube');
+  bindToggle('show-rays', function(v) { showRays = v; }, 'tg-rays');
+  bindToggleBar('tg-span', function(v) { showSpan = v; }, 'show-span');
+  bindToggleBar('tg-decomp', function(v) { showDecomp = v; }, 'show-decomp');
+  bindToggleBar('tg-cube', function(v) { showCube = v; }, 'show-cube');
+  bindToggleBar('tg-rays', function(v) { showRays = v; }, 'show-rays');
+
+  // Presets
+  document.querySelectorAll('.pbar-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var name = btn.getAttribute('data-preset');
+      var p = PRESETS[name];
+      if (!p) return;
+      A = p.m.map(function(r) { return r.slice(); });
+      // Update sliders
+      for (var i = 0; i < 3; i++) for (var j = 0; j < 3; j++) {
+        document.getElementById('s-' + i + j).value = A[i][j];
+        document.getElementById('v-' + i + j).textContent = A[i][j].toFixed(1);
+      }
+      document.querySelectorAll('.pbar-btn').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      buildScene();
+    });
+  });
+
+  // Play button
+  document.getElementById('btn-play').addEventListener('click', function() {
+    isPlaying = !isPlaying;
+    animProgress = 0;
+    document.getElementById('btn-play').textContent = isPlaying ? '⏸ 暂停' : '▶ 动画';
+  });
+
+  // Reset
+  document.getElementById('btn-reset').addEventListener('click', function() {
+    A = [[1,0.5,0.2],[0,1,0.3],[0.1,0.2,1]];
+    for (var i = 0; i < 3; i++) for (var j = 0; j < 3; j++) {
+      document.getElementById('s-' + i + j).value = A[i][j];
+      document.getElementById('v-' + i + j).textContent = A[i][j].toFixed(1);
+    }
+    animProgress = 1; isPlaying = false;
+    document.getElementById('btn-play').textContent = '▶ 动画';
+    document.querySelectorAll('.pbar-btn').forEach(function(b) { b.classList.remove('active'); });
+    document.querySelector('.pbar-btn[data-preset="full"]').classList.add('active');
+    buildScene();
+  });
+
+  // Toggle right sidebar
+  var toggleBtn = document.getElementById('btn-toggle-right');
+  if (toggleBtn) {
+    toggleBtn.addEventListener('click', function() {
+      document.getElementById('right-sidebar').classList.toggle('show');
+    });
+  }
+
+  // Camera drag
+  var drag = false, lx = 0, ly = 0, pinch = 0;
+  canvas.addEventListener('mousedown', function(e) { drag = true; lx = e.clientX; ly = e.clientY; });
+  window.addEventListener('mousemove', function(e) {
+    if (!drag) return;
+    camTheta -= (e.clientX - lx) * 0.007;
+    camPhi += (e.clientY - ly) * 0.007;
+    camPhi = Math.max(-1.4, Math.min(1.4, camPhi));
+    lx = e.clientX; ly = e.clientY;
+    updateCam();
+  });
+  window.addEventListener('mouseup', function() { drag = false; });
+  canvas.addEventListener('wheel', function(e) {
+    e.preventDefault();
+    camRadius += e.deltaY * 0.01;
+    camRadius = Math.max(4, Math.min(20, camRadius));
+    updateCam();
+  }, { passive: false });
+  canvas.addEventListener('touchstart', function(e) {
+    if (e.touches.length === 1) { drag = true; lx = e.touches[0].clientX; ly = e.touches[0].clientY; }
+    else if (e.touches.length === 2) {
+      var dx = e.touches[0].clientX - e.touches[1].clientX;
+      var dy = e.touches[0].clientY - e.touches[1].clientY;
+      pinch = Math.sqrt(dx*dx + dy*dy);
+    }
+  }, { passive: false });
+  canvas.addEventListener('touchmove', function(e) {
+    e.preventDefault();
+    if (e.touches.length === 1 && drag) {
+      camTheta -= (e.touches[0].clientX - lx) * 0.007;
+      camPhi += (e.touches[0].clientY - ly) * 0.007;
+      camPhi = Math.max(-1.4, Math.min(1.4, camPhi));
+      lx = e.touches[0].clientX; ly = e.touches[0].clientY;
+      updateCam();
+    } else if (e.touches.length === 2) {
+      var dx = e.touches[0].clientX - e.touches[1].clientX;
+      var dy = e.touches[0].clientY - e.touches[1].clientY;
+      var d = Math.sqrt(dx*dx + dy*dy);
+      if (pinch > 0) camRadius += (pinch - d) * 0.03;
+      camRadius = Math.max(4, Math.min(20, camRadius));
+      pinch = d; updateCam();
+    }
+  }, { passive: false });
+  canvas.addEventListener('touchend', function() { drag = false; pinch = 0; });
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  if (isPlaying) {
+    animProgress += 0.012;
+    if (animProgress > 1) { animProgress = 1; isPlaying = false; document.getElementById('btn-play').textContent = '▶ 动画'; }
+    buildScene();
+  }
+  renderer.render(scene, camera);
+}
+
+function tryStart() {
+  if (typeof THREE === 'undefined') { setTimeout(tryStart, 50); return; }
+  try { init(); } catch(e) {
+    document.getElementById('loading').innerHTML = '<div style="color:#dc2626">加载失败<br><span style="font-size:12px;color:#64748b">' + e.message + '</span></div>';
+    console.error(e);
+  }
+}
+tryStart();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>初等行变换寻找列向量组最大无关组</title>
+    <style>
+        /* 保持原有样式不变 */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #e0f7fa 0%, #f3e5f5 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+            font-weight: 600;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        
+        .input-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        
+        .matrix-input {
+            display: inline-block;
+            margin: 0 15px;
+        }
+        
+        .matrix-input label {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .matrix-input input {
+            width: 60px;
+            padding: 8px;
+            margin: 3px;
+            text-align: center;
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 6px;
+            font-weight: 500;
+            background: rgba(255,255,255,0.7);
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+        }
+        
+        button {
+            background: linear-gradient(to right, #3498db, #2c3e50);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0,0,0,0.15);
+        }
+        
+        button:disabled {
+            background: linear-gradient(to right, #bdc3c7, #95a5a6);
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .animation-container {
+            margin-top: 30px;
+            text-align: center;
+        }
+        
+        .column-vectors-container {
+            display: inline-block;
+            margin: 20px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        
+        .vector-group {
+            display: inline-block;
+            margin: 0 15px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        .vector-label {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            text-align: center;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        
+        .vector-element {
+            display: block;
+            width: 60px;
+            height: 40px;
+            line-height: 40px;
+            text-align: center;
+            margin: 5px auto;
+            font-weight: bold;
+            font-size: 16px;
+            transition: all 0.5s ease;
+            background: rgba(255,255,255,0.9);
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            position: relative;
+            border: 1px solid #ddd;
+        }
+        
+        .matrix {
+            display: inline-block;
+            position: relative;
+            padding: 10px;
+        }
+        
+        .matrix::before,
+        .matrix::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            border: 2px solid #2c3e50;
+        }
+        
+        .matrix::before {
+            left: 0;
+            border-right: none;
+            border-radius: 6px 0 0 6px;
+        }
+        
+        .matrix::after {
+            right: 0;
+            border-left: none;
+            border-radius: 0 6px 6px 0;
+        }
+        
+        .matrix-element {
+            display: inline-block;
+            width: 60px;
+            height: 40px;
+            line-height: 40px;
+            text-align: center;
+            margin: 2px;
+            font-weight: bold;
+            font-size: 16px;
+            transition: all 0.5s ease;
+            background: rgba(255,255,255,0.9);
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            position: relative;
+        }
+        
+        .highlight-current {
+            background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%) !important;
+            transform: scale(1.1);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+        
+        .highlight-pivot {
+            background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%) !important;
+            transform: scale(1.15);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+            z-index: 10;
+            border: 2px solid #3498db;
+        }
+        
+        .highlight-operation {
+            background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%) !important;
+            animation: pulse 1s infinite;
+        }
+        
+        .highlight-max-independent {
+            background: linear-gradient(135deg, #f6d365 0%, #fda085 100%) !important;
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(246, 211, 101, 0.4);
+            z-index: 10;
+            border: 2px solid #f39c12;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1.05); }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1.05); }
+        }
+        
+        .transform-arrow {
+            font-size: 36px;
+            color: #3498db;
+            font-weight: bold;
+            margin: 0 30px;
+            position: relative;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        
+        .result-panel {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        
+        .result-panel h3 {
+            color: #2c3e50;
+            margin-top: 0;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        
+        .max-independent-group {
+            display: inline-block;
+            margin: 15px;
+            padding: 15px;
+            background: rgba(255, 243, 205, 0.8);
+            border-radius: 8px;
+            border: 1px solid #f39c12;
+            vertical-align: top;
+            min-width: 200px;
+        }
+        
+        .vector-display {
+            display: inline-block;
+            margin: 8px;
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+        
+        .vector-index {
+            font-weight: bold;
+            color: #e74c3c;
+            font-size: 14px;
+            margin-bottom: 8px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+        
+        .current-operation {
+            font-size: 20px;
+            color: #e74c3c;
+            font-weight: bold;
+            margin: 20px 0;
+            min-height: 30px;
+            text-align: center;
+        }
+        
+        .operation-log {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 12px;
+            max-height: 250px;
+            overflow-y: auto;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        
+        .operation-log h3 {
+            color: #2c3e50;
+            margin-top: 0;
+        }
+        
+        .log-entry {
+            margin: 10px 0;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.9);
+            border-left: 4px solid #3498db;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            border-radius: 0 6px 6px 0;
+        }
+        
+        .step-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px;
+            background: rgba(44, 62, 80, 0.9);
+            color: white;
+            border-radius: 8px;
+            font-weight: bold;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <div class="step-indicator" id="stepIndicator" style="display: none;">
+        第 <span id="currentStep">0</span> / <span id="totalSteps">0</span> 步
+    </div>
+    
+    <div class="container">
+        <h1>初等行变换寻找列向量组最大无关组</h1>
+        
+        <div class="input-section">
+            <h3>输入列向量组（矩阵A，列向量构成）：</h3>
+            <div class="matrix-input">
+                <label>行数（向量维度）：</label>
+                <input type="number" id="rowNum" value="4" min="2" max="6" style="width: 50px;">
+                <label>列数（向量个数）：</label>
+                <input type="number" id="colNum" value="5" min="2" max="7" style="width: 50px;">
+            </div>
+            <div id="matrixInputs">
+                <!-- 动态生成矩阵输入 -->
+            </div>
+            <button id="updateBtn">更新矩阵</button>
+        </div>
+        
+        <div class="controls">
+            <button id="autoBtn">自动播放动画</button>
+            <button id="stepBtn">逐步演示</button>
+            <button id="pauseBtn">暂停</button>
+            <button id="resumeBtn">继续</button>
+            <button id="resetBtn">重置</button>
+        </div>
+        
+        <div class="current-operation" id="currentOperation"></div>
+        
+        <div class="animation-container" id="animationContainer">
+            <!-- 动画内容 -->
+        </div>
+        
+        <div class="result-panel" id="resultPanel" style="display: none;">
+            <h3>最大无关组分析结果</h3>
+            <div class="max-independent-group">
+                <h4>行阶梯形U的主元列</h4>
+                <div id="pivotColumnsU"></div>
+            </div>
+            <div class="max-independent-group">
+                <h4>行最简形R的主元列</h4>
+                <div id="pivotColumnsR"></div>
+            </div>
+            <div class="max-independent-group">
+                <h4>原始列向量组的最大无关组</h4>
+                <div id="maxIndependentGroup"></div>
+            </div>
+        </div>
+        
+        <div class="operation-log">
+            <h3>操作记录</h3>
+            <div id="logContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let rows = 4;
+        let cols = 5;
+        let isPaused = false;
+        let stepByStepMode = false;
+        let animationInProgress = false;
+        let currentStep = 0;
+        let totalSteps = 0;
+        let originalMatrix = [];
+        let matrixU = [];
+        let matrixR = [];
+        let pivotPositionsU = [];
+        let pivotPositionsR = [];
+        let maxIndependentCols = [];
+        
+        // 工具函数
+        function createMatrix(rows, cols) {
+            const matrix = [];
+            for (let i = 0; i < rows; i++) {
+                matrix[i] = new Array(cols).fill(0);
+            }
+            return matrix;
+        }
+        
+        function updateMatrixInputs() {
+            rows = parseInt(document.getElementById('rowNum').value);
+            cols = parseInt(document.getElementById('colNum').value);
+            
+            const container = document.getElementById('matrixInputs');
+            let html = '<label>矩阵A（列向量组）：</label><br>';
+            
+            for (let i = 0; i < rows; i++) {
+                for (let j = 0; j < cols; j++) {
+                    const defaultValue = (i === j) ? (i + 1) : (i + j + 1);
+                    html += `<input type="number" id="a${i}${j}" value="${defaultValue}" step="any">`;
+                }
+                html += '<br>';
+            }
+            
+            container.innerHTML = html;
+            logMessage(`矩阵维度更新为 ${rows}行 × ${cols}列（${cols}个向量）`, 'result');
+        }
+        
+        function getMatrixValues() {
+            const matrix = createMatrix(rows, cols);
+            for (let i = 0; i < rows; i++) {
+                for (let j = 0; j < cols; j++) {
+                    const value = parseFloat(document.getElementById(`a${i}${j}`).value);
+                    matrix[i][j] = isNaN(value) ? 0 : value;
+                }
+            }
+            return matrix;
+        }
+        
+        function logMessage(message, type = 'normal') {
+            const logContainer = document.getElementById('logContainer');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logContainer.appendChild(entry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+        
+        function showCurrentOperation(message) {
+            document.getElementById('currentOperation').textContent = message;
+        }
+        
+        async function waitIfPaused() {
+            while (isPaused && animationInProgress) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+        }
+        
+        async function delay(ms) {
+            if (!stepByStepMode) {
+                await new Promise(resolve => setTimeout(resolve, ms));
+            } else {
+                isPaused = true;
+                document.getElementById('pauseBtn').disabled = true;
+                document.getElementById('resumeBtn').disabled = false;
+                await waitIfPaused();
+                document.getElementById('pauseBtn').disabled = false;
+                document.getElementById('resumeBtn').disabled = true;
+            }
+        }
+        
+        // 显示函数
+        function createColumnVectorsDisplay(matrix, title) {
+            const container = document.createElement('div');
+            container.className = 'column-vectors-container';
+            
+            const label = document.createElement('div');
+            label.style.fontWeight = 'bold';
+            label.style.marginBottom = '15px';
+            label.style.fontSize = '18px';
+            label.textContent = title;
+            container.appendChild(label);
+            
+            const vectorsContainer = document.createElement('div');
+            vectorsContainer.style.display = 'flex';
+            vectorsContainer.style.justifyContent = 'center';
+            vectorsContainer.style.alignItems = 'flex-start';
+            vectorsContainer.style.flexWrap = 'wrap';
+            vectorsContainer.style.gap = '20px';
+            
+            for (let j = 0; j < matrix[0].length; j++) {
+                const vectorDiv = document.createElement('div');
+                vectorDiv.className = 'vector-group';
+                vectorDiv.id = `vector_${j}`;
+                
+                const vectorLabel = document.createElement('div');
+                vectorLabel.className = 'vector-label';
+                vectorLabel.textContent = `α${j + 1}`;
+                vectorDiv.appendChild(vectorLabel);
+                
+                for (let i = 0; i < matrix.length; i++) {
+                    const element = document.createElement('div');
+                    element.className = 'vector-element';
+                    element.id = `A_${i}_${j}`;
+                    element.textContent = matrix[i][j].toFixed(2);
+                    vectorDiv.appendChild(element);
+                }
+                
+                vectorsContainer.appendChild(vectorDiv);
+            }
+            
+            container.appendChild(vectorsContainer);
+            return container;
+        }
+        
+        function createMatrixDisplay(matrix, title, matrixName = '') {
+            const container = document.createElement('div');
+            container.className = 'matrix-display';
+            
+            const label = document.createElement('div');
+            label.style.fontWeight = 'bold';
+            label.style.marginBottom = '10px';
+            label.textContent = title;
+            container.appendChild(label);
+            
+            const matrixDiv = document.createElement('div');
+            matrixDiv.className = 'matrix';
+            
+            for (let i = 0; i < matrix.length; i++) {
+                for (let j = 0; j < matrix[i].length; j++) {
+                    const element = document.createElement('div');
+                    element.className = 'matrix-element';
+                    element.id = `${matrixName}_${i}_${j}`;
+                    element.textContent = matrix[i][j].toFixed(2);
+                    matrixDiv.appendChild(element);
+                }
+                const br = document.createElement('br');
+                matrixDiv.appendChild(br);
+            }
+            
+            container.appendChild(matrixDiv);
+            return container;
+        }
+        
+        function highlightColumn(matrixName, col, className) {
+            for (let i = 0; i < rows; i++) {
+                const element = document.getElementById(`${matrixName}_${i}_${col}`);
+                if (element) {
+                    element.classList.add(className);
+                }
+            }
+        }
+        
+        function clearHighlights() {
+            document.querySelectorAll('.highlight-current, .highlight-pivot, .highlight-operation, .highlight-max-independent').forEach(el => {
+                el.classList.remove('highlight-current', 'highlight-pivot', 'highlight-operation', 'highlight-max-independent');
+            });
+        }
+        
+        // 矩阵变换核心算法
+        async function transformToRowEchelon() {
+            matrixU = originalMatrix.map(row => [...row]);
+            currentStep = 0;
+            
+            let currentRow = 0;
+            pivotPositionsU = [];
+            
+            for (let j = 0; j < cols; j++) {
+                await waitIfPaused();
+                
+                if (currentRow >= rows) break;
+                
+                // 寻找主元
+                let pivotRow = currentRow;
+                for (let i = currentRow + 1; i < rows; i++) {
+                    if (Math.abs(matrixU[i][j]) > Math.abs(matrixU[pivotRow][j])) {
+                        pivotRow = i;
+                    }
+                }
+                
+                if (Math.abs(matrixU[pivotRow][j]) > 1e-10) {
+                    currentStep++;
+                    document.getElementById('currentStep').textContent = currentStep;
+                    
+                    // 交换行
+                    if (pivotRow !== currentRow) {
+                        logMessage(`第${currentStep}步：交换第${currentRow + 1}行和第${pivotRow + 1}行`, 'operation');
+                        showCurrentOperation(`交换第${currentRow + 1}行 ↔ 第${pivotRow + 1}行`);
+                        highlightColumn('U', j, 'highlight-operation');
+                        await delay(1000);
+                        
+                        [matrixU[currentRow], matrixU[pivotRow]] = [matrixU[pivotRow], matrixU[currentRow]];
+                        updateDisplay('U', matrixU);
+                        clearHighlights();
+                    }
+                    
+                    await waitIfPaused();
+                    
+                    // 主元归一化
+                    const pivot = matrixU[currentRow][j];
+                    logMessage(`第${currentStep}步：第${currentRow + 1}行 ÷ ${pivot.toFixed(2)}`, 'operation');
+                    showCurrentOperation(`第${currentRow + 1}行 ÷ ${pivot.toFixed(2)} (主元归一化)`);
+                    highlightColumn('U', j, 'highlight-pivot');
+                    await delay(1000);
+                    
+                    for (let k = j; k < cols; k++) {
+                        matrixU[currentRow][k] /= pivot;
+                    }
+                    updateDisplay('U', matrixU);
+                    await delay(800);
+                    
+                    await waitIfPaused();
+                    
+                    // 消去下方行
+                    for (let i = currentRow + 1; i < rows; i++) {
+                        const factor = matrixU[i][j];
+                        if (Math.abs(factor) > 1e-10) {
+                            logMessage(`第${currentStep}步：第${i + 1}行 - ${factor.toFixed(2)} × 第${currentRow + 1}行`, 'operation');
+                            showCurrentOperation(`第${i + 1}行 - ${factor.toFixed(2)} × 第${currentRow + 1}行`);
+                            await delay(600);
+                            
+                            for (let k = j; k < cols; k++) {
+                                matrixU[i][k] -= factor * matrixU[currentRow][k];
+                            }
+                            updateDisplay('U', matrixU);
+                            await delay(400);
+                        }
+                    }
+                    
+                    // 记录主元位置
+                    pivotPositionsU.push({row: currentRow, col: j});
+                    currentRow++;
+                }
+            }
+            
+            logMessage(`行阶梯形变换完成！找到${pivotPositionsU.length}个主元`, 'result');
+            showCurrentOperation('行阶梯形U已得到，主元列对应最大无关组');
+            
+            // 高亮主元列
+            for (let pos of pivotPositionsU) {
+                highlightColumn('U', pos.col, 'highlight-max-independent');
+            }
+        }
+        
+        async function transformToReducedEchelon() {
+            matrixR = matrixU.map(row => [...row]);
+            currentStep = 0;
+            
+            // 从最后一行开始向上消元
+            for (let i = pivotPositionsU.length - 1; i >= 0; i--) {
+                const pivotRow = pivotPositionsU[i].row;
+                const pivotCol = pivotPositionsU[i].col;
+                
+                await waitIfPaused();
+                currentStep++;
+                document.getElementById('currentStep').textContent = currentStep;
+                
+                // 消去上方行
+                for (let k = pivotRow - 1; k >= 0; k--) {
+                    const factor = matrixR[k][pivotCol];
+                    if (Math.abs(factor) > 1e-10) {
+                        logMessage(`第${currentStep}步：第${k + 1}行 - ${factor.toFixed(2)} × 第${pivotRow + 1}行`, 'operation');
+                        showCurrentOperation(`第${k + 1}行 - ${factor.toFixed(2)} × 第${pivotRow + 1}行`);
+                        await delay(600);
+                        
+                        for (let j = pivotCol; j < cols; j++) {
+                            matrixR[k][j] -= factor * matrixR[pivotRow][j];
+                        }
+                        updateDisplay('R', matrixR);
+                        await delay(400);
+                    }
+                }
+            }
+            
+            // 记录行最简形的主元位置（应该和U相同）
+            pivotPositionsR = [...pivotPositionsU];
+            
+            logMessage('行最简形变换完成！', 'result');
+            showCurrentOperation('行最简形R已得到，主元列更清晰');
+            
+            // 高亮主元列
+            for (let pos of pivotPositionsR) {
+                highlightColumn('R', pos.col, 'highlight-max-independent');
+            }
+        }
+        
+        function updateDisplay(matrixName, matrix) {
+            for (let i = 0; i < rows; i++) {
+                for (let j = 0; j < cols; j++) {
+                    const element = document.getElementById(`${matrixName}_${i}_${j}`);
+                    if (element) {
+                        element.textContent = matrix[i][j].toFixed(2);
+                    }
+                }
+            }
+        }
+        
+        function showResults() {
+            const resultPanel = document.getElementById('resultPanel');
+            resultPanel.style.display = 'block';
+            
+            // 显示U的主元列
+            const pivotColsU = document.getElementById('pivotColumnsU');
+            pivotColsU.innerHTML = '';
+            pivotPositionsU.forEach((pos, idx) => {
+                const colDiv = document.createElement('div');
+                colDiv.className = 'vector-display';
+                colDiv.innerHTML = `<div class="vector-index">列${pos.col + 1} (主元${idx + 1})</div>`;
+                for (let i = 0; i < rows; i++) {
+                    colDiv.innerHTML += `<div>${originalMatrix[i][pos.col].toFixed(2)}</div>`;
+                }
+                pivotColsU.appendChild(colDiv);
+            });
+            
+            // 显示R的主元列
+            const pivotColsR = document.getElementById('pivotColumnsR');
+            pivotColsR.innerHTML = '';
+            pivotPositionsR.forEach((pos, idx) => {
+                const colDiv = document.createElement('div');
+                colDiv.className = 'vector-display';
+                colDiv.innerHTML = `<div class="vector-index">列${pos.col + 1} (主元${idx + 1})</div>`;
+                for (let i = 0; i < rows; i++) {
+                    colDiv.innerHTML += `<div>${originalMatrix[i][pos.col].toFixed(2)}</div>`;
+                }
+                pivotColsR.appendChild(colDiv);
+            });
+            
+            // 显示原始最大无关组
+            const maxIndependent = document.getElementById('maxIndependentGroup');
+            maxIndependent.innerHTML = '';
+            maxIndependentCols = pivotPositionsU.map(pos => pos.col);
+            maxIndependentCols.forEach((colIdx, idx) => {
+                const colDiv = document.createElement('div');
+                colDiv.className = 'vector-display';
+                colDiv.innerHTML = `<div class="vector-index">α${colIdx + 1} (主元${idx + 1})</div>`;
+                for (let i = 0; i < rows; i++) {
+                    colDiv.innerHTML += `<div>${originalMatrix[i][colIdx].toFixed(2)}</div>`;
+                }
+                maxIndependent.appendChild(colDiv);
+            });
+            
+            // 高亮原始矩阵中的最大无关组列
+            for (let colIdx of maxIndependentCols) {
+                for (let i = 0; i < rows; i++) {
+                    const element = document.getElementById(`A_${i}_${colIdx}`);
+                    if (element) {
+                        element.classList.add('highlight-max-independent');
+                    }
+                }
+            }
+            
+            logMessage(`结论：列向量组的最大无关组为 {α${maxIndependentCols.map(i => i + 1).join(', α')}}`, 'result');
+            showCurrentOperation('分析完成！主元列对应原始向量组的最大无关组');
+        }
+        
+        // 错误处理函数
+        function handleError(error) {
+            console.error('发生错误:', error);
+            logMessage(`错误: ${error.message}`, 'error');
+            animationInProgress = false;
+            document.getElementById('pauseBtn').disabled = true;
+            document.getElementById('resumeBtn').disabled = true;
+            alert('发生错误，请查看控制台和日志。错误信息：' + error.message);
+        }
+        
+        // 动画控制函数
+        async function startAutoAnimation() {
+            if (animationInProgress) {
+                logMessage('动画正在进行中，请等待完成或点击重置', 'operation');
+                return;
+            }
+            
+            try {
+                animationInProgress = true;
+                stepByStepMode = false;
+                isPaused = false;
+                
+                document.getElementById('pauseBtn').disabled = false;
+                document.getElementById('resumeBtn').disabled = true;
+                
+                resetAnimation();
+                originalMatrix = getMatrixValues();
+                
+                // 显示步骤指示器
+                document.getElementById('stepIndicator').style.display = 'block';
+                
+                const container = document.getElementById('animationContainer');
+                container.innerHTML = '';
+                
+                // 显示原始列向量组
+                const originalDisplay = createColumnVectorsDisplay(originalMatrix, '原始列向量组');
+                container.appendChild(originalDisplay);
+                
+                const arrow1 = document.createElement('div');
+                arrow1.className = 'transform-arrow';
+                arrow1.textContent = '初等行变换 →';
+                container.appendChild(arrow1);
+                
+                // 显示行阶梯形
+                const uDisplay = createMatrixDisplay(createMatrix(rows, cols), '行阶梯形U', 'U');
+                container.appendChild(uDisplay);
+                
+                const arrow2 = document.createElement('div');
+                arrow2.className = 'transform-arrow';
+                arrow2.textContent = '继续变换 →';
+                container.appendChild(arrow2);
+                
+                // 显示行最简形
+                const rDisplay = createMatrixDisplay(createMatrix(rows, cols), '行最简形R', 'R');
+                container.appendChild(rDisplay);
+                
+                logMessage('开始寻找列向量组的最大无关组...', 'result');
+                showCurrentOperation('第一步：将列向量组化为行阶梯形U');
+                
+                await transformToRowEchelon();
+                
+                await delay(1000);
+                
+                currentStep = 0;
+                logMessage('第二步：将U化为行最简形R', 'result');
+                showCurrentOperation('第二步：将U化为行最简形R');
+                
+                await transformToReducedEchelon();
+                
+                await delay(1000);
+                
+                showResults();
+                
+            } catch (error) {
+                handleError(error);
+            } finally {
+                animationInProgress = false;
+                document.getElementById('pauseBtn').disabled = true;
+                document.getElementById('resumeBtn').disabled = true;
+            }
+        }
+        
+        async function startStepByStep() {
+            if (animationInProgress) {
+                logMessage('动画正在进行中，请等待完成或点击重置', 'operation');
+                return;
+            }
+            
+            animationInProgress = true;
+            stepByStepMode = true;
+            isPaused = true;
+            
+            document.getElementById('pauseBtn').disabled = true;
+            document.getElementById('resumeBtn').disabled = false;
+            
+            await startAutoAnimation();
+        }
+        
+        function pauseAnimation() {
+            if (!animationInProgress) return;
+            isPaused = true;
+            logMessage('动画已暂停，点击"继续"执行下一步', 'operation');
+            document.getElementById('pauseBtn').disabled = true;
+            document.getElementById('resumeBtn').disabled = false;
+        }
+        
+        function resumeAnimation() {
+            if (!animationInProgress) return;
+            isPaused = false;
+            logMessage('继续执行下一步...', 'operation');
+            document.getElementById('pauseBtn').disabled = false;
+            document.getElementById('resumeBtn').disabled = true;
+        }
+        
+        function resetAnimation() {
+            isPaused = false;
+            currentStep = 0;
+            animationInProgress = false;
+            stepByStepMode = false;
+            pivotPositionsU = [];
+            pivotPositionsR = [];
+            maxIndependentCols = [];
+            
+            document.getElementById('logContainer').innerHTML = '';
+            document.getElementById('animationContainer').innerHTML = '';
+            document.getElementById('currentOperation').textContent = '';
+            document.getElementById('resultPanel').style.display = 'none';
+            document.getElementById('stepIndicator').style.display = 'none';
+            document.getElementById('pauseBtn').disabled = true;
+            document.getElementById('resumeBtn').disabled = true;
+            
+            logMessage('系统已重置', 'result');
+        }
+        
+        // 初始化函数
+        function initializeApp() {
+            updateMatrixInputs();
+            document.getElementById('pauseBtn').disabled = true;
+            document.getElementById('resumeBtn').disabled = true;
+            
+            // 使用 addEventListener 替代 onclick，更可靠
+            document.getElementById('updateBtn').addEventListener('click', updateMatrixInputs);
+            document.getElementById('autoBtn').addEventListener('click', startAutoAnimation);
+            document.getElementById('stepBtn').addEventListener('click', startStepByStep);
+            document.getElementById('pauseBtn').addEventListener('click', pauseAnimation);
+            document.getElementById('resumeBtn').addEventListener('click', resumeAnimation);
+            document.getElementById('resetBtn').addEventListener('click', resetAnimation);
+            
+            logMessage('系统初始化完成 - 支持自动播放和逐步演示模式', 'result');
+            
+            // 添加键盘快捷键支持
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !animationInProgress) {
+                    startAutoAnimation();
+                } else if (e.key === ' ' && stepByStepMode && animationInProgress) {
+                    e.preventDefault();
+                    resumeAnimation();
+                }
+            });
+        }
+        
+        // 页面加载完成后初始化
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeApp);
+        } else {
+            // DOM已经加载完成
+            initializeApp();
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>非方阵的四个基本子空间</title>
+<!-- 将 three.js 主体库与 OrbitControls 提前到 head 中加载，确保主脚本执行前 THREE 已就绪 -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family:"PingFang SC","Microsoft YaHei","WenQuanYi Micro Hei",sans-serif;
+    background:linear-gradient(135deg,#f5f7fa 0%,#e8f0fe 50%,#f0f4ff 100%);
+    color:#1a1a2e; min-height:100vh; font-size:16px; line-height:1.7;
+  }
+  header { text-align:center; padding:26px 16px 14px; }
+  header h1 { font-size:30px; color:#1a3c6e; letter-spacing:1px; }
+  header p { font-size:16px; color:#3a4a6a; margin-top:8px; }
+  .wrap { display:flex; flex-wrap:wrap; max-width:1280px; margin:0 auto; padding:0 14px 30px; gap:16px; }
+  .left { flex:1 1 340px; display:flex; flex-direction:column; gap:14px; }
+  .right { flex:1 1 420px; display:flex; flex-direction:column; gap:14px; }
+  .card {
+    background:rgba(255,255,255,0.92); border-radius:14px; padding:18px 20px;
+    box-shadow:0 4px 18px rgba(30,60,120,0.08); border:1px solid rgba(180,200,230,0.5);
+  }
+  .card h2 { font-size:20px; color:#1a3c6e; margin-bottom:10px; }
+  .card h3 { font-size:16px; color:#2a5a9e; margin:12px 0 6px; }
+  .matrix {
+    display:inline-grid; gap:2px 14px;
+    border-left:3px solid #2a5a9e; border-right:3px solid #2a5a9e;
+    padding:8px 16px; margin:8px 0; font-family:"JetBrains Mono","Fira Code","Courier New",monospace;
+    font-size:18px; line-height:1.9; justify-content:center;
+  }
+  .matrix .bracket-l{ grid-column:1; }
+  .matrix .cell{ text-align:center; }
+  .matrix .bracket-r{ grid-column:5; }
+  .mat-wrap{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin:8px 0; }
+  .mat-label{ font-family:"JetBrains Mono","Fira Code","Courier New",monospace; font-size:16px; color:#1a3c6e; }
+  .formula { background:#eef3fb; border-radius:8px; padding:10px 12px; font-size:15px; margin:8px 0; }
+  .cb-row { display:flex; flex-wrap:wrap; gap:10px; margin:8px 0; }
+  .cb-row label {
+    display:flex; align-items:center; gap:7px; font-size:15px; cursor:pointer;
+    padding:6px 11px; border-radius:8px; background:#f0f4fb; border:1px solid #d5e0f0;
+  }
+  .cb-row input { width:16px; height:16px; cursor:pointer; }
+  .swatch { display:inline-block; width:14px; height:14px; border-radius:3px; vertical-align:middle; }
+  #c { width:100%; height:560px; display:block; border-radius:12px; background:#fafcff; }
+  .legend { font-size:14px; line-height:2; }
+  .legend div { display:flex; align-items:center; gap:8px; }
+  .tip { font-size:13px; color:#5a6a8a; margin-top:6px; }
+  table { width:100%; border-collapse:collapse; font-size:14px; margin-top:6px; }
+  td,th { border:1px solid #d5e0f0; padding:6px 8px; text-align:center; }
+  th { background:#eef3fb; }
+  .eng { font-size:13px; color:#4a5a7a; background:#f7f9fd; border-left:3px solid #9aaad0; padding:8px 12px; border-radius:6px; margin-top:8px;}
+  @media(max-width:900px){ #c { height:420px; } header h1 { font-size:24px; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>非方阵的四个基本子空间</h1>
+  <p>矩阵 A 是 2×3（m=2 行, n=3 列）⇒ 列在 ℝ²，行在 ℝ³。四个子空间两两正交配对，撑满整个空间。</p>
+</header>
+<div class="wrap">
+  <div class="left">
+    <div class="card">
+      <h2>① 示例矩阵与四个空间</h2>
+      <div class="mat-wrap">
+        <span class="mat-label">A =</span>
+        <div class="matrix" style="grid-template-columns:auto repeat(3,auto) auto;">
+          <span class="bracket-l">[</span><span class="cell">1</span><span class="cell">2</span><span class="cell">3</span><span class="bracket-r">]</span>
+          <span class="bracket-l">[</span><span class="cell">2</span><span class="cell">5</span><span class="cell">7</span><span class="bracket-r">]</span>
+        </div>
+        <span class="mat-label">(2×3)</span>
+      </div>
+      <div class="formula">
+        <b>列空间</b> C(A)=Col(A) ⊂ ℝ²：A 的列所有线性组合 &emsp;dim = rank = 2<br>
+        <b>行空间</b> C(Aᵀ)=Row(A) ⊂ ℝ³：A 的行所有线性组合 &emsp;dim = rank = 2<br>
+        <b>零空间</b> N(A)=Null(A) ⊂ ℝ³：Ax=0 的解 &emsp;dim = n−rank = 3−2 = 1<br>
+        <b>左零空间</b> N(Aᵀ) ⊂ ℝ²：Aᵀy=0 的解 &emsp;dim = m−rank = 2−2 = 0
+      </div>
+      <h3>显示控制（可单独查看每个空间）</h3>
+      <div class="cb-row">
+        <label><input type="checkbox" id="ckCol" checked><span class="swatch" style="background:#2e86de"></span>C(A) 列空间 ℝ²</label>
+        <label><input type="checkbox" id="ckRow" checked><span class="swatch" style="background:#26a69a"></span>C(Aᵀ) 行空间 ℝ³</label>
+        <label><input type="checkbox" id="ckNul" checked><span class="swatch" style="background:#ef5350"></span>N(A) 零空间 ℝ³</label>
+        <label><input type="checkbox" id="ckLNu" checked><span class="swatch" style="background:#ab47bc"></span>N(Aᵀ) 左零空间 ℝ²</label>
+      </div>
+      <div class="legend">
+        <div><span class="swatch" style="background:#2e86de"></span>C(A) 列空间 ⊂ ℝ²（x-y 平面贴片，dim=2 = 整个 ℝ²）</div>
+        <div><span class="swatch" style="background:#26a69a"></span>C(Aᵀ) 行空间 ⊂ ℝ³（绿色平面，dim=2）</div>
+        <div><span class="swatch" style="background:#ef5350"></span>N(A) 零空间 ⊂ ℝ³（红色直线，dim=1，⊥ 行空间）</div>
+        <div><span class="swatch" style="background:#ab47bc"></span>N(Aᵀ) 左零空间 ⊂ ℝ²（dim=0，仅原点 {0}）</div>
+      </div>
+      <div class="tip">提示：鼠标拖动画布可旋转视角，滚轮缩放。右图把 ℝ³（行/零空间）画在主 3D 空间，把 ℝ²（列/左零空间）贴在 x-y 平面上展示。</div>
+    </div>
+    <div class="card">
+      <h2>② 正交配对（核心关系）</h2>
+      <div class="formula">
+        N(A) &perp; C(Aᵀ) &emsp;两者都在 ℝ³ 中，且互为正交补 ⇒ ℝ³ = C(Aᵀ) ⊕ N(A)<br>
+        N(Aᵀ) &perp; C(A) &emsp;两者都在 ℝ² 中，且互为正交补 ⇒ ℝ² = C(A) ⊕ N(Aᵀ)
+      </div>
+      <p>本例中 rank=2=m，故 C(A)=ℝ²（满空间），N(Aᵀ)={0}（仅原点）。红色零空间直线恰好垂直于绿色行空间平面（拖动视角可验证二者垂直）。</p>
+      <h3>秩—零化度定理</h3>
+      <table>
+        <tr><th>配对</th><th>dim C(A)</th><th>dim N(Aᵀ)</th><th>和 = m</th></tr>
+        <tr><td>C(A) & N(Aᵀ) ⊂ ℝ²</td><td>2</td><td>0</td><td>2 = m ✓</td></tr>
+        <tr><th>dim C(Aᵀ)</th><th>dim N(A)</th><th>和 = n</th></tr>
+        <tr><td>C(Aᵀ) & N(A) ⊂ ℝ³</td><td>2</td><td>1</td><td>3 = n ✓</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="right">
+    <div class="card">
+      <h2>③ 三维可视化</h2>
+      <canvas id="c" width="760" height="560"></canvas>
+    </div>
+    <div class="card">
+      <h2>④ 原理解读（大一能懂）</h2>
+      <h3>为什么是"四个"空间？</h3>
+      <p>A 把 ℝⁿ 的向量 x 映射到 ℝᵐ（Ax=b）。定义域 ℝⁿ 被拆成两块：<b>行空间</b>（有用信息方向）和与之垂直的<b>零空间</b>（被 A"压成 0"的方向）。值域 ℝᵐ 也被拆成：<b>列空间</b>（A 能映到的全部结果）和与之垂直的<b>左零空间</b>（Aᵀ 的零空间）。</p>
+      <h3>几何直觉</h3>
+      <p>把 A 想成一个"投影/压缩器"：ℝ³ 中的向量进来，被压到 ℝ²。零空间就是"压扁后变成零"的那条线；行空间是"真正携带信息"的平面。二者互相垂直，合起来铺满整个 ℝ³。</p>
+      <h3>工程意义</h3>
+      <div class="eng">
+        <b>⚡ 电路 MNA：</b>Ax=b 中 N(A) 是齐次解/内部环流（你前面问过的"无穷多解"来源），C(Aᵀ) 是可观测的独立结点电压方向。<br>
+        <b>📡 信号处理/最小二乘：</b>b 不在 C(A) 时方程无解，最优解落在 C(A) 上（投影），N(Aᵀ) 给出"误差方向"⊥C(A)。<br>
+        <b>🎛️ 能控性：</b>能控子空间 = C(B,AB,…) 是状态空间的一个子空间，其正交补与不可观/不可控模态相关——本质就是左零空间思想。<br>
+        <b>📊 数据/PCA：</b>数据矩阵 A 的四个空间 = 信号子空间与噪声子空间的划分基础。
+      </div>
+      <div class="tip">一句话：行空间与零空间把"输入域"正交切开，列空间与左零空间把"输出域"正交切开——四个空间合起来，完整描述了矩阵 A 的全部线性行为。</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// 主脚本：在 DOM 与 three.js 均就绪后执行，避免 THREE 未定义导致画布空白。
+window.addEventListener('load', function () {
+  if (typeof THREE === 'undefined') {
+    console.error('three.js 未加载');
+    return;
+  }
+
+  // ===== 数值（与验证脚本一致）=====
+  // A=[[1,2,3],[2,5,7]], rank=2
+  const ROW_BASIS = [[1,2,3],[2,5,7]];          // C(Aᵀ) 基(ℝ³)
+  const NULL_BASIS = [-0.57735,-0.57735,0.57735]; // N(A) 基(ℝ³)  (Ax=0)
+
+  // ===== Three.js 场景 =====
+  const canvas = document.getElementById('c');
+  const renderer = new THREE.WebGLRenderer({canvas: canvas, antialias:true, alpha:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  function resize(){ renderer.setSize(canvas.clientWidth, canvas.clientHeight, false); }
+  resize(); window.addEventListener('resize', resize);
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xfafcff);
+  const camera = new THREE.PerspectiveCamera(45, canvas.clientWidth/canvas.clientHeight, 0.1, 100);
+  camera.position.set(5.5,4.2,6.5); camera.lookAt(0,0,0);
+  const controls = new THREE.OrbitControls(camera, canvas);
+  controls.enableDamping=true; controls.target.set(0,0,0);
+
+  // 灯光
+  scene.add(new THREE.AmbientLight(0xffffff,0.85));
+  const dl = new THREE.DirectionalLight(0xffffff,0.5); dl.position.set(4,6,5); scene.add(dl);
+
+  // 坐标轴（ℝ³ 主空间）
+  function axis(dir, color, len){ len = len || 3.2;
+    const g = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0), dir.clone().multiplyScalar(len)]);
+    scene.add(new THREE.Line(g, new THREE.LineBasicMaterial({color:color})));
+  }
+  axis(new THREE.Vector3(1,0,0),0xd04040); axis(new THREE.Vector3(0,1,0),0x40b040); axis(new THREE.Vector3(0,0,1),0x4060d0);
+  // 轴标签(精灵)
+  function makeTextTex(t,c){ var cv=document.createElement('canvas'); cv.width=256; cv.height=128; var ctx=cv.getContext('2d'); ctx.font='bold 60px sans-serif'; ctx.fillStyle=c; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(t,128,64); return new THREE.CanvasTexture(cv); }
+  function label(t,x,y,z,c){ var sp=new THREE.Sprite(new THREE.SpriteMaterial({map:makeTextTex(t,c),transparent:true})); sp.position.set(x,y,z); sp.scale.set(0.9,0.45,1); scene.add(sp); }
+  label('x',3.5,0,0,'#b02020'); label('y',0,3.5,0,'#208020'); label('z',0,0,3.5,'#2030a0');
+  label('ℝ³ 主空间',1.6,-0.5,1.6,'#1a3c6e');
+
+  // 网格辅助(地面 x-z)
+  var grid = new THREE.GridHelper(6,12,0xc0c8d8,0xe0e4ec); grid.position.y=-0.01; scene.add(grid);
+
+  // ===== 可隐藏的对象组 =====
+  var gCol=new THREE.Group(), gRow=new THREE.Group(), gNul=new THREE.Group(), gLNu=new THREE.Group();
+  scene.add(gCol,gRow,gNul,gLNu);
+
+  function labelSprite(t,c,x,y,z){var sp=new THREE.Sprite(new THREE.SpriteMaterial({map:makeTextTex(t,c),transparent:true}));sp.position.set(x,y,z);sp.scale.set(0.9,0.45,1);return sp;}
+  function addArrow(group, vec, color){ var len=vec.length(); if(len<1e-6) return; group.add(new THREE.ArrowHelper(vec.clone().normalize(),new THREE.Vector3(0,0,0),len,color,0.22,0.14)); }
+
+  // ---- C(A) 列空间 ⊂ ℝ² : dim=2 = 整个 ℝ², 贴在 x-y 平面(z=0) 的半透明蓝色大方片 ----
+  (function(){
+    var m=new THREE.Mesh(new THREE.PlaneGeometry(5.5,5.5), new THREE.MeshBasicMaterial({color:0x2e86de,transparent:true,opacity:0.18,side:THREE.DoubleSide}));
+    m.rotation.x=-Math.PI/2; gCol.add(m);
+    var b=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-2.75,0,-2.75),new THREE.Vector3(2.75,0,-2.75),new THREE.Vector3(2.75,0,2.75),new THREE.Vector3(-2.75,0,2.75),new THREE.Vector3(-2.75,0,-2.75)]);
+    gCol.add(new THREE.Line(b,new THREE.LineBasicMaterial({color:0x2e86de,opacity:0.7,transparent:true})));
+    gCol.add(labelSprite('C(A)=ℝ² (dim2)',0x1f5f9e,2.9,0.25,2.9));
+    addArrow(gCol,new THREE.Vector3(1,2,0),0x2e86de); addArrow(gCol,new THREE.Vector3(2,5,0),0x2e86de);
+  })();
+
+  // ---- C(Aᵀ) 行空间 ⊂ ℝ³ : dim=2, 由行向量张成的平面 ----
+  (function(){
+    var r1=new THREE.Vector3(1,2,3), r2=new THREE.Vector3(2,5,7);
+    var geo=new THREE.BufferGeometry(); var verts=[]; var seg=10;
+    for(var i=0;i<=seg;i++)for(var j=0;j<=seg;j++){var a=-0.6+1.2*i/seg,b=-0.6+1.2*j/seg;var v=new THREE.Vector3().addScaledVector(r1,a).addScaledVector(r2,b);verts.push(v.x,v.y,v.z);}
+    var idx=[];for(var i2=0;i2<seg;i2++)for(var j2=0;j2<seg;j2++){var k=(seg+1)*i2+j2;idx.push(k,k+1,k+(seg+1),k+1,k+(seg+1)+1,k+(seg+1));}
+    geo.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));geo.setIndex(idx);geo.computeVertexNormals();
+    var mesh=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({color:0x26a69a,transparent:true,opacity:0.28,side:THREE.DoubleSide,depthWrite:false}));
+    gRow.add(mesh);
+    var corners=[new THREE.Vector3().addScaledVector(r1,-0.6).addScaledVector(r2,-0.6),new THREE.Vector3().addScaledVector(r1,0.6).addScaledVector(r2,-0.6),new THREE.Vector3().addScaledVector(r1,0.6).addScaledVector(r2,0.6),new THREE.Vector3().addScaledVector(r1,-0.6).addScaledVector(r2,0.6),new THREE.Vector3().addScaledVector(r1,-0.6).addScaledVector(r2,-0.6)];
+    gRow.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(corners),new THREE.LineBasicMaterial({color:0x26a69a,opacity:0.85,transparent:true})));
+    addArrow(gRow,r1,0x26a69a); addArrow(gRow,r2,0x26a69a);
+    gRow.add(labelSprite('C(Aᵀ) 行空间 dim2',0x157a6e,1.6,3.4,4.2));
+  })();
+
+  // ---- N(A) 零空间 ⊂ ℝ³ : dim=1, 直线沿 NULL_BASIS ----
+  (function(){
+    var d=new THREE.Vector3(NULL_BASIS[0],NULL_BASIS[1],NULL_BASIS[2]).normalize().multiplyScalar(2.4);
+    var geo=new THREE.BufferGeometry().setFromPoints([d.clone().multiplyScalar(-1),d.clone()]);
+    gNul.add(new THREE.Line(geo,new THREE.LineBasicMaterial({color:0xef5350,linewidth:3})));
+    addArrow(gNul,d,0xef5350); addArrow(gNul,d.clone().multiplyScalar(-1),0xef5350);
+    gNul.add(labelSprite('N(A) 零空间 dim1',0xc62828,-1.9,0.3,-1.9));
+    gNul.add(new THREE.Mesh(new THREE.SphereGeometry(0.09,16,16),new THREE.MeshBasicMaterial({color:0xef5350})));
+  })();
+
+  // ---- N(Aᵀ) 左零空间 ⊂ ℝ² : dim=0, 仅原点 {0} ----
+  (function(){
+    gLNu.add(new THREE.Mesh(new THREE.SphereGeometry(0.14,18,18),new THREE.MeshBasicMaterial({color:0xab47bc})));
+    gLNu.add(labelSprite('N(Aᵀ)={0} dim0',0x7b1fa2,0.35,0.35,0));
+  })();
+
+  // ===== 复选框绑定 =====
+  var ck={Col:document.getElementById('ckCol'),Row:document.getElementById('ckRow'),Nul:document.getElementById('ckNul'),LNu:document.getElementById('ckLNu')};
+  function applyVis(){ gCol.visible=ck.Col.checked; gRow.visible=ck.Row.checked; gNul.visible=ck.Nul.checked; gLNu.visible=ck.LNu.checked; }
+  ['Col','Row','Nul','LNu'].forEach(function(k){ ck[k].addEventListener('change',applyVis); });
+  applyVis();
+
+  // ===== 动画循环 =====
+  function tick(){ controls.update(); renderer.render(scene,camera); requestAnimationFrame(tick); }
+  tick();
+});
+</script>
+</body>
+</html>

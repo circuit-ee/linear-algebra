@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>线性相关 vs 线性无关 — 工程实例交互演示</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', 'PingFang SC', sans-serif;
+            background: #faf8f5;
+            color: #2c3e50;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* 标题区 */
+        .header {
+            text-align: center;
+            padding: 30px 0;
+            animation: fadeInDown 1s ease-out;
+        }
+
+        .header h1 {
+            font-size: 42px;
+            font-weight: 700;
+            color: #1a252f;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+
+        .header .subtitle {
+            font-size: 18px;
+            color: #7f8c8d;
+            font-weight: 300;
+        }
+
+        /* 主内容区 */
+        .main-content {
+            display: flex;
+            gap: 30px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .scene-card {
+            flex: 1;
+            min-width: 400px;
+            max-width: 600px;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            animation: fadeInUp 1s ease-out;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .scene-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 50px rgba(0,0,0,0.12);
+        }
+
+        .scene-card.independent {
+            border-top: 5px solid #e74c3c;
+        }
+
+        .scene-card.dependent {
+            border-top: 5px solid #e67e22;
+        }
+
+        .scene-title {
+            font-size: 26px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .scene-card.independent .scene-title {
+            color: #e74c3c;
+        }
+
+        .scene-card.dependent .scene-title {
+            color: #e67e22;
+        }
+
+        .scene-subtitle {
+            font-size: 16px;
+            color: #7f8c8d;
+            margin-bottom: 25px;
+        }
+
+        /* SVG 动画区 */
+        .svg-container {
+            width: 100%;
+            height: 320px;
+            position: relative;
+            background: #f8f9fa;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* 力的箭头动画 */
+        .force-arrow {
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .force-arrow.f1 { animation-delay: 0s; }
+        .force-arrow.f2 { animation-delay: 0.3s; }
+        .force-arrow.f3 { animation-delay: 0.6s; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.7; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.05); }
+        }
+
+        /* 负载动画 */
+        .load-arrow {
+            animation: bounce 2s ease-in-out infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(8px); }
+        }
+
+        /* 桥梁震动动画（线性相关场景） */
+        .bridge-shake {
+            animation: shake 0.5s ease-in-out infinite;
+            animation-play-state: paused;
+        }
+
+        .bridge-shake.active {
+            animation-play-state: running;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-3px); }
+            75% { transform: translateX(3px); }
+        }
+
+        /* 说明框 */
+        .info-box {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 12px;
+            font-size: 16px;
+            line-height: 1.8;
+        }
+
+        .info-box.independent {
+            background: #fadbd8;
+            border: 2px solid #e74c3c;
+        }
+
+        .info-box.dependent {
+            background: #fdebd0;
+            border: 2px solid #e67e22;
+        }
+
+        .info-box h3 {
+            font-size: 22px;
+            margin-bottom: 12px;
+        }
+
+        .info-box.independent h3 {
+            color: #e74c3c;
+        }
+
+        .info-box.dependent h3 {
+            color: #e67e22;
+        }
+
+        .info-box p {
+            margin: 8px 0;
+            color: #2c3e50;
+        }
+
+        .highlight {
+            font-weight: 700;
+            background: rgba(255,255,255,0.6);
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        /* 控制按钮 */
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 28px;
+            border: none;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: white;
+        }
+
+        .btn-primary {
+            background: #3498db;
+        }
+
+        .btn-primary:hover {
+            background: #2980b9;
+            transform: scale(1.05);
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+            transform: scale(1.05);
+        }
+
+        .btn-warning {
+            background: #e67e22;
+        }
+
+        .btn-warning:hover {
+            background: #d35400;
+            transform: scale(1.05);
+        }
+
+        /* 数学定义区 */
+        .math-section {
+            background: #eaf2f8;
+            border: 2px solid #3498db;
+            border-radius: 20px;
+            padding: 30px;
+            margin: 30px auto;
+            max-width: 900px;
+            text-align: center;
+            animation: fadeIn 1.5s ease-out;
+        }
+
+        .math-section h2 {
+            font-size: 28px;
+            color: #1a252f;
+            margin-bottom: 25px;
+        }
+
+        .math-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            text-align: left;
+        }
+
+        .math-box {
+            padding: 20px;
+            border-radius: 12px;
+        }
+
+        .math-box.independent {
+            background: rgba(231, 76, 60, 0.1);
+            border-left: 4px solid #e74c3c;
+        }
+
+        .math-box.dependent {
+            background: rgba(230, 126, 34, 0.1);
+            border-left: 4px solid #e67e22;
+        }
+
+        .math-box h4 {
+            font-size: 20px;
+            margin-bottom: 15px;
+        }
+
+        .math-box.independent h4 {
+            color: #e74c3c;
+        }
+
+        .math-box.dependent h4 {
+            color: #e67e22;
+        }
+
+        .math-formula {
+            font-family: 'Times New Roman', serif;
+            font-size: 18px;
+            line-height: 2;
+            color: #2c3e50;
+        }
+
+        /* 工程意义区 */
+        .meaning-section {
+            background: #fef9e7;
+            border: 2px solid #f1c40f;
+            border-radius: 15px;
+            padding: 20px 30px;
+            margin: 30px auto;
+            max-width: 1200px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a252f;
+            animation: fadeIn 2s ease-out;
+        }
+
+        /* 交互提示 */
+        .tooltip {
+            position: absolute;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 100;
+        }
+
+        .tooltip.show {
+            opacity: 1;
+        }
+
+        /* 响应式 */
+        @media (max-width: 900px) {
+            .main-content {
+                flex-direction: column;
+                align-items: center;
+            }
+            .scene-card {
+                min-width: 90%;
+            }
+            .math-grid {
+                grid-template-columns: 1fr;
+            }
+            .header h1 {
+                font-size: 28px;
+            }
+        }
+
+        /* 动画定义 */
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* 粒子效果 */
+        .particle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: #e74c3c;
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        @keyframes particleFloat {
+            0% { opacity: 1; transform: translate(0, 0) scale(1); }
+            100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 标题 -->
+        <div class="header">
+            <h1>线性相关 vs 线性无关 — 工程实例</h1>
+            <p class="subtitle">Interactive Animation Demo</p>
+        </div>
+
+        <!-- 主内容 -->
+        <div class="main-content">
+            <!-- 场景一：线性无关 -->
+            <div class="scene-card independent" id="card-independent">
+                <div class="scene-title">【场景一】线性无关</div>
+                <div class="scene-subtitle">桥梁三向支撑力</div>
+
+                <div class="svg-container">
+                    <svg viewBox="0 0 500 320" id="svg-independent">
+                        <!-- 桥梁 -->
+                        <rect x="50" y="140" width="400" height="8" fill="#1a252f" rx="2" class="bridge-stable"/>
+
+                        <!-- 支撑1：竖直 F1 -->
+                        <line x1="120" y1="140" x2="120" y2="260" stroke="#e74c3c" stroke-width="4" stroke-dasharray="8,4" class="support-line"/>
+                        <polygon points="120,140 110,155 130,155" fill="#e74c3c" class="force-arrow f1"/>
+                        <text x="120" y="285" text-anchor="middle" fill="#e74c3c" font-size="16" font-weight="bold">F₁ (竖直)</text>
+
+                        <!-- 支撑2：斜向 F2 -->
+                        <line x1="220" y1="140" x2="160" y2="260" stroke="#3498db" stroke-width="4" stroke-dasharray="8,4" class="support-line"/>
+                        <polygon points="220,140 210,158 232,152" fill="#3498db" class="force-arrow f2"/>
+                        <text x="170" y="285" text-anchor="middle" fill="#3498db" font-size="16" font-weight="bold">F₂ (斜向)</text>
+
+                        <!-- 支撑3：水平 F3 -->
+                        <line x1="320" y1="140" x2="320" y2="200" stroke="#2ecc71" stroke-width="4" stroke-dasharray="8,4" class="support-line"/>
+                        <polygon points="320,140 305,150 305,130" fill="#2ecc71" class="force-arrow f3"/>
+                        <text x="320" y="225" text-anchor="middle" fill="#2ecc71" font-size="16" font-weight="bold">F₃ (水平)</text>
+
+                        <!-- 负载 W -->
+                        <line x1="250" y1="80" x2="250" y2="132" stroke="#e67e22" stroke-width="4" marker-end="url(#arrow-orange)" class="load-arrow"/>
+                        <text x="250" y="65" text-anchor="middle" fill="#e67e22" font-size="16" font-weight="bold">负载 W</text>
+
+                        <!-- 箭头定义 -->
+                        <defs>
+                            <marker id="arrow-orange" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+                                <path d="M0,0 L0,6 L9,3 z" fill="#e67e22"/>
+                            </marker>
+                            <marker id="arrow-red" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+                                <path d="M0,0 L0,6 L9,3 z" fill="#e74c3c"/>
+                            </marker>
+                        </defs>
+
+                        <!-- 稳定标识 -->
+                        <circle cx="450" cy="50" r="25" fill="#2ecc71" opacity="0.9"/>
+                        <text x="450" y="57" text-anchor="middle" fill="white" font-size="24" font-weight="bold">✓</text>
+                        <text x="450" y="90" text-anchor="middle" fill="#2ecc71" font-size="14" font-weight="bold">稳定</text>
+                    </svg>
+                    <div class="tooltip" id="tooltip-ind"></div>
+                </div>
+
+                <div class="info-box independent">
+                    <h3>✓ 线性无关</h3>
+                    <p>• 三个力方向<span class="highlight">各不相同</span></p>
+                    <p>• 没有一个力能被其他力组合表示</p>
+                    <p>• 方程组有<span class="highlight">唯一解</span> → 结构稳定</p>
+                </div>
+
+                <div class="controls">
+                    <button class="btn btn-primary" onclick="animateForces('independent')">演示力的平衡</button>
+                    <button class="btn btn-danger" onclick="showMathDetail('independent')">查看方程</button>
+                </div>
+            </div>
+
+            <!-- 场景二：线性相关 -->
+            <div class="scene-card dependent" id="card-dependent">
+                <div class="scene-title">【场景二】线性相关</div>
+                <div class="scene-subtitle">桥梁冗余支撑</div>
+
+                <div class="svg-container">
+                    <svg viewBox="0 0 500 320" id="svg-dependent">
+                        <!-- 桥梁（会震动） -->
+                        <rect x="50" y="140" width="400" height="8" fill="#1a252f" rx="2" class="bridge-shake" id="bridge-shake"/>
+
+                        <!-- 支撑1：竖直 F1 -->
+                        <line x1="140" y1="140" x2="140" y2="260" stroke="#e74c3c" stroke-width="4" stroke-dasharray="8,4"/>
+                        <polygon points="140,140 130,155 150,155" fill="#e74c3c" class="force-arrow f1"/>
+                        <text x="140" y="285" text-anchor="middle" fill="#e74c3c" font-size="16" font-weight="bold">F₁</text>
+
+                        <!-- 支撑2：竖直 F2 -->
+                        <line x1="250" y1="140" x2="250" y2="260" stroke="#3498db" stroke-width="4" stroke-dasharray="8,4"/>
+                        <polygon points="250,140 240,155 260,155" fill="#3498db" class="force-arrow f2"/>
+                        <text x="250" y="285" text-anchor="middle" fill="#3498db" font-size="16" font-weight="bold">F₂</text>
+
+                        <!-- 支撑3：竖直 F3（冗余） -->
+                        <line x1="360" y1="140" x2="360" y2="260" stroke="#2ecc71" stroke-width="4" stroke-dasharray="8,4"/>
+                        <polygon points="360,140 350,155 370,155" fill="#2ecc71" class="force-arrow f3"/>
+                        <text x="360" y="285" text-anchor="middle" fill="#2ecc71" font-size="16" font-weight="bold">F₃</text>
+
+                        <!-- 负载 W -->
+                        <line x1="250" y1="80" x2="250" y2="132" stroke="#e67e22" stroke-width="4" marker-end="url(#arrow-orange2)" class="load-arrow"/>
+                        <text x="250" y="65" text-anchor="middle" fill="#e67e22" font-size="16" font-weight="bold">负载 W</text>
+
+                        <!-- 箭头定义 -->
+                        <defs>
+                            <marker id="arrow-orange2" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+                                <path d="M0,0 L0,6 L9,3 z" fill="#e67e22"/>
+                            </marker>
+                        </defs>
+
+                        <!-- 不稳定标识 -->
+                        <circle cx="450" cy="50" r="25" fill="#e74c3c" opacity="0.9"/>
+                        <text x="450" y="57" text-anchor="middle" fill="white" font-size="24" font-weight="bold">✗</text>
+                        <text x="450" y="90" text-anchor="middle" fill="#e74c3c" font-size="14" font-weight="bold">不稳定</text>
+
+                        <!-- 警告波纹 -->
+                        <circle cx="250" cy="144" r="20" fill="none" stroke="#e74c3c" stroke-width="2" opacity="0" id="warning-ring">
+                            <animate attributeName="r" values="20;60;20" dur="2s" repeatCount="indefinite"/>
+                            <animate attributeName="opacity" values="0.8;0;0.8" dur="2s" repeatCount="indefinite"/>
+                        </circle>
+                    </svg>
+                    <div class="tooltip" id="tooltip-dep"></div>
+                </div>
+
+                <div class="info-box dependent">
+                    <h3>✗ 线性相关</h3>
+                    <p>• 三个力都在<span class="highlight">同一方向</span></p>
+                    <p>• F₃ = a·F₁ + b·F₂ (可被表示)</p>
+                    <p>• 方程组<span class="highlight">无穷解</span> → 结构不稳定</p>
+                </div>
+
+                <div class="controls">
+                    <button class="btn btn-warning" onclick="toggleShake()">演示结构失稳</button>
+                    <button class="btn btn-danger" onclick="showMathDetail('dependent')">查看方程</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 数学定义 -->
+        <div class="math-section">
+            <h2>数学定义</h2>
+            <div class="math-grid">
+                <div class="math-box independent">
+                    <h4>线性无关：</h4>
+                    <div class="math-formula">
+                        若 c₁v₁ + c₂v₂ + ... + cₙvₙ = 0<br>
+                        则必有 c₁ = c₂ = ... = cₙ = 0<br><br>
+                        <span style="color:#e74c3c; font-weight:bold;">⇒ 只有零解，向量组线性无关</span>
+                    </div>
+                </div>
+                <div class="math-box dependent">
+                    <h4>线性相关：</h4>
+                    <div class="math-formula">
+                        存在不全为零的 cᵢ<br>
+                        使得 c₁v₁ + c₂v₂ + ... + cₙvₙ = 0<br><br>
+                        <span style="color:#e67e22; font-weight:bold;">⇒ 存在非零解，向量组线性相关</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 工程意义 -->
+        <div class="meaning-section">
+            <span style="color:#f39c12;">★</span> 工程意义：
+            <span style="color:#2ecc71;">线性无关 = 每个约束提供独立信息</span> | 
+            <span style="color:#e74c3c;">线性相关 = 存在冗余约束，可能导致结构不稳定或计算困难</span>
+        </div>
+
+        <!-- 交互式方程展示面板 -->
+        <div id="math-panel" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); 
+             background:white; padding:40px; border-radius:20px; box-shadow:0 20px 60px rgba(0,0,0,0.3); 
+             z-index:1000; max-width:600px; width:90%;">
+            <h3 style="font-size:24px; margin-bottom:20px; color:#1a252f;">详细方程组</h3>
+            <div id="math-content" style="font-size:18px; line-height:2; font-family:'Times New Roman', serif;"></div>
+            <button onclick="closeMathPanel()" class="btn btn-primary" style="margin-top:20px;">关闭</button>
+        </div>
+        <div id="overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; 
+             background:rgba(0,0,0,0.5); z-index:999;" onclick="closeMathPanel()"></div>
+    </div>
+
+    <script>
+        // 力的平衡动画
+        function animateForces(scene) {
+            const svg = document.getElementById('svg-independent');
+            const arrows = svg.querySelectorAll('.force-arrow');
+
+            arrows.forEach((arrow, index) => {
+                arrow.style.transition = 'all 0.5s ease';
+                setTimeout(() => {
+                    arrow.style.transform = 'scale(1.3)';
+                    arrow.style.filter = 'drop-shadow(0 0 10px currentColor)';
+                }, index * 200);
+
+                setTimeout(() => {
+                    arrow.style.transform = 'scale(1)';
+                    arrow.style.filter = 'none';
+                }, index * 200 + 500);
+            });
+
+            // 创建粒子效果
+            createParticles(svg, 120, 140, '#e74c3c');
+            createParticles(svg, 220, 140, '#3498db');
+            createParticles(svg, 320, 140, '#2ecc71');
+        }
+
+        // 创建粒子
+        function createParticles(svg, x, y, color) {
+            for (let i = 0; i < 8; i++) {
+                const particle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                particle.setAttribute('cx', x);
+                particle.setAttribute('cy', y);
+                particle.setAttribute('r', 4);
+                particle.setAttribute('fill', color);
+                particle.style.opacity = '1';
+                particle.style.transition = 'all 1s ease-out';
+                svg.appendChild(particle);
+
+                const angle = (Math.PI * 2 * i) / 8;
+                const distance = 50 + Math.random() * 30;
+                const tx = Math.cos(angle) * distance;
+                const ty = Math.sin(angle) * distance;
+
+                setTimeout(() => {
+                    particle.style.transform = `translate(${tx}px, ${ty}px)`;
+                    particle.style.opacity = '0';
+                }, 50);
+
+                setTimeout(() => {
+                    particle.remove();
+                }, 1050);
+            }
+        }
+
+        // 结构失稳动画
+        let shaking = false;
+        function toggleShake() {
+            const bridge = document.getElementById('bridge-shake');
+            const warningRing = document.getElementById('warning-ring');
+            shaking = !shaking;
+
+            if (shaking) {
+                bridge.classList.add('active');
+                warningRing.style.opacity = '1';
+
+                // 添加红色闪烁背景
+                document.getElementById('card-dependent').style.animation = 'shake 0.5s ease-in-out infinite';
+            } else {
+                bridge.classList.remove('active');
+                warningRing.style.opacity = '0';
+                document.getElementById('card-dependent').style.animation = 'none';
+            }
+        }
+
+        // 显示数学详情
+        function showMathDetail(type) {
+            const panel = document.getElementById('math-panel');
+            const overlay = document.getElementById('overlay');
+            const content = document.getElementById('math-content');
+
+            if (type === 'independent') {
+                content.innerHTML = `
+                    <strong style="color:#e74c3c;">场景一：线性无关的方程组</strong><br><br>
+                    设 F₁ = (0, F₁y), F₂ = (F₂x, F₂y), F₃ = (F₃x, 0)<br><br>
+                    平衡方程：<br>
+                    ΣFx = 0:  F₂x + F₃x = 0<br>
+                    ΣFy = 0:  F₁y + F₂y = W<br>
+                    ΣM = 0:  F₁y·d₁ + F₂y·d₂ + F₃x·d₃ = W·dw<br><br>
+                    <span style="color:#2ecc71; font-weight:bold;">
+                    系数矩阵满秩 (rank = 3)<br>
+                    ⇒ 方程组有唯一解<br>
+                    ⇒ 三个力线性无关
+                    </span>
+                `;
+            } else {
+                content.innerHTML = `
+                    <strong style="color:#e67e22;">场景二：线性相关的方程组</strong><br><br>
+                    设 F₁ = (0, F₁y), F₂ = (0, F₂y), F₃ = (0, F₃y)<br><br>
+                    平衡方程：<br>
+                    ΣFx = 0:  0 = 0  (自动满足，无信息)<br>
+                    ΣFy = 0:  F₁y + F₂y + F₃y = W<br><br>
+                    <span style="color:#e74c3c; font-weight:bold;">
+                    系数矩阵秩不足 (rank = 1 < 3)<br>
+                    ⇒ 方程组有无穷多解<br>
+                    ⇒ F₃ = a·F₁ + b·F₂，线性相关<br>
+                    ⇒ 无法唯一确定各支撑力
+                    </span>
+                `;
+            }
+
+            panel.style.display = 'block';
+            overlay.style.display = 'block';
+        }
+
+        function closeMathPanel() {
+            document.getElementById('math-panel').style.display = 'none';
+            document.getElementById('overlay').style.display = 'none';
+        }
+
+        // SVG 交互提示
+        document.querySelectorAll('.svg-container').forEach(container => {
+            const svg = container.querySelector('svg');
+            const tooltip = container.querySelector('.tooltip');
+
+            svg.addEventListener('mousemove', (e) => {
+                const rect = svg.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                // 检测鼠标悬停在哪个力上
+                let text = '';
+                if (x > 100 && x < 140 && y > 140 && y < 280) {
+                    text = 'F₁: 竖直向上支撑力';
+                } else if (x > 200 && x < 240 && y > 140 && y < 280) {
+                    text = 'F₂: 斜向支撑力，提供水平分量';
+                } else if (x > 300 && x < 340 && y > 140 && y < 220) {
+                    text = 'F₃: 水平支撑力，抵抗侧向力';
+                } else if (x > 230 && x < 270 && y > 60 && y < 140) {
+                    text = 'W: 外部负载（重力）';
+                }
+
+                if (text) {
+                    tooltip.textContent = text;
+                    tooltip.style.left = (x + 10) + 'px';
+                    tooltip.style.top = (y - 30) + 'px';
+                    tooltip.classList.add('show');
+                } else {
+                    tooltip.classList.remove('show');
+                }
+            });
+
+            svg.addEventListener('mouseleave', () => {
+                tooltip.classList.remove('show');
+            });
+        });
+
+        // 页面加载动画
+        window.addEventListener('load', () => {
+            document.querySelectorAll('.scene-card').forEach((card, index) => {
+                card.style.animationDelay = (index * 0.3) + 's';
+            });
+        });
+    </script>
+</body>
+</html>

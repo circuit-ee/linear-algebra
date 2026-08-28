@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>线性相关与线性无关 · 工程意义解读</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 18px; }
+  body {
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: linear-gradient(135deg, #f5f7fa 0%, #e8f0fe 55%, #f0f4ff 100%);
+    color: #1e293b; line-height: 1.75; min-height: 100vh;
+    padding: 32px 20px;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; }
+  header { text-align: center; margin-bottom: 28px; }
+  header h1 { font-size: 42px; font-weight: 800; color: #1e40af; letter-spacing: 1px; }
+  header .sub { font-size: 20px; color: #6366f1; margin-top: 8px; font-weight: 600; }
+  header .lead { font-size: 18px; color: #475569; margin-top: 14px; max-width: 860px; margin-left: auto; margin-right: auto; }
+
+  .card {
+    background: rgba(255,255,255,0.92); border: 1px solid rgba(59,130,246,0.18);
+    border-radius: 18px; padding: 26px 28px; margin-bottom: 22px;
+    box-shadow: 0 8px 30px rgba(59,130,246,0.10);
+  }
+  .card h2 { font-size: 28px; color: #1e40af; margin-bottom: 14px; font-weight: 800; }
+  .card h3 { font-size: 22px; color: #2563eb; margin: 14px 0 8px; font-weight: 700; }
+  .card p, .card li { font-size: 18px; color: #334155; }
+  .card ul { padding-left: 22px; }
+  .card li { margin-bottom: 6px; }
+
+  /* 常规公式块（非LaTeX）：用等宽字体排布，可读性好 */
+  .formula {
+    font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 19px;
+    background: #dbeafe; border-left: 5px solid #3b82f6;
+    padding: 12px 16px; border-radius: 8px; margin: 12px 0; color: #1e3a8a;
+    line-height: 1.7; word-break: break-word;
+  }
+  .formula .subt { display:block; font-family:-apple-system,"PingFang SC",sans-serif; font-size:15px; color:#475569; margin-top:4px; }
+  .tip {
+    background: #fef9c3; border: 1px solid rgba(234,179,8,0.4);
+    border-radius: 10px; padding: 14px 16px; margin-top: 12px; font-size: 17px; color: #854d0e;
+  }
+  .tip b { color: #713f12; }
+  .note {
+    background: #ecfdf5; border: 1px solid rgba(16,185,129,0.35);
+    border-radius: 10px; padding: 12px 16px; margin-top: 12px; font-size: 16px; color: #065f46;
+  }
+  .note b { color: #047857; }
+
+  /* matrix */
+  .mat { display: inline-block; border: 2px solid #3b82f6; border-radius: 8px; padding: 6px 4px; margin: 6px 8px; vertical-align: middle; background: #fff; }
+  .mat table { border-collapse: collapse; }
+  .mat td { padding: 4px 10px; font-family: "SF Mono", Menlo, monospace; font-size: 18px; text-align: center; }
+  .vec { color: #1e40af; font-weight: 700; }
+  .coef { color: #b45309; font-weight: 700; }
+
+  /* case cards */
+  .cases { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-top: 12px; }
+  .case { border-radius: 14px; padding: 18px; color: #fff; cursor: default; box-shadow: 0 6px 20px rgba(0,0,0,0.08); }
+  .case h3 { color: #fff; font-size: 21px; margin-bottom: 8px; }
+  .case p { color: rgba(255,255,255,0.96); font-size: 17px; }
+  .case .tag { display:inline-block; background: rgba(255,255,255,0.22); border-radius: 6px; padding: 2px 8px; font-size: 14px; margin-bottom: 8px; font-weight:700;}
+  .c1 { background: linear-gradient(135deg,#2563eb,#1e40af); }
+  .c2 { background: linear-gradient(135deg,#059669,#047857); }
+  .c3 { background: linear-gradient(135deg,#d97706,#b45309); }
+  .c4 { background: linear-gradient(135deg,#7c3aed,#5b21b6); }
+
+  /* interactive */
+  .inter { display: flex; flex-wrap: wrap; gap: 14px; align-items:center; margin: 14px 0; }
+  .inter label { font-size: 18px; color: #334155; font-weight:600; }
+  input[type=range] { -webkit-appearance:none; appearance:none; width: 220px; height:6px; background:#bfdbfe; border-radius:3px; outline:none; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:22px; height:22px; background:#3b82f6; border-radius:50%; border:3px solid #fff; cursor:pointer; box-shadow:0 2px 8px rgba(59,130,246,.4);}
+  .btn { padding: 12px 20px; border:1px solid rgba(59,130,246,.35); background:rgba(255,255,255,.85); color:#1e40af; border-radius:10px; cursor:pointer; font-size:18px; font-weight:700; box-shadow:0 4px 12px rgba(59,130,246,.10); transition:.15s; }
+  .btn:hover { background: rgba(59,130,246,.12); transform: translateY(-1px); }
+  .out { margin-top: 12px; padding: 14px 16px; border-radius: 10px; background:#eff6ff; border:1px solid rgba(59,130,246,.2); font-size: 18px; color:#1e3a8a; line-height:1.7; }
+  canvas { display:block; width:100%; max-width:520px; height:340px; margin: 8px auto; background:#fff; border-radius:12px; border:1px solid #e2e8f0;}
+
+  footer { text-align:center; color:#64748b; font-size:16px; margin-top: 18px; }
+  @media (max-width:700px){ header h1 { font-size:32px; } .card h2 { font-size:24px; } canvas { height:280px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>线性相关 与 线性无关</h1>
+  <div class="sub">从原理到工程：一组向量何时"多余"？何时"各管一摊"？</div>
+  <p class="lead">大一新生一句话入门：<b>线性相关 = 其中某个向量能被其余向量"拼出来"（有多余信息）；线性无关 = 谁也拼不出谁（每个都不可替代）</b>。下面从定义、判定，一路走到电路、力学、控制、数据的真实工程意义。</p>
+</header>
+
+<!-- 1 定义 -->
+<section class="card">
+  <h2>一、先搞懂定义（用"拼向量"说话）</h2>
+  <p>给定一组向量 v₁, v₂, … , v_k，考虑方程</p>
+  <div class="formula">c₁·v₁ + c₂·v₂ + … + c_k·v_k = 0　（c₁…c_k 是待定系数）<span class="subt">读法：用一组系数把向量"加权相加"凑成零向量。关键不在"凑成了零"，而在"凑零的系数是否只能全为 0"。</span></div>
+  <ul>
+    <li><b>线性相关</b>：存在<b>不全为 0</b> 的 c₁…c_k 使上式成立 → 至少有一个向量能被其余向量<b>线性表示</b>（"它是多余的，可被拼出来"）。</li>
+    <li><b>线性无关</b>：只有当 c₁=c₂=…=c_k=<b>0</b> 时上式才成立 → 谁也拼不出谁，<b>每个向量都不可替代</b>。</li>
+  </ul>
+  <h3>几何直觉（在平面 / 空间里看）</h3>
+  <p>• 两个向量线性相关 ⇔ 它们<b>共线</b>（同一直线方向，一个能数乘出另一个）。<br>
+     • 三个平面向量线性相关 ⇔ 它们<b>全挤在同一直线或同一平面内</b>（没能"撑开"整个平面）。<br>
+     • 三个空间向量线性相关 ⇔ 它们<b>共面</b>（三个向量都在同一张平面里，没能撑开整个三维空间）。<br>
+     • 线性无关的向量组 = 一组<b>彼此不重叠的"方向骨架"</b>，能张成（span）出最大的空间。</p>
+  <div class="tip"><b>记忆口诀：</b>相关 = 有冗余（有人偷懒可被替掉）；无关 = 全员骨干（少一个都不行）。工程上，我们<b>既怕冗余（浪费、病态）也怕不够（欠定、不可控）</b>，线性无关是"刚好、高效"的黄金标准。</div>
+  <div class="note"><b>给大一的"生活类比"：</b>把三个向量想象成三个队友汇报同一件事。若三人说的其实是一回事（相关），你只需留一个；若三人各说各的独立信息（无关），少听谁都会漏掉一块——这和"秩 = 独立信息维数"是同一个想法。</div>
+</section>
+
+<!-- 2 判定 -->
+<section class="card">
+  <h2>二、怎么判定？（矩阵的秩 rank）</h2>
+  <p>把向量按列排成矩阵 A = [v₁  v₂  …  v_k]（每个向量是一列），则：</p>
+  <div class="formula">rank(A) = 线性无关向量的最大个数<span class="subt">rank 读作"矩阵的秩"，它告诉你：这一组向量里，到底有几个是真正"独立、不可替代"的。</span></div>
+  <ul>
+    <li>若 rank(A) &lt; k（向量个数） → <b>线性相关</b>（秩不够，必有冗余列）。</li>
+    <li>若 rank(A) = k → <b>线性无关</b>（列满秩，无冗余）。</li>
+    <li>方阵情形：det(A) ≠ 0 ⇔ 列向量线性无关；det(A) = 0 ⇔ 线性相关。</li>
+  </ul>
+  <p style="margin-top:8px">下面这个交互让你亲手"拼"一组向量，实时看它们是否相关、行列式 det 是多少。</p>
+  <div class="inter">
+    <label>向量 v₁ = ( <span id="l1">1</span>, 2 )</label>
+    <input type="range" id="s1" min="-3" max="3" step="1" value="1">
+    <label style="margin-left:14px">向量 v₂ = ( 2, <span id="l2">4</span> )</label>
+    <input type="range" id="s2" min="-3" max="6" step="1" value="4">
+  </div>
+  <div style="font-size:16px;color:#64748b">拖动滑块改变 v₁ 的 x 分量与 v₂ 的 y 分量，观察两向量是否共线（相关）。当 v₂ 正好是 v₁ 的数乘时，det = 0，两向量共线 → 相关。</div>
+  <div class="out" id="judgeOut">判定结果将在这里实时显示…</div>
+  <canvas id="vecCanvas" width="520" height="340"></canvas>
+  <div class="note"><b>怎么读图：</b>蓝色箭头是 v₁，绿色箭头是 v₂。若两箭头落在同一直线上（方向相同或相反），说明一个 = 另一个 × 某个数，即<b>共线 → 相关</b>；若两箭头撑开一个角、不共线，则<b>无关</b>。这正是 det = v1_x·v2_y − v1_y·v2_x 的几何意义：det 的绝对值 = 两向量张成的平行四边形面积，面积为 0 ⇔ 共线。</div>
+</section>
+
+<!-- 3 工程意义 -->
+<section class="card">
+  <h2>三、工程意义：为什么工程师关心"相关 / 无关"？</h2>
+  <p>在工程建模里，向量常常是<b>物理量（力、电压、信号、特征）</b>，线性无关性回答的是：<b>"这些量里有没有多余的？能不能用最少的一组基把系统完整描述出来？"</b></p>
+  <div class="cases">
+    <div class="case c1">
+      <span class="tag">电路 · MNA</span>
+      <h3>结点电压法的方程是否独立</h3>
+      <p>由 KCL 改写得到 MNA 方程 A·x = b。<b>列向量线性无关 ⇔ 各支路/结点方程彼此独立</b>，矩阵满秩可求解；若出现线性相关（如重复约束、理想变压器引入的依赖关系），则 rank 下降、解不唯一或无解，需增补/剔除约束。</p>
+    </div>
+    <div class="case c2">
+      <span class="tag">结构力学 · 桁架</span>
+      <h3>杆件力是否静定</h3>
+      <p>平衡方程 K·f = p 的列（各杆方向向量）若<b>线性无关</b>，则外力可被杆力唯一分担（静定/可解）；若相关（冗余杆方向重复），则存在非零自应力或无穷多内力分配，需补充变形协调条件。</p>
+    </div>
+    <div class="case c3">
+      <span class="tag">控制理论 · 能控性</span>
+      <h3>状态能否被输入驱动</h3>
+      <p>能控性矩阵 C = [B  A·B  A²·B  …] 的列若<b>线性无关（秩 = n）</b>，系统完全能控；一旦相关（秩 &lt; n），某些状态方向永远达不到，控制器设计必须单独处理不可控子空间。</p>
+    </div>
+    <div class="case c4">
+      <span class="tag">数据科学 · 特征</span>
+      <h3>特征冗余与降维（PCA）</h3>
+      <p>数据特征高度<b>相关</b>（如"身高 cm"与"身高 m"）→ 信息重复、协方差矩阵近奇异、模型病态。PCA 正是寻找一组<b>线性无关的主成分</b>替代原特征，用最少基向量保留最大方差（去冗余 + 降维）。</p>
+    </div>
+  </div>
+  <div class="tip"><b>一句话串起来：</b>线性无关 = 系统的"独立自由度 / 独立信息"；线性相关 = 存在"多余约束 / 冗余特征"。<b>秩 rank</b> 就是系统真正"独立"的维度——这正是前面"无穷多解时自由变量个数 = n − rank"的同一套思想。</div>
+  <div class="note"><b>工程"度"的把握：</b>完全无关（秩 = 未知数个数）往往对应"恰好可唯一求解"（电路满秩、桁架静定）；轻度相关常意味着"设计有冗余"（静不定，需用最小二乘/优化在无穷解里挑最优）；高度相关则可能导致"方程近奇异、数值不稳定"，需要剔除或正则化。</div>
+</section>
+
+<!-- 4 动手：找冗余列 -->
+<section class="card">
+  <h2>四、动手：找出"多余"的那一列</h2>
+  <p>下面矩阵的三列中，有一列能被另外两列拼出来（线性相关）。点击按钮让它自动检测并告诉你哪一列是冗余的、以及拼法。</p>
+  <div class="mat"><table id="matShow"></table></div>
+  <div class="inter">
+    <button class="btn" id="btnDetect">检测线性相关性</button>
+    <button class="btn" id="btnReset">重置</button>
+  </div>
+  <div class="out" id="redOut">点击"检测"查看结果…</div>
+  <div class="note"><b>怎么想"拼法"：</b>要找非零系数 a、b、c 使 a·c₁ + b·c₂ + c·c₃ = 0。若解出 a=1、b=−2、c=1，就说明 c₃ = 2·c₂ − c₁——即 c₃ 是 c₁、c₂ 的线性组合，因而是"多余"的那一列。工程中它就像一路可被其他传感器数据算出来的重复测量。</div>
+</section>
+
+<!-- 5 速记 -->
+<section class="card">
+  <h2>五、给大一同学的"意义速记"</h2>
+  <ul>
+    <li><b>定义层</b>：相关 = 有非零系数组合得零 = 有人可被替掉；无关 = 只有全零系数才得零 = 全员骨干。</li>
+    <li><b>几何层</b>：无关向量组彼此不共线 / 不共面，能"撑开"最大空间；相关则挤在低维子空间里。</li>
+    <li><b>代数层</b>：用秩判定——rank &lt; 向量个数 → 相关；rank = 向量个数 → 无关；方阵看 det（det≠0 ⇔ 无关）。</li>
+    <li><b>工程层</b>：无关 = 独立方程 / 独立特征 / 可控 / 满秩可解；相关 = 冗余约束 / 特征多重共线性 / 不可控 / 解退化。</li>
+    <li><b>方法论</b>：遇到"能不能少一个""信息有没有重复""系统能不能被唯一确定"——先问<b>这组向量线性相关吗？</b></li>
+  </ul>
+  <div class="tip"><b>总结：</b>线性相关与无关，是贯穿线性代数与工程建模的"独立性与冗余度"判据。读懂它，你就读懂了<b>秩、解的唯一性、PCA 降维、能控性</b>背后的共同语言。</div>
+</section>
+
+<footer>线性代数 · 面向大一新生的交互式解读 · 浅色版 / 大字号</footer>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  // ===== 判定交互 =====
+  var s1=document.getElementById('s1'), s2=document.getElementById('s2');
+  var l1=document.getElementById('l1'), l2=document.getElementById('l2');
+  var out=document.getElementById('judgeOut');
+  var cv=document.getElementById('vecCanvas');
+  var ctx=cv.getContext('2d');
+  function draw(x1,y1,x2,y2,rel){
+    ctx.clearRect(0,0,cv.width,cv.height);
+    ctx.save();
+    ctx.translate(cv.width/2,cv.height/2);
+    // grid
+    ctx.strokeStyle='#eef2f7'; ctx.lineWidth=1;
+    for(var i=-6;i<=6;i++){ ctx.beginPath();ctx.moveTo(i*40,-cv.height/2);ctx.lineTo(i*40,cv.height/2);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(-cv.width/2,i*40);ctx.lineTo(cv.width/2,i*40);ctx.stroke();}
+    // axes
+    ctx.strokeStyle='#94a3b8';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(-cv.width/2,0);ctx.lineTo(cv.width/2,0);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(0,-cv.height/2);ctx.lineTo(0,cv.height/2);ctx.stroke();
+    function arrow(dx,dy,color,label){
+      var len=Math.sqrt(dx*dx+dy*dy); if(len<0.001) return;
+      var ux=dx/len, uy=dy/len, px=dx*40, py=-dy*40;
+      ctx.strokeStyle=color; ctx.fillStyle=color; ctx.lineWidth=3;
+      ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(px,py);ctx.stroke();
+      var al=10; var ang=Math.atan2(-uy,ux);
+      ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(px-al*Math.cos(ang-0.4),py-al*Math.sin(ang-0.4));ctx.lineTo(px-al*Math.cos(ang+0.4),py-al*Math.sin(ang+0.4));ctx.closePath();ctx.fill();
+      ctx.font='16px Menlo'; ctx.fillText(label,px+8,py-6);
+    }
+    arrow(x1,y1,'#2563eb','v1'); arrow(x2,y2,'#059669','v2');
+    ctx.restore();
+  }
+  function update(){
+    var x1=+s1.value, y2=+s2.value; l1.textContent=x1; l2.textContent=y2;
+    var v1=[x1,2], v2=[2,y2];
+    var det=v1[0]*v2[1]-v1[1]*v2[0];
+    var rel=Math.abs(det)<1e-6;
+    var msg='<b>v1 = ('+v1[0]+', '+v1[1]+'),　v2 = ('+v2[0]+', '+v2[1]+')</b><br>';
+    msg+='矩阵行列式 det = v1_x·v2_y − v1_y·v2_x = '+v1[0]+'×'+v2[1]+' − '+v1[1]+'×'+v2[0]+' = <b>'+det+'</b><br>';
+    msg+='几何意义：|det| = 两向量张成的平行四边形面积。<br>';
+    if(rel){ msg+='<span style="color:#dc2626;font-weight:700">det = 0 → 面积为 0 → 两向量共线 → <b>线性相关</b>。</span> 一个能被另一个数乘得到（方向重叠，有冗余）。';}
+    else { msg+='<span style="color:#16a34a;font-weight:700">det ≠ 0 → 面积非 0 → 两向量不共线 → <b>线性无关</b>。</span> 它们分别撑开两个独立方向。';}
+    out.innerHTML=msg; draw(v1[0],v1[1],v2[0],v2[1],rel);
+  }
+  s1.oninput=s2.oninput=update; update();
+
+  // ===== 冗余列检测 =====
+  // c1=(1,2,3), c2=(2,5,7), c3=(3,8,11);  c3 = 2*c2 - c1  => 1*c1 -2*c2 +1*c3 = 0
+  var cols=[[1,2,3],[2,5,7],[3,8,11]];
+  function showMat(){
+    var t=document.getElementById('matShow'); var html='';
+    for(var r=0;r<3;r++){ html+='<tr>'; for(var cc=0;cc<3;cc++) html+='<td class="vec">'+(cc===0?'[':'')+cols[cc][r]+(r===2?']':'')+'</td>'; html+='</tr>';}
+    t.innerHTML=html;
+  }
+  showMat();
+  document.getElementById('btnDetect').onclick=function(){
+    var html='<b>检测过程：</b>把三列排成矩阵 A，计算秩。<br>';
+    html+='观察到 <b>c3 = 2·c2 − c1</b>（即 1·c1 − 2·c2 + 1·c3 = 0，系数不全为 0）。<br>';
+    html+='→ 三列<b style="color:#dc2626">线性相关</b>，rank(A) = 2 &lt; 3。<br>';
+    html+='<b>工程解读：</b>"c3"这一列是冗余的，它携带的信息已被 c1、c2 的组合覆盖——正如工程中"多余的一路传感器 / 重复约束"可被其余量线性表示掉。';
+    document.getElementById('redOut').innerHTML=html;
+  };
+  document.getElementById('btnReset').onclick=function(){ document.getElementById('redOut').innerHTML='点击"检测"查看结果…'; };
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1389 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>线性相关与无关：从数学原理到工程稳定</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            color: #212529;
+            min-height: 100vh;
+            overflow-x: hidden;
+            font-size: 20px;
+            font-weight: 700;
+            line-height: 1.7;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 25px;
+        }
+        
+        header {
+            text-align: center;
+            padding: 50px 0;
+            position: relative;
+        }
+        
+        h1 {
+            font-size: 3.5rem;
+            margin-bottom: 25px;
+            text-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+            background: linear-gradient(to right, #1a237e, #283593);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+        }
+        
+        .subtitle {
+            font-size: 1.6rem;
+            max-width: 900px;
+            margin: 0 auto 35px;
+            line-height: 1.9;
+            font-weight: 700;
+            color: #37474f;
+        }
+        
+        .tabs {
+            display: flex;
+            justify-content: center;
+            margin: 35px 0 60px;
+            flex-wrap: wrap;
+        }
+        
+        .tab-btn {
+            background: #e3f2fd;
+            border: none;
+            color: #1565c0;
+            padding: 18px 35px;
+            margin: 10px;
+            border-radius: 35px;
+            cursor: pointer;
+            font-size: 1.3rem;
+            transition: all 0.3s ease;
+            border: 3px solid #90caf9;
+            font-weight: 700;
+        }
+        
+        .tab-btn:hover {
+            background: #1565c0;
+            color: white;
+            transform: translateY(-4px);
+            box-shadow: 0 7px 20px rgba(21, 101, 192, 0.5);
+        }
+        
+        .tab-btn.active {
+            background: linear-gradient(45deg, #0d47a1, #1565c0);
+            color: white;
+            box-shadow: 0 7px 20px rgba(21, 101, 192, 0.5);
+            border: 3px solid #0d47a1;
+        }
+        
+        .content-section {
+            display: none;
+            background: white;
+            border-radius: 20px;
+            padding: 35px;
+            margin-bottom: 50px;
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
+            border: 3px solid #bbdefb;
+        }
+        
+        .content-section.active {
+            display: block;
+            animation: fadeIn 1s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(25px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .section-title {
+            font-size: 2.5rem;
+            margin-bottom: 30px;
+            color: #1565c0;
+            display: flex;
+            align-items: center;
+            font-weight: 800;
+        }
+        
+        .section-title i {
+            margin-right: 20px;
+            font-size: 2.2rem;
+        }
+        
+        .animation-container {
+            height: 500px;
+            background: #fafafa;
+            border-radius: 15px;
+            margin: 30px 0;
+            position: relative;
+            overflow: hidden;
+            border: 4px solid #1565c0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 25px;
+            margin: 30px 0;
+            padding: 25px;
+            background: #e3f2fd;
+            border-radius: 15px;
+            border: 3px solid #90caf9;
+        }
+        
+        .control-group {
+            flex: 1;
+            min-width: 300px;
+        }
+        
+        .slider-container {
+            margin: 20px 0;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 15px;
+            font-weight: 800;
+            color: #0d47a1;
+            font-size: 1.3rem;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 15px;
+            background: #bbdefb;
+            border-radius: 8px;
+            outline: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: #1565c0;
+            cursor: pointer;
+        }
+        
+        .value-display {
+            display: inline-block;
+            width: 60px;
+            text-align: right;
+            margin-left: 20px;
+            font-weight: 800;
+            color: #d84315;
+            font-size: 1.2rem;
+        }
+        
+        .explanation {
+            background: #e1f5fe;
+            padding: 30px;
+            border-radius: 15px;
+            margin: 30px 0;
+            line-height: 1.9;
+            border-left: 6px solid #0277bd;
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+        
+        .engineering-case {
+            display: flex;
+            align-items: center;
+            margin: 30px 0;
+            padding: 25px;
+            background: #e8f5e9;
+            border-radius: 15px;
+            border: 3px solid #2e7d32;
+        }
+        
+        .case-icon {
+            font-size: 3.5rem;
+            margin-right: 30px;
+            color: #1b5e20;
+        }
+        
+        .ideology-point {
+            background: #fff3e0;
+            border-left: 6px solid #ef6c00;
+            padding: 25px;
+            margin: 30px 0;
+            border-radius: 0 15px 15px 0;
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+        
+        .formula {
+            font-family: 'Cambria Math', serif;
+            font-size: 2.2rem;
+            text-align: center;
+            padding: 25px;
+            margin: 30px 0;
+            background: #f5f5f5;
+            border-radius: 15px;
+            border: 4px solid #1565c0;
+            font-weight: 800;
+        }
+        
+        .vector-space {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .coordinate-system {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            height: 80%;
+            border: 3px solid #757575;
+        }
+        
+        .axis {
+            position: absolute;
+            background: #757575;
+        }
+        
+        .x-axis {
+            width: 100%;
+            height: 3px;
+            top: 50%;
+            left: 0;
+        }
+        
+        .y-axis {
+            width: 3px;
+            height: 100%;
+            top: 0;
+            left: 50%;
+        }
+        
+        .axis-label {
+            position: absolute;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #424242;
+        }
+        
+        .x-label {
+            top: 52%;
+            right: 5%;
+        }
+        
+        .y-label {
+            top: 5%;
+            left: 52%;
+        }
+        
+        .vector {
+            position: absolute;
+            transform-origin: 0 0;
+        }
+        
+        .vector-line {
+            position: absolute;
+            height: 6px;
+            background: #d32f2f;
+            transform-origin: 0 50%;
+        }
+        
+        .vector-arrow {
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-style: solid;
+        }
+        
+        .vector-label {
+            position: absolute;
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: #d32f2f;
+        }
+        
+        .result-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            border: 3px solid #1565c0;
+            font-size: 1.3rem;
+            font-weight: 700;
+            min-width: 250px;
+        }
+        
+        .linear-dependent {
+            color: #d32f2f;
+        }
+        
+        .linear-independent {
+            color: #2e7d32;
+        }
+        
+        .determinant-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-top: 10px;
+        }
+        
+        .engineering-explanation {
+            font-size: 1.1rem;
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.8);
+        }
+        
+        .engineering-dependent {
+            background: rgba(255, 235, 238, 0.9);
+            border-left: 3px solid #d32f2f;
+        }
+        
+        .engineering-independent {
+            background: rgba(232, 245, 233, 0.9);
+            border-left: 3px solid #2e7d32;
+        }
+        
+        .engineering-animation {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            width: 200px;
+            height: 150px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            border: 2px solid #1565c0;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .bridge-model {
+            width: 100%;
+            height: 60px;
+            position: relative;
+            margin-bottom: 10px;
+        }
+        
+        .bridge-deck {
+            width: 100%;
+            height: 10px;
+            background: #795548;
+            position: absolute;
+            bottom: 0;
+        }
+        
+        .bridge-support {
+            position: absolute;
+            width: 5px;
+            background: #607d8b;
+            bottom: 0;
+        }
+        
+        .support-left {
+            left: 25%;
+            height: 30px;
+        }
+        
+        .support-middle {
+            left: 50%;
+            height: 40px;
+        }
+        
+        .support-right {
+            left: 75%;
+            height: 30px;
+        }
+        
+        .bridge-stability {
+            font-size: 1rem;
+            font-weight: 700;
+            text-align: center;
+        }
+        
+        .stable {
+            color: #2e7d32;
+        }
+        
+        .unstable {
+            color: #d32f2f;
+            animation: shake 0.5s ease-in-out infinite;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-2px); }
+            75% { transform: translateX(2px); }
+        }
+        
+        .case-animation {
+            height: 300px;
+            background: #f5f5f5;
+            border-radius: 10px;
+            margin: 20px 0;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid #1565c0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .case-controls {
+            display: flex;
+            gap: 15px;
+            margin: 15px 0;
+            padding: 15px;
+            background: #e3f2fd;
+            border-radius: 10px;
+            border: 2px solid #90caf9;
+        }
+        
+        .case-control-group {
+            flex: 1;
+        }
+        
+        .case-slider-container {
+            margin: 10px 0;
+        }
+        
+        .case-label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 700;
+            color: #0d47a1;
+            font-size: 1.1rem;
+        }
+        
+        .case-value-display {
+            display: inline-block;
+            width: 40px;
+            text-align: right;
+            margin-left: 10px;
+            font-weight: 700;
+            color: #d84315;
+            font-size: 1rem;
+        }
+        
+        .case-result {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px;
+            border-radius: 5px;
+            border: 2px solid #1565c0;
+            font-size: 1rem;
+            font-weight: 700;
+            min-width: 150px;
+        }
+        
+        .robot-model {
+            width: 100%;
+            height: 100px;
+            position: relative;
+            margin-bottom: 10px;
+        }
+        
+        .robot-base {
+            width: 80px;
+            height: 20px;
+            background: #78909c;
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 5px 5px 0 0;
+        }
+        
+        .robot-arm {
+            position: absolute;
+            background: #546e7a;
+            transform-origin: bottom center;
+        }
+        
+        .arm-1 {
+            width: 8px;
+            height: 60px;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) rotate(0deg);
+        }
+        
+        .arm-2 {
+            width: 6px;
+            height: 50px;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%) rotate(0deg);
+        }
+        
+        .end-effector {
+            width: 15px;
+            height: 15px;
+            background: #e53935;
+            border-radius: 50%;
+            position: absolute;
+            bottom: 130px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .satellite-model {
+            width: 100%;
+            height: 120px;
+            position: relative;
+            margin-bottom: 10px;
+        }
+        
+        .satellite-body {
+            width: 40px;
+            height: 20px;
+            background: #78909c;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 5px;
+        }
+        
+        .solar-panel-case {
+            position: absolute;
+            width: 60px;
+            height: 10px;
+            background: #f9a825;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        
+        .panel-left-case {
+            left: -65px;
+        }
+        
+        .panel-right-case {
+            right: -65px;
+        }
+        
+        .reaction-wheel {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #7e57c2;
+            border-radius: 50%;
+        }
+        
+        .wheel-x {
+            top: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .wheel-y {
+            top: 50%;
+            right: 5px;
+            transform: translateY(-50%);
+        }
+        
+        .wheel-z {
+            bottom: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        footer {
+            text-align: center;
+            padding: 50px 0;
+            margin-top: 40px;
+            border-top: 3px solid #90caf9;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+        
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.8rem;
+            }
+            
+            .animation-container {
+                height: 400px;
+            }
+            
+            .tabs {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .tab-btn {
+                width: 95%;
+                margin: 10px 0;
+                padding: 15px 25px;
+            }
+            
+            body {
+                font-size: 18px;
+            }
+            
+            .section-title {
+                font-size: 2rem;
+            }
+            
+            .engineering-animation {
+                width: 150px;
+                height: 120px;
+            }
+            
+            .case-animation {
+                height: 250px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>线性相关与无关：工程稳定的数学基石</h1>
+            <p class="subtitle">探索线性代数核心概念在工程中的应用，感受数学严谨性如何保障工程系统的可靠性与稳定性</p>
+        </header>
+        
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="concept">数学概念</button>
+            <button class="tab-btn" data-tab="animation">向量空间演示</button>
+            <button class="tab-btn" data-tab="engineering">工程应用</button>
+            <button class="tab-btn" data-tab="inspiration">启发元素</button>
+        </div>
+        
+        <!-- 数学概念部分 -->
+        <section id="concept" class="content-section active">
+            <h2 class="section-title"><i>📐</i> 线性相关与无关的数学原理</h2>
+            
+            <div class="formula">
+                线性相关: k₁v₁ + k₂v₂ + ... + kₙvₙ = 0 (存在非零解)
+            </div>
+            
+            <div class="formula">
+                线性无关: k₁v₁ + k₂v₂ + ... + kₙvₙ = 0 ⇒ k₁ = k₂ = ... = kₙ = 0
+            </div>
+            
+            <div class="explanation">
+                <p><strong>线性相关</strong>是指在一组向量中，至少有一个向量可以表示为其他向量的线性组合。这意味着这组向量中存在"冗余"信息，它们张成的空间维度低于向量个数。</p>
+                <p><strong>线性无关</strong>是指一组向量中没有任何一个向量可以表示为其他向量的线性组合。这些向量彼此独立，它们张成的空间维度等于向量个数。</p>
+                <p>判断向量组线性相关性的关键方法是计算矩阵的秩：如果秩小于向量个数，则线性相关；如果秩等于向量个数，则线性无关。</p>
+            </div>
+            
+            <div class="engineering-case">
+                <div class="case-icon">🏗️</div>
+                <div>
+                    <h3>工程意义：系统独立性与稳定性</h3>
+                    <p>在工程系统中，线性无关的概念对应着组件的独立性和系统的稳定性。当支撑结构的作用力线性无关时，结构能够抵抗各个方向的载荷；当控制系统中的状态变量线性无关时，系统能够实现完全可控。</p>
+                    <p>例如，在桥梁设计中，如果所有支撑力线性相关，意味着存在冗余支撑，桥梁可能在某些方向缺乏稳定性；如果支撑力线性无关，则桥梁能够在所有方向保持稳定。</p>
+                </div>
+            </div>
+        </section>
+        
+        <!-- 向量空间演示部分 -->
+        <section id="animation" class="content-section">
+            <h2 class="section-title"><i>🔍</i> 向量空间中的线性相关性演示</h2>
+            
+            <div class="animation-container">
+                <div class="vector-space">
+                    <div class="coordinate-system">
+                        <div class="axis x-axis"></div>
+                        <div class="axis y-axis"></div>
+                        <div class="axis-label x-label">x</div>
+                        <div class="axis-label y-label">y</div>
+                        
+                        <div id="vector1" class="vector">
+                            <div id="vector1-line" class="vector-line"></div>
+                            <div id="vector1-arrow" class="vector-arrow"></div>
+                            <div id="vector1-label" class="vector-label">v₁</div>
+                        </div>
+                        
+                        <div id="vector2" class="vector">
+                            <div id="vector2-line" class="vector-line"></div>
+                            <div id="vector2-arrow" class="vector-arrow"></div>
+                            <div id="vector2-label" class="vector-label">v₂</div>
+                        </div>
+                    </div>
+                    
+                    <div class="result-panel">
+                        <div id="result-text">等待计算...</div>
+                        <div id="determinant" class="determinant-value">行列式: -</div>
+                        <div id="rank-info">秩: -</div>
+                        <div id="engineering-text" class="engineering-explanation">调整向量观察工程应用原理</div>
+                    </div>
+                    
+                    <div class="engineering-animation">
+                        <div class="bridge-model">
+                            <div class="bridge-deck"></div>
+                            <div class="bridge-support support-left"></div>
+                            <div class="bridge-support support-middle"></div>
+                            <div class="bridge-support support-right"></div>
+                        </div>
+                        <div id="bridge-stability" class="bridge-stability">桥梁稳定性: 正常</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="controls">
+                <div class="control-group">
+                    <div class="slider-container">
+                        <label for="v1x">向量1 X分量: <span id="v1x-value" class="value-display">1</span></label>
+                        <input type="range" id="v1x" min="-5" max="5" step="0.1" value="1">
+                    </div>
+                    <div class="slider-container">
+                        <label for="v1y">向量1 Y分量: <span id="v1y-value" class="value-display">2</span></label>
+                        <input type="range" id="v1y" min="-5" max="5" step="0.1" value="2">
+                    </div>
+                </div>
+                <div class="control-group">
+                    <div class="slider-container">
+                        <label for="v2x">向量2 X分量: <span id="v2x-value" class="value-display">3</span></label>
+                        <input type="range" id="v2x" min="-5" max="5" step="0.1" value="3">
+                    </div>
+                    <div class="slider-container">
+                        <label for="v2y">向量2 Y分量: <span id="v2y-value" class="value-display">1</span></label>
+                        <input type="range" id="v2y" min="-5" max="5" step="0.1" value="1">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="explanation">
+                <p>通过调整上面两个向量的分量，观察它们在线性空间中的关系。当两个向量共线时，它们线性相关；当它们不共线时，线性无关。</p>
+                <p>在右侧信息面板中，实时显示行列式的值和矩阵的秩。当行列式值为0时，向量线性相关；当行列式值不为0时，向量线性无关。</p>
+                <p>左下角的桥梁模型动态演示线性相关性在工程中的应用：当向量线性无关时，桥梁保持稳定；当向量线性相关时，桥梁出现不稳定现象。</p>
+            </div>
+        </section>
+        
+        <!-- 工程应用部分 -->
+        <section id="engineering" class="content-section">
+            <h2 class="section-title"><i>🏭</i> 工程中的线性相关性应用</h2>
+            
+            <div class="formula">
+                结构稳定性: rank(A) = n ⇒ 系统稳定
+            </div>
+            
+            <div class="engineering-case">
+                <div class="case-icon">🌉</div>
+                <div>
+                    <h3>应用案例一：桥梁支撑结构设计</h3>
+                    <p>在大型桥梁设计中，工程师需要确保支撑结构在各个方向都能提供独立的支撑力。如果所有支撑力线性相关，意味着存在冗余支撑，桥梁可能在某些方向缺乏稳定性；如果支撑力线性无关，则桥梁能够在所有方向保持稳定。</p>
+                    <p>通过计算支撑力向量的秩，工程师可以验证桥梁是否能在所有可能载荷条件下保持稳定。港珠澳大桥的支撑系统经过精心设计，确保所有主要支撑力线性无关，使大桥能够承受16级台风和8级地震。</p>
+                    
+                    <!-- 桥梁案例动画 -->
+                    <div class="case-animation" id="bridge-case-animation">
+                        <div class="vector-space">
+                            <div class="coordinate-system">
+                                <div class="axis x-axis"></div>
+                                <div class="axis y-axis"></div>
+                                <div class="axis-label x-label">F₁</div>
+                                <div class="axis-label y-label">F₂</div>
+                                
+                                <div id="bridge-vector1" class="vector">
+                                    <div id="bridge-vector1-line" class="vector-line" style="background: #d32f2f;"></div>
+                                    <div id="bridge-vector1-arrow" class="vector-arrow"></div>
+                                    <div id="bridge-vector1-label" class="vector-label">支撑力1</div>
+                                </div>
+                                
+                                <div id="bridge-vector2" class="vector">
+                                    <div id="bridge-vector2-line" class="vector-line" style="background: #1976d2;"></div>
+                                    <div id="bridge-vector2-arrow" class="vector-arrow"></div>
+                                    <div id="bridge-vector2-label" class="vector-label">支撑力2</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="case-result" id="bridge-case-result">
+                            <div id="bridge-result-text">等待计算...</div>
+                            <div id="bridge-determinant">行列式: -</div>
+                            <div id="bridge-stability-text">桥梁状态: -</div>
+                        </div>
+                    </div>
+                    
+                    <div class="case-controls">
+                        <div class="case-control-group">
+                            <div class="case-slider-container">
+                                <label for="bridge-f1x">支撑力1 X分量: <span id="bridge-f1x-value" class="case-value-display">2</span></label>
+                                <input type="range" id="bridge-f1x" min="-5" max="5" step="0.1" value="2">
+                            </div>
+                            <div class="case-slider-container">
+                                <label for="bridge-f1y">支撑力1 Y分量: <span id="bridge-f1y-value" class="case-value-display">1</span></label>
+                                <input type="range" id="bridge-f1y" min="-5" max="5" step="0.1" value="1">
+                            </div>
+                        </div>
+                        <div class="case-control-group">
+                            <div class="case-slider-container">
+                                <label for="bridge-f2x">支撑力2 X分量: <span id="bridge-f2x-value" class="case-value-display">1</span></label>
+                                <input type="range" id="bridge-f2x" min="-5" max="5" step="0.1" value="1">
+                            </div>
+                            <div class="case-slider-container">
+                                <label for="bridge-f2y">支撑力2 Y分量: <span id="bridge-f2y-value" class="case-value-display">2</span></label>
+                                <input type="range" id="bridge-f2y" min="-5" max="5" step="0.1" value="2">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="engineering-case">
+                <div class="case-icon">🤖</div>
+                <div>
+                    <h3>应用案例二：工业机器人运动控制</h3>
+                    <p>工业机器人的每个关节提供独立的运动自由度。如果关节运动向量线性相关，机器人将无法到达工作空间中的某些位置。</p>
+                    <p>通过确保运动学雅可比矩阵满秩，工程师保证机器人在工作空间内任意位置都具有完整的运动能力。中国工业机器人制造商已将此原理应用于高铁车身焊接生产线，实现毫米级精度控制。</p>
+                    
+                    <!-- 机器人案例动画 -->
+                    <div class="case-animation" id="robot-case-animation">
+                        <div class="robot-model">
+                            <div class="robot-base"></div>
+                            <div id="robot-arm-1" class="robot-arm arm-1"></div>
+                            <div id="robot-arm-2" class="robot-arm arm-2"></div>
+                            <div id="robot-end-effector" class="end-effector"></div>
+                        </div>
+                        <div class="case-result" id="robot-case-result">
+                            <div id="robot-result-text">等待计算...</div>
+                            <div id="robot-determinant">雅可比行列式: -</div>
+                            <div id="robot-reachability">可达性: -</div>
+                        </div>
+                    </div>
+                    
+                    <div class="case-controls">
+                        <div class="case-control-group">
+                            <div class="case-slider-container">
+                                <label for="robot-angle1">关节1角度: <span id="robot-angle1-value" class="case-value-display">30</span>°</label>
+                                <input type="range" id="robot-angle1" min="0" max="180" step="1" value="30">
+                            </div>
+                            <div class="case-slider-container">
+                                <label for="robot-angle2">关节2角度: <span id="robot-angle2-value" class="case-value-display">45</span>°</label>
+                                <input type="range" id="robot-angle2" min="0" max="180" step="1" value="45">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="engineering-case">
+                <div class="case-icon">🛰️</div>
+                <div>
+                    <h3>应用案例三：卫星姿态控制系统</h3>
+                    <p>卫星姿态控制需要三个正交的反作用飞轮提供独立的控制力矩。如果这些力矩向量线性相关，卫星将无法在三个轴上独立调整姿态。</p>
+                    <p>北斗导航卫星通过精心设计的飞轮配置，确保控制力矩线性无关，实现厘米级精度的轨道保持和天线指向控制。</p>
+                    
+                    <!-- 卫星案例动画 -->
+                    <div class="case-animation" id="satellite-case-animation">
+                        <div class="satellite-model">
+                            <div class="satellite-body"></div>
+                            <div class="solar-panel-case panel-left-case"></div>
+                            <div class="solar-panel-case panel-right-case"></div>
+                            <div class="reaction-wheel wheel-x"></div>
+                            <div class="reaction-wheel wheel-y"></div>
+                            <div class="reaction-wheel wheel-z"></div>
+                        </div>
+                        <div class="case-result" id="satellite-case-result">
+                            <div id="satellite-result-text">等待计算...</div>
+                            <div id="satellite-determinant">控制矩阵秩: -</div>
+                            <div id="satellite-stability">姿态稳定性: -</div>
+                        </div>
+                    </div>
+                    
+                    <div class="case-controls">
+                        <div class="case-control-group">
+                            <div class="case-slider-container">
+                                <label for="satellite-tx">力矩X分量: <span id="satellite-tx-value" class="case-value-display">1</span></label>
+                                <input type="range" id="satellite-tx" min="-2" max="2" step="0.1" value="1">
+                            </div>
+                            <div class="case-slider-container">
+                                <label for="satellite-ty">力矩Y分量: <span id="satellite-ty-value" class="case-value-display">0.5</span></label>
+                                <input type="range" id="satellite-ty" min="-2" max="2" step="0.1" value="0.5">
+                            </div>
+                        </div>
+                        <div class="case-control-group">
+                            <div class="case-slider-container">
+                                <label for="satellite-tz">力矩Z分量: <span id="satellite-tz-value" class="case-value-display">0.5</span></label>
+                                <input type="range" id="satellite-tz" min="-2" max="2" step="0.1" value="0.5">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- 启发元素部分 -->
+        <section id="inspiration" class="content-section">
+            <h2 class="section-title"><i>💡</i> 启发元素：数学严谨性与工程可靠性</h2>
+            
+            <div class="formula">
+                ⎡ 严谨 ⎤   ⎡ 可靠性 ⎤
+                ⎢ 精确 ⎥ = ⎢ 稳定性 ⎥
+                ⎣ 系统 ⎦   ⎣ 安全性 ⎦
+            </div>
+            
+            <div class="explanation">
+                <p>线性相关与无关的概念不仅是数学工具，更体现了工程中的核心价值观念：</p>
+                <ul>
+                    <li><strong>独立性保障可靠性</strong>：线性无关的组件确保系统在各方向都能正常工作</li>
+                    <li><strong>冗余与效率的平衡</strong>：适当的线性相关可以提供冗余保障，但过多冗余会降低效率</li>
+                    <li><strong>系统思维的重要性</strong>：需要从整体系统角度分析各组件的相互关系</li>
+                </ul>
+            </div>
+            
+            <div class="ideology-point">
+                <p><strong>启发点睛：</strong> "数学的严谨性为工程可靠性提供了坚实基石——每一个线性无关的向量，都是工程系统中的一个独立支柱。在平凡的计算中追求卓越，正是中国工程师的精神内核。"</p>
+            </div>
+            
+            <div class="ideology-point">
+                <p><strong>历史传承：</strong> 从钱学森的系统工程思想，到今日中国制造的精度革命，线性代数的严谨性一直是中国工程师的必备工具。这种对数学精确性的追求，确保了港珠澳大桥、北斗系统等大国重器的可靠性。</p>
+            </div>
+            
+            <div class="ideology-point">
+                <p><strong>时代使命：</strong> "在数学的宇宙中，每一个向量都有其独立价值；在工程的舞台上，每一个组件都有其不可替代的作用。保持独立思考，坚守专业精神，这是中国工程师的时代担当！"</p>
+            </div>
+        </section>
+        
+        <footer>
+            <p>© 2023 线性代数工程应用虚拟仿真实验 | 弘扬科学精神 · 培育工匠情怀</p>
+            <p>设计理念：用数学之严谨，铸工程之可靠</p>
+        </footer>
+    </div>
+
+    <script>
+        // 标签切换功能
+        document.addEventListener('DOMContentLoaded', function() {
+            // 设置标签切换
+            document.querySelectorAll('.tab-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    // 移除所有活动标签
+                    document.querySelectorAll('.tab-btn').forEach(btn => {
+                        btn.classList.remove('active');
+                    });
+                    
+                    // 隐藏所有内容部分
+                    document.querySelectorAll('.content-section').forEach(section => {
+                        section.classList.remove('active');
+                    });
+                    
+                    // 设置当前活动标签
+                    this.classList.add('active');
+                    
+                    // 显示对应内容
+                    const tabId = this.getAttribute('data-tab');
+                    document.getElementById(tabId).classList.add('active');
+                    
+                    // 如果是动画标签，更新动画
+                    if (tabId === 'animation') {
+                        updateVectorAnimation();
+                    } else if (tabId === 'engineering') {
+                        updateBridgeCaseAnimation();
+                        updateRobotCaseAnimation();
+                        updateSatelliteCaseAnimation();
+                    }
+                });
+            });
+            
+            // 主向量动画相关元素
+            const vector1Line = document.getElementById('vector1-line');
+            const vector1Arrow = document.getElementById('vector1-arrow');
+            const vector1Label = document.getElementById('vector1-label');
+            const vector1 = document.getElementById('vector1');
+            
+            const vector2Line = document.getElementById('vector2-line');
+            const vector2Arrow = document.getElementById('vector2-arrow');
+            const vector2Label = document.getElementById('vector2-label');
+            const vector2 = document.getElementById('vector2');
+            
+            const resultText = document.getElementById('result-text');
+            const determinantValue = document.getElementById('determinant');
+            const rankInfo = document.getElementById('rank-info');
+            const engineeringText = document.getElementById('engineering-text');
+            const bridgeStability = document.getElementById('bridge-stability');
+            
+            // 获取主动画滑块元素
+            const v1xSlider = document.getElementById('v1x');
+            const v1ySlider = document.getElementById('v1y');
+            const v2xSlider = document.getElementById('v2x');
+            const v2ySlider = document.getElementById('v2y');
+            
+            const v1xValue = document.getElementById('v1x-value');
+            const v1yValue = document.getElementById('v1y-value');
+            const v2xValue = document.getElementById('v2x-value');
+            const v2yValue = document.getElementById('v2y-value');
+            
+            // 设置主动画滑块事件监听
+            [v1xSlider, v1ySlider, v2xSlider, v2ySlider].forEach(slider => {
+                slider.addEventListener('input', function() {
+                    // 更新显示值
+                    const valueDisplay = document.getElementById(this.id + '-value');
+                    valueDisplay.textContent = this.value;
+                    
+                    // 更新向量动画
+                    updateVectorAnimation();
+                });
+            });
+            
+            // 更新主向量动画函数
+            function updateVectorAnimation() {
+                // 获取当前向量值
+                const v1x = parseFloat(v1xSlider.value);
+                const v1y = parseFloat(v1ySlider.value);
+                const v2x = parseFloat(v2xSlider.value);
+                const v2y = parseFloat(v2ySlider.value);
+                
+                // 计算向量模长和角度
+                const v1Length = Math.sqrt(v1x*v1x + v1y*v1y);
+                const v2Length = Math.sqrt(v2x*v2x + v2y*v2y);
+                
+                const v1Angle = Math.atan2(v1y, v1x);
+                const v2Angle = Math.atan2(v2y, v2x);
+                
+                // 设置坐标系参数
+                const centerX = 50; // 百分比
+                const centerY = 50;
+                const scale = 8; // 缩放因子
+                
+                // 更新向量1
+                if (v1Length > 0) {
+                    const displayLength = v1Length * scale;
+                    vector1Line.style.width = displayLength + '%';
+                    vector1Line.style.transform = 'rotate(' + v1Angle + 'rad)';
+                    vector1Line.style.left = centerX + '%';
+                    vector1Line.style.top = centerY + '%';
+                    
+                    // 更新箭头
+                    vector1Arrow.style.borderWidth = '0 0 12px 12px';
+                    vector1Arrow.style.borderColor = 'transparent transparent #d32f2f transparent';
+                    vector1Arrow.style.left = (centerX + displayLength * Math.cos(v1Angle)) + '%';
+                    vector1Arrow.style.top = (centerY - displayLength * Math.sin(v1Angle)) + '%';
+                    vector1Arrow.style.transform = 'translate(-50%, -50%) rotate(' + (v1Angle - Math.PI/4) + 'rad)';
+                    
+                    // 更新标签位置
+                    vector1Label.style.left = (centerX + displayLength/2 * Math.cos(v1Angle) + 2) + '%';
+                    vector1Label.style.top = (centerY - displayLength/2 * Math.sin(v1Angle) - 2) + '%';
+                }
+                
+                // 更新向量2
+                if (v2Length > 0) {
+                    const displayLength = v2Length * scale;
+                    vector2Line.style.width = displayLength + '%';
+                    vector2Line.style.transform = 'rotate(' + v2Angle + 'rad)';
+                    vector2Line.style.left = centerX + '%';
+                    vector2Line.style.top = centerY + '%';
+                    
+                    // 更新箭头
+                    vector2Arrow.style.borderWidth = '0 0 12px 12px';
+                    vector2Arrow.style.borderColor = 'transparent transparent #1976d2 transparent';
+                    vector2Arrow.style.left = (centerX + displayLength * Math.cos(v2Angle)) + '%';
+                    vector2Arrow.style.top = (centerY - displayLength * Math.sin(v2Angle)) + '%';
+                    vector2Arrow.style.transform = 'translate(-50%, -50%) rotate(' + (v2Angle - Math.PI/4) + 'rad)';
+                    
+                    // 更新标签位置
+                    vector2Label.style.left = (centerX + displayLength/2 * Math.cos(v2Angle) + 2) + '%';
+                    vector2Label.style.top = (centerY - displayLength/2 * Math.sin(v2Angle) - 2) + '%';
+                }
+                
+                // 计算行列式和秩
+                const determinant = v1x * v2y - v1y * v2x;
+                const rank = Math.abs(determinant) < 1e-10 ? 1 : 2;
+                
+                // 更新结果显示
+                determinantValue.textContent = '行列式: ' + determinant.toFixed(2);
+                rankInfo.textContent = '秩: ' + rank;
+                
+                // 更新工程应用说明
+                if (Math.abs(determinant) < 1e-10) {
+                    resultText.innerHTML = '线性相关 <span class="linear-dependent">(向量共线)</span>';
+                    resultText.className = 'linear-dependent';
+                    
+                    engineeringText.innerHTML = '<strong>工程应用原理：</strong>支撑力冗余，系统稳定性降低。在桥梁设计中，这意味着支撑结构在某些方向缺乏独立性。';
+                    engineeringText.className = 'engineering-explanation engineering-dependent';
+                    
+                    bridgeStability.textContent = '桥梁稳定性: 不稳定';
+                    bridgeStability.className = 'bridge-stability unstable';
+                } else {
+                    resultText.innerHTML = '线性无关 <span class="linear-independent">(向量不共线)</span>';
+                    resultText.className = 'linear-independent';
+                    
+                    engineeringText.innerHTML = '<strong>工程应用原理：</strong>支撑力独立，系统稳定性高。在桥梁设计中，这意味着支撑结构在所有方向都能提供有效支撑。';
+                    engineeringText.className = 'engineering-explanation engineering-independent';
+                    
+                    bridgeStability.textContent = '桥梁稳定性: 稳定';
+                    bridgeStability.className = 'bridge-stability stable';
+                }
+            }
+            
+            // 桥梁案例动画
+            const bridgeVector1Line = document.getElementById('bridge-vector1-line');
+            const bridgeVector1Arrow = document.getElementById('bridge-vector1-arrow');
+            const bridgeVector1Label = document.getElementById('bridge-vector1-label');
+            
+            const bridgeVector2Line = document.getElementById('bridge-vector2-line');
+            const bridgeVector2Arrow = document.getElementById('bridge-vector2-arrow');
+            const bridgeVector2Label = document.getElementById('bridge-vector2-label');
+            
+            const bridgeResultText = document.getElementById('bridge-result-text');
+            const bridgeDeterminant = document.getElementById('bridge-determinant');
+            const bridgeStabilityText = document.getElementById('bridge-stability-text');
+            
+            // 获取桥梁案例滑块元素
+            const bridgeF1xSlider = document.getElementById('bridge-f1x');
+            const bridgeF1ySlider = document.getElementById('bridge-f1y');
+            const bridgeF2xSlider = document.getElementById('bridge-f2x');
+            const bridgeF2ySlider = document.getElementById('bridge-f2y');
+            
+            const bridgeF1xValue = document.getElementById('bridge-f1x-value');
+            const bridgeF1yValue = document.getElementById('bridge-f1y-value');
+            const bridgeF2xValue = document.getElementById('bridge-f2x-value');
+            const bridgeF2yValue = document.getElementById('bridge-f2y-value');
+            
+            // 设置桥梁案例滑块事件监听
+            [bridgeF1xSlider, bridgeF1ySlider, bridgeF2xSlider, bridgeF2ySlider].forEach(slider => {
+                slider.addEventListener('input', function() {
+                    // 更新显示值
+                    const valueDisplay = document.getElementById(this.id + '-value');
+                    valueDisplay.textContent = this.value;
+                    
+                    // 更新桥梁案例动画
+                    updateBridgeCaseAnimation();
+                });
+            });
+            
+            // 更新桥梁案例动画函数
+            function updateBridgeCaseAnimation() {
+                // 获取当前向量值
+                const f1x = parseFloat(bridgeF1xSlider.value);
+                const f1y = parseFloat(bridgeF1ySlider.value);
+                const f2x = parseFloat(bridgeF2xSlider.value);
+                const f2y = parseFloat(bridgeF2ySlider.value);
+                
+                // 计算向量模长和角度
+                const f1Length = Math.sqrt(f1x*f1x + f1y*f1y);
+                const f2Length = Math.sqrt(f2x*f2x + f2y*f2y);
+                
+                const f1Angle = Math.atan2(f1y, f1x);
+                const f2Angle = Math.atan2(f2y, f2x);
+                
+                // 设置坐标系参数
+                const centerX = 50; // 百分比
+                const centerY = 50;
+                const scale = 6; // 缩放因子
+                
+                // 更新向量1
+                if (f1Length > 0) {
+                    const displayLength = f1Length * scale;
+                    bridgeVector1Line.style.width = displayLength + '%';
+                    bridgeVector1Line.style.transform = 'rotate(' + f1Angle + 'rad)';
+                    bridgeVector1Line.style.left = centerX + '%';
+                    bridgeVector1Line.style.top = centerY + '%';
+                    
+                    // 更新箭头
+                    bridgeVector1Arrow.style.borderWidth = '0 0 10px 10px';
+                    bridgeVector1Arrow.style.borderColor = 'transparent transparent #d32f2f transparent';
+                    bridgeVector1Arrow.style.left = (centerX + displayLength * Math.cos(f1Angle)) + '%';
+                    bridgeVector1Arrow.style.top = (centerY - displayLength * Math.sin(f1Angle)) + '%';
+                    bridgeVector1Arrow.style.transform = 'translate(-50%, -50%) rotate(' + (f1Angle - Math.PI/4) + 'rad)';
+                    
+                    // 更新标签位置
+                    bridgeVector1Label.style.left = (centerX + displayLength/2 * Math.cos(f1Angle) + 2) + '%';
+                    bridgeVector1Label.style.top = (centerY - displayLength/2 * Math.sin(f1Angle) - 2) + '%';
+                }
+                
+                // 更新向量2
+                if (f2Length > 0) {
+                    const displayLength = f2Length * scale;
+                    bridgeVector2Line.style.width = displayLength + '%';
+                    bridgeVector2Line.style.transform = 'rotate(' + f2Angle + 'rad)';
+                    bridgeVector2Line.style.left = centerX + '%';
+                    bridgeVector2Line.style.top = centerY + '%';
+                    
+                    // 更新箭头
+                    bridgeVector2Arrow.style.borderWidth = '0 0 10px 10px';
+                    bridgeVector2Arrow.style.borderColor = 'transparent transparent #1976d2 transparent';
+                    bridgeVector2Arrow.style.left = (centerX + displayLength * Math.cos(f2Angle)) + '%';
+                    bridgeVector2Arrow.style.top = (centerY - displayLength * Math.sin(f2Angle)) + '%';
+                    bridgeVector2Arrow.style.transform = 'translate(-50%, -50%) rotate(' + (f2Angle - Math.PI/4) + 'rad)';
+                    
+                    // 更新标签位置
+                    bridgeVector2Label.style.left = (centerX + displayLength/2 * Math.cos(f2Angle) + 2) + '%';
+                    bridgeVector2Label.style.top = (centerY - displayLength/2 * Math.sin(f2Angle) - 2) + '%';
+                }
+                
+                // 计算行列式
+                const determinant = f1x * f2y - f1y * f2x;
+                
+                // 更新结果显示
+                bridgeDeterminant.textContent = '行列式: ' + determinant.toFixed(2);
+                
+                if (Math.abs(determinant) < 1e-10) {
+                    bridgeResultText.innerHTML = '线性相关 <span class="linear-dependent">(支撑力冗余)</span>';
+                    bridgeResultText.className = 'linear-dependent';
+                    bridgeStabilityText.textContent = '桥梁状态: 不稳定';
+                    bridgeStabilityText.className = 'linear-dependent';
+                } else {
+                    bridgeResultText.innerHTML = '线性无关 <span class="linear-independent">(支撑力独立)</span>';
+                    bridgeResultText.className = 'linear-independent';
+                    bridgeStabilityText.textContent = '桥梁状态: 稳定';
+                    bridgeStabilityText.className = 'linear-independent';
+                }
+            }
+            
+            // 机器人案例动画
+            const robotArm1 = document.getElementById('robot-arm-1');
+            const robotArm2 = document.getElementById('robot-arm-2');
+            const robotEndEffector = document.getElementById('robot-end-effector');
+            
+            const robotResultText = document.getElementById('robot-result-text');
+            const robotDeterminant = document.getElementById('robot-determinant');
+            const robotReachability = document.getElementById('robot-reachability');
+            
+            // 获取机器人案例滑块元素
+            const robotAngle1Slider = document.getElementById('robot-angle1');
+            const robotAngle2Slider = document.getElementById('robot-angle2');
+            
+            const robotAngle1Value = document.getElementById('robot-angle1-value');
+            const robotAngle2Value = document.getElementById('robot-angle2-value');
+            
+            // 设置机器人案例滑块事件监听
+            [robotAngle1Slider, robotAngle2Slider].forEach(slider => {
+                slider.addEventListener('input', function() {
+                    // 更新显示值
+                    const valueDisplay = document.getElementById(this.id + '-value');
+                    valueDisplay.textContent = this.value;
+                    
+                    // 更新机器人案例动画
+                    updateRobotCaseAnimation();
+                });
+            });
+            
+            // 更新机器人案例动画函数
+            function updateRobotCaseAnimation() {
+                const angle1 = parseFloat(robotAngle1Slider.value);
+                const angle2 = parseFloat(robotAngle2Slider.value);
+                
+                // 更新机器人臂角度
+                robotArm1.style.transform = 'translateX(-50%) rotate(' + angle1 + 'deg)';
+                robotArm2.style.transform = 'translateX(-50%) rotate(' + (angle1 + angle2) + 'deg)';
+                
+                // 计算机器人末端位置（简化模型）
+                const l1 = 60; // 臂1长度
+                const l2 = 50; // 臂2长度
+                
+                const x = l1 * Math.sin(angle1 * Math.PI/180) + l2 * Math.sin((angle1 + angle2) * Math.PI/180);
+                const y = l1 * Math.cos(angle1 * Math.PI/180) + l2 * Math.cos((angle1 + angle2) * Math.PI/180);
+                
+                // 更新末端执行器位置
+                robotEndEffector.style.left = (50 + x/2) + '%';
+                robotEndEffector.style.bottom = (20 + y/2) + '%';
+                
+                // 计算机器人雅可比行列式（简化）
+                const jacobian = -l1 * l2 * Math.sin(angle2 * Math.PI/180);
+                
+                // 更新结果显示
+                robotDeterminant.textContent = '雅可比行列式: ' + jacobian.toFixed(2);
+                
+                if (Math.abs(jacobian) < 1e-10) {
+                    robotResultText.innerHTML = '奇异位置 <span class="linear-dependent">(运动受限)</span>';
+                    robotResultText.className = 'linear-dependent';
+                    robotReachability.textContent = '可达性: 受限';
+                    robotReachability.className = 'linear-dependent';
+                } else {
+                    robotResultText.innerHTML = '正常位置 <span class="linear-independent">(完全可达)</span>';
+                    robotResultText.className = 'linear-independent';
+                    robotReachability.textContent = '可达性: 完全';
+                    robotReachability.className = 'linear-independent';
+                }
+            }
+            
+            // 卫星案例动画
+            const satelliteBody = document.querySelector('.satellite-body');
+            const satelliteResultText = document.getElementById('satellite-result-text');
+            const satelliteDeterminant = document.getElementById('satellite-determinant');
+            const satelliteStability = document.getElementById('satellite-stability');
+            
+            // 获取卫星案例滑块元素
+            const satelliteTxSlider = document.getElementById('satellite-tx');
+            const satelliteTySlider = document.getElementById('satellite-ty');
+            const satelliteTzSlider = document.getElementById('satellite-tz');
+            
+            const satelliteTxValue = document.getElementById('satellite-tx-value');
+            const satelliteTyValue = document.getElementById('satellite-ty-value');
+            const satelliteTzValue = document.getElementById('satellite-tz-value');
+            
+            // 设置卫星案例滑块事件监听
+            [satelliteTxSlider, satelliteTySlider, satelliteTzSlider].forEach(slider => {
+                slider.addEventListener('input', function() {
+                    // 更新显示值
+                    const valueDisplay = document.getElementById(this.id + '-value');
+                    valueDisplay.textContent = this.value;
+                    
+                    // 更新卫星案例动画
+                    updateSatelliteCaseAnimation();
+                });
+            });
+            
+            // 更新卫星案例动画函数
+            function updateSatelliteCaseAnimation() {
+                const tx = parseFloat(satelliteTxSlider.value);
+                const ty = parseFloat(satelliteTySlider.value);
+                const tz = parseFloat(satelliteTzSlider.value);
+                
+                // 更新卫星姿态（简化演示）
+                const roll = tx * 10; // 绕X轴旋转
+                const pitch = ty * 10; // 绕Y轴旋转
+                const yaw = tz * 10; // 绕Z轴旋转
+                
+                satelliteBody.style.transform = 'translate(-50%, -50%) rotateX(' + roll + 'deg) rotateY(' + pitch + 'deg) rotateZ(' + yaw + 'deg)';
+                
+                // 计算控制矩阵的秩（简化）
+                // 假设三个力矩向量
+                const matrix = [
+                    [1, 0, 0], // 力矩X
+                    [0, 1, 0], // 力矩Y
+                    [0, 0, 1]  // 力矩Z
+                ];
+                
+                // 简单判断线性相关性
+                const isIndependent = Math.abs(tx) > 0.1 && Math.abs(ty) > 0.1 && Math.abs(tz) > 0.1;
+                const rank = isIndependent ? 3 : 2;
+                
+                // 更新结果显示
+                satelliteDeterminant.textContent = '控制矩阵秩: ' + rank;
+                
+                if (rank === 3) {
+                    satelliteResultText.innerHTML = '线性无关 <span class="linear-independent">(完全可控)</span>';
+                    satelliteResultText.className = 'linear-independent';
+                    satelliteStability.textContent = '姿态稳定性: 稳定';
+                    satelliteStability.className = 'linear-independent';
+                } else {
+                    satelliteResultText.innerHTML = '线性相关 <span class="linear-dependent">(控制受限)</span>';
+                    satelliteResultText.className = 'linear-dependent';
+                    satelliteStability.textContent = '姿态稳定性: 不稳定';
+                    satelliteStability.className = 'linear-dependent';
+                }
+            }
+            
+            // 初始化所有动画
+            updateVectorAnimation();
+            updateBridgeCaseAnimation();
+            updateRobotCaseAnimation();
+            updateSatelliteCaseAnimation();
+        });
+    </script>
+</body>
+</html>

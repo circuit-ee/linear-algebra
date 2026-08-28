@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>3D 线性相关完整演示</title>
+<style>
+  body{margin:0;font-family:Segoe UI,Helvetica,Arial,sans-serif;background:#e3f2fd;display:flex;height:100vh;overflow:hidden;}
+  .wrap{display:flex;gap:20px;background:#fff;border-radius:12px;padding:20px;box-shadow:0 8px 20px rgba(0,0,0,.15);width:100%;height:100%;box-sizing:border-box;max-width:none;}
+  canvas{background:#fafafa;border-radius:8px;cursor:grab;display:block;}
+  canvas:active{cursor:grabbing;}
+  .panel{width:220px;display:flex;flex-direction:column;gap:12px;flex-shrink:0;}
+  button{padding:10px 16px;border:none;border-radius:6px;background:#2196F3;color:#fff;font-size:15px;cursor:pointer;transition:.2s}
+  button:hover{transform:translateY(-2px);box-shadow:0 4px 10px rgba(33,150,243,.4)}
+  .status{padding:10px;border-radius:6px;text-align:center;font-weight:600}
+  .ok{background:#c8e6c9;color:#2e7d32}
+  .bad{background:#ffcdd2;color:#c62828;animation:pulse 1s infinite}
+  @keyframes pulse{50%{opacity:.7}}
+  h3{margin:0 0 8px;font-size:17px;color:#1565c0}
+  .info{font-size:13px;color:#555;max-height:140px;overflow:auto}
+  .zoom-control{margin-top:8px;padding:10px;background:#f5f5f5;border-radius:6px}
+  .zoom-label{font-size:13px;color:#555;margin-bottom:5px}
+  input[type="range"]{width:100%;margin-bottom:5px}
+  .zoom-value{text-align:center;font-size:13px;color:#333;font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <canvas id="cvs" width="600" height="600"></canvas>
+  <div class="panel">
+    <h3>3D 线性相关演示</h3>
+    <button onclick="showDep()">线性相关显示</button>
+    <button onclick="showIndep()">线性无关显示</button>
+    <button onclick="reset3D()">重置</button>
+    <div id="stat" class="status ok">两基向量张成平面</div>
+    <div class="info" id="info"></div>
+    <div class="zoom-control">
+      <div class="zoom-label">缩放控制</div>
+      <input type="range" id="zoomSlider" min="0.5" max="3" step="0.1" value="1">
+      <div class="zoom-value" id="zoomValue">100%</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const cvs=document.getElementById('cvs'),ctx=cvs.getContext('2d');
+let CX,CY,SCALE=60,SIZE;
+let angX=-0.3, angY=0.4;
+let isDragging=false, lastX=0, lastY=0;
+let scaleFactor=1;
+
+// 高对比度颜色定义
+let u={x:2,y:1,z:0,color:'#FF0000',name:'u'};
+let v={x:0,y:2,z:1,color:'#00FF00',name:'v'};
+let w=null;
+
+/* ========== 尺寸控制 ========== */
+function updateCanvasSize(){
+  const wrap=cvs.parentElement;
+  const panel=document.querySelector('.panel');
+  const wrapStyle=getComputedStyle(wrap);
+  const panelStyle=getComputedStyle(panel);
+  
+  const wrapPadding=parseFloat(wrapStyle.paddingLeft)+parseFloat(wrapStyle.paddingRight);
+  const wrapPaddingVert=parseFloat(wrapStyle.paddingTop)+parseFloat(wrapStyle.paddingBottom);
+  const panelWidth=parseFloat(panelStyle.width);
+  const gap=20;
+  
+  const availWidth=wrap.clientWidth-wrapPadding-panelWidth-gap;
+  const availHeight=wrap.clientHeight-wrapPaddingVert;
+  
+  SIZE=Math.floor(Math.min(availWidth, availHeight));
+  SIZE=Math.max(SIZE, 300); // 最小尺寸限制
+  
+  cvs.width=SIZE;
+  cvs.height=SIZE;
+  CX=SIZE/2;
+  CY=SIZE/2;
+  
+  draw();
+}
+
+/* ========== 三维工具 ========== */
+function proj(x,y,z){
+  const cx=Math.cos(angX), sx=Math.sin(angX);
+  const cy=Math.cos(angY), sy=Math.sin(angY);
+  const y1=y*cx - z*sx, z1=y*sx + z*cx;
+  const x2=x*cy + z1*sy, z2=-x*sy + z1*cy;
+  const f=8/(8+z2);
+  return{x:CX+x2*SCALE*scaleFactor*f, y:CY-y1*SCALE*scaleFactor*f, z:z2};
+}
+function drawLine3D(x1,y1,z1,x2,y2,z2){
+  const p1=proj(x1,y1,z1), p2=proj(x2,y2,z2);
+  ctx.beginPath();ctx.moveTo(p1.x,p1.y);ctx.lineTo(p2.x,p2.y);ctx.stroke();
+}
+function drawAxes3D(){
+  ctx.lineWidth=3;
+  ctx.strokeStyle='#FF0000'; drawLine3D(0,0,0,5,0,0); drawArrow3D(5,0,0,'#FF0000');
+  ctx.strokeStyle='#00FF00'; drawLine3D(0,0,0,0,5,0); drawArrow3D(0,5,0,'#00FF00');
+  ctx.strokeStyle='#0000FF'; drawLine3D(0,0,0,0,0,5); drawArrow3D(0,0,5,'#0000FF');
+  
+  ctx.fillStyle='#FF0000'; ctx.font='bold 18px sans-serif'; const pX=proj(5.3,0,0); ctx.fillText('X', pX.x,pX.y);
+  ctx.fillStyle='#00FF00'; const pY=proj(0,5.3,0); ctx.fillText('Y', pY.x,pY.y);
+  ctx.fillStyle='#0000FF'; const pZ=proj(0,0,5.3); ctx.fillText('Z', pZ.x,pZ.y);
+}
+function drawArrow3D(x,y,z,col){
+  const p=proj(x,y,z), ang=Math.atan2(CY-p.y,p.x-CX);
+  ctx.fillStyle=col;
+  ctx.beginPath();ctx.moveTo(p.x,p.y);
+  ctx.lineTo(p.x-12*Math.cos(ang-Math.PI/6),p.y+12*Math.sin(ang-Math.PI/6));
+  ctx.lineTo(p.x-12*Math.cos(ang+Math.PI/6),p.y+12*Math.sin(ang+Math.PI/6));ctx.closePath();ctx.fill();
+}
+function drawGrid3D(){
+  ctx.strokeStyle='rgba(100,100,100,.25)';
+  const gridRange=Math.ceil(4/scaleFactor);
+  for(let i=-gridRange;i<=gridRange;i++){
+    drawLine3D(i,-gridRange,0, i,gridRange,0);
+    drawLine3D(-gridRange,i,0, gridRange,i,0);
+  }
+}
+function drawVec(vec){
+  drawLine3D(0,0,0,vec.x,vec.y,vec.z);
+  drawArrow3D(vec.x,vec.y,vec.z,vec.color);
+  const p=proj(vec.x,vec.y,vec.z);
+  ctx.font='bold 14px sans-serif'; ctx.fillStyle=vec.color; ctx.fillText(vec.name, p.x+8,p.y-8);
+}
+function drawPlane(){
+  ctx.fillStyle='rgba(255,193,7,.3)';
+  ctx.strokeStyle='rgba(255,193,7,1)'; ctx.lineWidth=2;
+  const p0=proj(0,0,0), pu=proj(u.x,u.y,u.z), pv=proj(v.x,v.y,v.z), puv=proj(u.x+v.x,u.y+v.y,u.z+v.z);
+  ctx.beginPath(); ctx.moveTo(p0.x,p0.y); ctx.lineTo(pu.x,pu.y); ctx.lineTo(puv.x,puv.y); ctx.lineTo(pv.x,pv.y); ctx.closePath(); ctx.fill(); ctx.stroke();
+}
+
+/* ========== 逻辑 ========== */
+function mixProd(a,b,c){return a.x*(b.y*c.z-b.z*c.y)-a.y*(b.x*c.z-b.z*c.x)+a.z*(b.x*c.y-b.y*c.x);}
+function updateStat(){
+  const stat=document.getElementById('stat'), info=document.getElementById('info');
+  if(!w){stat.className='status ok'; stat.textContent='两基向量张成平面'; info.innerHTML=`u=${str(u)}<br>v=${str(v)}`; return;}
+  const vol=mixProd(u,v,w);
+  if(Math.abs(vol)<0.2){
+    stat.className='status bad'; stat.textContent='三向量共面 → 线性相关';
+    info.innerHTML=`w 在 u,v 平面内<br>混合积 ≈ 0`;
+  }else{
+    stat.className='status ok'; stat.textContent='三向量不共面 → 线性无关';
+    info.innerHTML=`w 不在 u,v 平面<br>混合积 ≠ 0`;
+  }
+}
+function str(v){return `(${v.x.toFixed(1)},${v.y.toFixed(1)},${v.z.toFixed(1)})`;}
+
+/* ========== 按钮 ========== */
+function showDep(){
+  const a={x:u.x*1.2, y:u.y*1.2, z:u.z*1.2, color:'#FF5722',name:'a∥u'};
+  const b={x:(u.x+v.x)*0.8, y:(u.y+v.y)*0.8, z:(u.z+v.z)*0.8, color:'#FFC107',name:'b∈平面'};
+  w=a; draw(); setTimeout(()=>{w=b; draw();},1200);
+}
+function showIndep(){
+  w={x:1, y:1, z:3, color:'#9C27B0',name:'w⊄平面'}; draw();
+}
+function reset3D(){w=null; draw();}
+
+/* ========== 缩放控制 ========== */
+const zoomSlider=document.getElementById('zoomSlider');
+const zoomValue=document.getElementById('zoomValue');
+zoomSlider.addEventListener('input',(e)=>{
+  scaleFactor=parseFloat(e.target.value);
+  zoomValue.textContent=Math.round(scaleFactor*100)+'%';
+  draw();
+});
+
+/* ========== 鼠标旋转 ========== */
+cvs.addEventListener('mousedown',e=>{isDragging=true; lastX=e.clientX; lastY=e.clientY;});
+window.addEventListener('mousemove',e=>{
+  if(!isDragging)return;
+  const dx=e.clientX-lastX, dy=e.clientY-lastY;
+  angY+=dx*0.01; angX+=dy*0.01;
+  lastX=e.clientX; lastY=e.clientY;
+  draw();
+});
+window.addEventListener('mouseup',()=>isDragging=false);
+
+/* ========== 初始绘制 ========== */
+function draw(){
+  ctx.clearRect(0,0,cvs.width,cvs.height);
+  drawGrid3D();
+  drawAxes3D();
+  drawPlane();
+  drawVec(u); drawVec(v); if(w)drawVec(w);
+  updateStat();
+}
+
+// 初始化
+updateCanvasSize();
+window.addEventListener('resize', updateCanvasSize);
+</script>
+</body>
+</html>

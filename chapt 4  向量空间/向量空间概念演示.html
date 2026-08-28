@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>向量空间的数学概念动画</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: white;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        
+        .title {
+            font-size: 2.8em;
+            margin: 30px 0;
+            color: #ffffff;
+            text-shadow: 0 0 15px rgba(0, 195, 255, 0.7);
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+        
+        .subtitle {
+            font-size: 1.4em;
+            margin: 20px 0;
+            color: #a0d2ff;
+            font-weight: 300;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.6;
+        }
+        
+        .animation-container {
+            display: flex;
+            justify-content: space-around;
+            margin: 50px 0;
+            flex-wrap: wrap;
+            gap: 40px;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 30px;
+            margin: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            flex: 1;
+            min-width: 300px;
+            max-width: 500px;
+        }
+        
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 12px 40px rgba(0, 195, 255, 0.25);
+        }
+        
+        .card h3 {
+            color: #4fc3f7;
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            font-weight: 400;
+        }
+        
+        canvas {
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            transition: box-shadow 0.3s ease;
+        }
+        
+        canvas:hover {
+            box-shadow: 0 6px 25px rgba(0, 195, 255, 0.3);
+        }
+        
+        .controls {
+            margin: 40px 0;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        button {
+            background: rgba(0, 0, 0, 0.3);
+            color: white;
+            border: 1px solid rgba(0, 195, 255, 0.5);
+            padding: 15px 30px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 0;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(5px);
+            min-width: 150px;
+        }
+        
+        button:hover {
+            background: rgba(0, 195, 255, 0.2);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0, 195, 255, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(1px);
+        }
+        
+        .explanation {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 30px;
+            border-radius: 20px;
+            margin: 40px 0;
+            text-align: left;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+        
+        .explanation h3 {
+            color: #4fc3f7;
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            font-weight: 400;
+            border-bottom: 1px solid rgba(79, 195, 247, 0.3);
+            padding-bottom: 10px;
+        }
+        
+        .explanation p {
+            font-size: 1.1em;
+            line-height: 1.7;
+            margin: 15px 0;
+            color: #e0f7ff;
+        }
+        
+        .formula {
+            background: rgba(0, 0, 0, 0.25);
+            padding: 15px 25px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            margin: 20px 0;
+            border-left: 3px solid #4fc3f7;
+            color: #80deea;
+            font-size: 1.1em;
+            overflow-x: auto;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        .status {
+            background: rgba(0, 0, 0, 0.25);
+            color: #80deea;
+            padding: 15px 30px;
+            border-radius: 30px;
+            margin: 20px auto;
+            display: inline-block;
+            font-weight: 500;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(0, 195, 255, 0.3);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            min-width: 200px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4fc3f7, #29b6f6);
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">向量空间的数学概念动画</h1>
+        <p class="subtitle">展示二维向量空间的双重性质：代数平面与几何平面的统一</p>
+        
+        <div class="animation-container">
+            <div class="card">
+                <h3>代数形象：向量平面</h3>
+                <canvas id="vectorCanvas" width="400" height="400"></canvas>
+                <p>每个箭头代表一个向量，展示向量的加法和数乘运算</p>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="vectorProgress"></div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>几何形象：点构成的平面</h3>
+                <canvas id="pointCanvas" width="400" height="400"></canvas>
+                <p>每个点代表向量的终点，展示空间中的几何分布</p>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="pointProgress"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button onclick="startAnimation()">开始动画</button>
+            <button onclick="pauseAnimation()">暂停</button>
+            <button onclick="resetAnimation()">重置</button>
+            <button onclick="recordGIF()">录制GIF</button>
+            <button onclick="showOperations()">显示运算</button>
+        </div>
+        
+        <div class="status" id="status">准备就绪</div>
+        
+        <div class="explanation">
+            <h3>数学概念解释</h3>
+            <p><strong>向量空间</strong>是一个配备加法和数乘运算的集合，满足八条公理。</p>
+            <p><strong>二维向量空间</strong>可以表示为：所有实数对 (x,y) 的集合，配备如下运算：</p>
+            <div class="formula">
+                向量加法：(x₁,y₁) + (x₂,y₂) = (x₁+x₂, y₁+y₂)<br>
+                数乘：k·(x,y) = (kx, ky)
+            </div>
+            <p><strong>双重性质：</strong></p>
+            <p>• <strong>代数形象</strong>：将向量视为有方向和大小的箭头，可以进行线性运算</p>
+            <p>• <strong>几何形象</strong>：将向量的终点视为空间中的点，构成一个几何平面</p>
+            <p>• <strong>统一性</strong>：这两种表示本质相同，只是观察角度不同</p>
+            <p><strong>关键洞察：</strong>在向量空间中，"向量"和"点"是同一数学对象的不同表现形式</p>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
+    <script>
+        // 获取画布和上下文
+        const vectorCanvas = document.getElementById('vectorCanvas');
+        const pointCanvas = document.getElementById('pointCanvas');
+        const vectorCtx = vectorCanvas.getContext('2d');
+        const pointCtx = pointCanvas.getContext('2d');
+        
+        // 动画状态
+        let animationId;
+        let isRecording = false;
+        let gif;
+        let frameCount = 0;
+        let isPaused = false;
+        let showOps = false;
+        
+        // 向量数据
+        let vectors = [];
+        let points = [];
+        let currentOperation = 0;
+        let operationProgress = 0;
+        
+        // 初始化向量数据
+        function initData() {
+            vectors = [];
+            points = [];
+            
+            // 创建网格点
+            for (let x = -3; x <= 3; x += 1) {
+                for (let y = -3; y <= 3; y += 1) {
+                    vectors.push({ x: x * 30, y: y * 30, originalX: x * 30, originalY: y * 30 });
+                    points.push({ x: x * 30 + 200, y: -y * 30 + 200, originalX: x * 30 + 200, originalY: -y * 30 + 200 });
+                }
+            }
+        }
+        
+        // 绘制坐标系
+        function drawCoordinateSystem(ctx, width, height, centerX, centerY) {
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 5]);
+            
+            // 绘制网格
+            for (let x = 0; x <= width; x += 30) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, height);
+                ctx.stroke();
+            }
+            
+            for (let y = 0; y <= height; y += 30) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+                ctx.stroke();
+            }
+            
+            // 绘制坐标轴
+            ctx.setLineDash([]);
+            ctx.strokeStyle = '#4fc3f7';
+            ctx.lineWidth = 3;
+            
+            // X轴
+            ctx.beginPath();
+            ctx.moveTo(0, centerY);
+            ctx.lineTo(width, centerY);
+            ctx.stroke();
+            
+            // Y轴
+            ctx.beginPath();
+            ctx.moveTo(centerX, 0);
+            ctx.lineTo(centerX, height);
+            ctx.stroke();
+            
+            // 绘制轴标签
+            ctx.fillStyle = '#4fc3f7';
+            ctx.font = 'bold 16px "Segoe UI", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('x', width - 20, centerY - 10);
+            ctx.fillText('y', centerX + 15, 20);
+            
+            // 绘制原点
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 6, 0, 2 * Math.PI);
+            ctx.fillStyle = '#4fc3f7';
+            ctx.fill();
+        }
+        
+        // 绘制向量
+        function drawVectors(ctx, centerX, centerY) {
+            vectors.forEach((vector, index) => {
+                const startX = centerX;
+                const startY = centerY;
+                const endX = centerX + vector.x;
+                const endY = centerY - vector.y;
+                
+                // 绘制向量线
+                ctx.strokeStyle = `hsl(${(index * 10) % 360}, 70%, 60%)`;
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);
+                ctx.lineTo(endX, endY);
+                ctx.stroke();
+                
+                // 绘制箭头
+                const angle = Math.atan2(endY - startY, endX - startX);
+                const arrowLength = 12;
+                ctx.beginPath();
+                ctx.moveTo(endX, endY);
+                ctx.lineTo(endX - arrowLength * Math.cos(angle - Math.PI / 6), 
+                          endY - arrowLength * Math.sin(angle - Math.PI / 6));
+                ctx.moveTo(endX, endY);
+                ctx.lineTo(endX - arrowLength * Math.cos(angle + Math.PI / 6), 
+                          endY - arrowLength * Math.sin(angle + Math.PI / 6));
+                ctx.stroke();
+                
+                // 绘制向量标签（仅在显示运算时）
+                if (showOps && index % 3 === 0) {
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = 'bold 14px "Segoe UI", sans-serif';
+                    ctx.textAlign = 'center';
+                    const label = `(${Math.round(vector.x/30)},${Math.round(vector.y/30)})`;
+                    ctx.fillText(label, endX + 20, endY - 10);
+                }
+            });
+        }
+        
+        // 绘制点
+        function drawPoints(ctx) {
+            points.forEach((point, index) => {
+                const hue = (index * 15) % 360;
+                const radius = 4 + 2 * Math.sin(frameCount * 0.02 + index * 0.1);
+                
+                // 绘制点
+                ctx.beginPath();
+                ctx.arc(point.x, point.y, radius, 0, 2 * Math.PI);
+                ctx.fillStyle = `hsl(${hue}, 80%, 60%)`;
+                ctx.fill();
+                
+                // 添加发光效果
+                ctx.shadowColor = `hsl(${hue}, 80%, 60%)`;
+                ctx.shadowBlur = 10;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+                
+                // 绘制连接线（仅在显示运算时）
+                if (showOps && index > 0 && index % 7 === 0) {
+                    ctx.strokeStyle = `hsla(${hue}, 60%, 50%, 0.3)`;
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(points[index-1].x, points[index-1].y);
+                    ctx.lineTo(point.x, point.y);
+                    ctx.stroke();
+                }
+            });
+        }
+        
+        // 更新向量（动画效果）
+        function updateVectors() {
+            const time = frameCount * 0.02;
+            
+            vectors.forEach((vector, index) => {
+                // 创建动态效果
+                const scale = 1 + 0.3 * Math.sin(time + index * 0.1);
+                const rotation = time * 0.1;
+                
+                const cos = Math.cos(rotation);
+                const sin = Math.sin(rotation);
+                
+                vector.x = (vector.originalX * cos - vector.originalY * sin) * scale;
+                vector.y = (vector.originalX * sin + vector.originalY * cos) * scale;
+            });
+        }
+        
+        // 更新点（与向量同步）
+        function updatePoints() {
+            points.forEach((point, index) => {
+                if (vectors[index]) {
+                    point.x = vectors[index].x + 200;
+                    point.y = -vectors[index].y + 200;
+                }
+            });
+        }
+        
+        // 更新进度条
+        function updateProgress() {
+            const progress = (frameCount % 300) / 300 * 100;
+            document.getElementById('vectorProgress').style.width = progress + '%';
+            document.getElementById('pointProgress').style.width = progress + '%';
+        }
+        
+        // 动画循环
+        function animate() {
+            if (!isPaused) {
+                // 清空画布
+                vectorCtx.clearRect(0, 0, vectorCanvas.width, vectorCanvas.height);
+                pointCtx.clearRect(0, 0, pointCanvas.width, pointCanvas.height);
+                
+                // 绘制坐标系
+                drawCoordinateSystem(vectorCtx, vectorCanvas.width, vectorCanvas.height, 200, 200);
+                drawCoordinateSystem(pointCtx, pointCanvas.width, pointCanvas.height, 200, 200);
+                
+                // 更新数据
+                updateVectors();
+                updatePoints();
+                
+                // 绘制内容
+                drawVectors(vectorCtx, 200, 200);
+                drawPoints(pointCtx);
+                
+                // 更新进度
+                updateProgress();
+                
+                // 更新帧计数
+                frameCount++;
+                
+                // 添加到GIF录制
+                if (isRecording && frameCount % 2 === 0) {
+                    gif.addFrame(vectorCanvas, { copy: true, delay: 100 });
+                    document.getElementById('status').textContent = `录制中... 帧数: ${Math.floor(frameCount/2)}`;
+                }
+            }
+            
+            animationId = requestAnimationFrame(animate);
+        }
+        
+        // 控制函数
+        function startAnimation() {
+            isPaused = false;
+            document.getElementById('status').textContent = '动画运行中...';
+        }
+        
+        function pauseAnimation() {
+            isPaused = true;
+            document.getElementById('status').textContent = '动画已暂停';
+        }
+        
+        function resetAnimation() {
+            frameCount = 0;
+            isPaused = false;
+            initData();
+            document.getElementById('status').textContent = '动画已重置';
+        }
+        
+        function showOperations() {
+            showOps = !showOps;
+            document.getElementById('status').textContent = showOps ? '显示运算标签' : '隐藏运算标签';
+        }
+        
+        function recordGIF() {
+            if (isRecording) {
+                isRecording = false;
+                document.getElementById('status').textContent = '正在生成GIF...';
+                
+                gif.on('finished', function(blob) {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = '向量空间动画.gif';
+                    a.click();
+                    document.getElementById('status').textContent = 'GIF下载完成！';
+                });
+                
+                gif.render();
+            } else {
+                gif = new GIF({
+                    workers: 2,
+                    quality: 15,
+                    width: 400,
+                    height: 400
+                });
+                
+                isRecording = true;
+                frameCount = 0;
+                document.getElementById('status').textContent = '开始录制GIF...';
+            }
+        }
+        
+        // 初始化
+        initData();
+        animate();
+        
+        // 添加键盘控制
+        document.addEventListener('keydown', function(e) {
+            switch(e.key) {
+                case ' ':
+                    e.preventDefault();
+                    if (isPaused) startAnimation(); else pauseAnimation();
+                    break;
+                case 'r':
+                    resetAnimation();
+                    break;
+                case 'g':
+                    recordGIF();
+                    break;
+                case 'o':
+                    showOperations();
+                    break;
+            }
+        });
+        
+        // 添加鼠标交互
+        vectorCanvas.addEventListener('mousemove', function(e) {
+            const rect = vectorCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left - 200;
+            const y = -(e.clientY - rect.top - 200);
+            
+            // 高亮最近的向量
+            let minDist = Infinity;
+            let closestIndex = -1;
+            
+            vectors.forEach((vector, index) => {
+                const dist = Math.sqrt(Math.pow(vector.x - x, 2) + Math.pow(vector.y - y, 2));
+                if (dist < minDist && dist < 30) {
+                    minDist = dist;
+                    closestIndex = index;
+                }
+            });
+            
+            if (closestIndex !== -1) {
+                vectorCanvas.style.cursor = 'pointer';
+                vectorCanvas.title = `向量: (${Math.round(vectors[closestIndex].x/30)}, ${Math.round(vectors[closestIndex].y/30)})`;
+            } else {
+                vectorCanvas.style.cursor = 'default';
+                vectorCanvas.title = '';
+            }
+        });
+    </script>
+</body>
+</html>

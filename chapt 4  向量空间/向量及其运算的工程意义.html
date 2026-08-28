@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>向量及其运算的工程意义 · 电气工程 / 能源动力</title>
+<style>
+  :root{--blue:#1f6feb;--red:#e8553a;--ink:#1c2530;--muted:#5b6b7c;--bd:#c7d4e2;}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+       background:linear-gradient(160deg,#eef3f9,#f7f9fc);color:var(--ink);
+       font-size:19px;line-height:1.85;}
+  header{padding:28px 22px 10px;text-align:center}
+  h1{font-size:2.5rem;margin:.2em 0}
+  h2{font-size:1.55rem;margin:1em 0 .4em}
+  h3{font-size:1.2rem;margin:.8em 0 .3em;color:#2a4a6a}
+  .wrap{max-width:1100px;margin:0 auto;padding:0 18px 80px}
+  .tabs{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:18px 0 24px}
+  .tabs button{border:1px solid var(--bd);background:#fff;color:var(--ink);
+       font-size:17px;padding:10px 15px;border-radius:30px;cursor:pointer}
+  .tabs button.on{background:var(--blue);color:#fff;border-color:var(--bd)}
+  .panel{display:none;background:#fff;border:1px solid #e3eaf2;border-radius:16px;
+       padding:22px 24px;box-shadow:0 6px 24px rgba(40,70,110,.07)}
+  .panel.on{display:block}
+  .stage{width:100%;height:440px;background:#eef2f7;border-radius:12px;overflow:hidden}
+  .cv{width:100%;display:block;background:#fbfdff;border:1px solid #e3eaf2;border-radius:12px}
+  .row{display:flex;gap:18px;flex-wrap:wrap;align-items:center;margin:14px 0}
+  .row label{font-weight:600}
+  input[type=range]{width:250px}
+  .tag{display:inline-block;padding:4px 12px;border-radius:20px;font-size:16px;font-weight:700}
+  .tag.ok{background:#e3f6ea;color:#1c8a4d}
+  .tag.no{background:#fde4de;color:#c23a1e}
+  .card{border-left:5px solid var(--blue);background:#f3f8ff;padding:12px 16px;border-radius:8px;margin:14px 0}
+  .card.warn{border-color:var(--red);background:#fff4f1}
+  .card.green{border-color:#2bb673;background:#eefaf2}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:17px}
+  th,td{border:1px solid #d7e1ec;padding:8px 10px;text-align:left}
+  th{background:#eef4fb}
+  code{background:#eef2f7;padding:2px 6px;border-radius:6px}
+  #status{padding:10px 14px;margin:10px 0;border-radius:8px;font-size:16px}
+  #status.err{background:#fde4de;color:#c23a1e}
+  #status.ok{background:#e3f6ea;color:#1c8a4d}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;font-size:16px;margin-top:8px}
+  .dot{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:6px;vertical-align:middle}
+  .vec3d{width:100%;height:460px;background:#eef2f7;border-radius:12px;overflow:hidden}
+</style>
+</head>
+<body>
+<header><h1>向量及其运算的工程意义</h1>
+<div style="color:var(--muted)">结合同济《线性代数》· 面向电气工程 / 能源动力大一新生 · 几何向量 / 代数向量 / 矩阵桥接</div></header>
+
+<div class="wrap">
+  <div id="status">⏳ 正在加载 3D 引擎…</div>
+  <div class="tabs">
+    <button data-t="0" class="on">① 概念分层（必读）</button>
+    <button data-t="1">② 几何向量运算</button>
+    <button data-t="2">③ 代数向量 ⇄ 矩阵</button>
+    <button data-t="3">④ 工程意义总表</button>
+  </div>
+
+  <!-- ① 概念分层 -->
+  <section class="panel on" data-p="0">
+    <h2>先分清三种"向量"（依据：同济《线性代数》五版 §4.1 + 向量分析通用约定）</h2>
+    <table>
+      <tr><th>名称</th><th>身份</th><th>有没有空间方向</th><th>例子</th></tr>
+      <tr><td><b>物理向量</b></td><td>有大小+方向的<b>物理量</b>（客观存在）</td><td>✅ 有</td><td>力 F、速度 v、电场 E、磁场 B、流速、热流密度 q</td></tr>
+      <tr><td><b>几何向量</b></td><td>物理向量的<b>可视化</b>：带方向的线段（有向线段）</td><td>✅ 有（可画箭头）</td><td>在纸上画 F 的箭头、桁架杆力箭头</td></tr>
+      <tr><td><b>代数向量</b></td><td>几何向量的<b>代数形式</b>：一组有序数 (a₁,…,aₙ)ᵀ</td><td>❌ 无（只是数列/状态数组）</td><td>节点电压列向量 v=(v₁,…,vₙ)ᵀ、状态 x=(p,T,ω)ᵀ</td></tr>
+    </table>
+    <div class="card"><b>同济口径补充</b>：n 个有序数组成的数组称为 n 维向量；写成一行是行向量、写成一列是列向量，都按<b>矩阵运算法则</b>运算（同济五版 §4.1）。</div>
+
+    <h2>容易踩坑的三类量（不能当"几何箭头"）</h2>
+    <table>
+      <tr><th>量</th><th>有没有方向</th><th>正确归类</th><th>说明</th></tr>
+      <tr><td>节点电压 vₖ、支路电压、电动势</td><td>❌ 仅参考极性（±）</td><td><b>代数向量</b>（列向量，解 Ax=b 用）</td><td>不能画成空间箭头；nodal 方程 Y·v=i</td></tr>
+      <tr><td>三相相量 U=(U_A,U_B,U_C)ᵀ、电流相量 I</td><td>❌（复数二维表示）</td><td><b>相量 / 复数</b>（非几何向量）</td><td>相量≠正弦量；仅表示大小+初相</td></tr>
+      <tr><td>功率 P、Q、复功率 S=P+jQ</td><td>❌</td><td><b>标量 / 复标量</b></td><td>不画箭头、不参与叉积；P=Re(U·I*)</td></tr>
+    </table>
+    <div class="card"><b>三分法的来源</b>："physical vector（物理量/有向线段）→ geometric vector（几何箭头表示）→ algebraic vector（有序数组）"是向量分析中的通用约定（见 PlanetMath "vector" 词条）；"n 个有序数组成的数组称为 n 维向量"即同济《线性代数》五版 §4.1 的代数向量定义。两者合在一起，就是本页"先分层、再讲工程意义"的口径。</div>
+    <div class="card warn"><b>一句话防踩坑</b>：能在空间里画带方向箭头、能做点积/叉积的，只有<b>物理向量→几何向量</b>（力、E、B、流速 v、热流 q）。节点电压/相量/功率都不是几何箭头。</div>
+  </section>
+
+  <!-- ② 几何向量运算 -->
+  <section class="panel" data-p="1">
+    <h2>几何向量的运算（仅限物理向量：力/场/速度）</h2>
+    <canvas class="cv" id="geo2d" width="1000" height="380"></canvas>
+    <div class="row">
+      <label>α 方向角(°)：<span id="aDeg">40</span></label>
+      <input type="range" id="aAng" min="0" max="360" step="1" value="40">
+      <label>β 方向角(°)：<span id="bDeg">110</span></label>
+      <input type="range" id="bAng" min="0" max="360" step="1" value="110">
+    </div>
+    <div class="legend">
+      <span><i class="dot" style="background:var(--blue)"></i>α（如力 F₁）</span>
+      <span><i class="dot" style="background:var(--red)"></i>β（如力 F₂）</span>
+      <span><i class="dot" style="background:#2bb673"></i>α+β = 合力（平行四边形对角线）</span>
+      <span><i class="dot" style="background:#9b59b6"></i>α 在 β 上的投影</span>
+    </div>
+    <div class="row"><span id="geoOut" class="tag ok"></span></div>
+
+    <h3>叉积 α×β（三维 · 右手定则）</h3>
+    <div class="vec3d" id="stage3d" data-w="900" data-h="460"></div>
+    <div class="row">
+      <label>α 仰角(°)：<span id="axDeg">55</span></label>
+      <input type="range" id="axAng" min="0" max="90" step="1" value="55">
+      <label>β 方位角(°)：<span id="bxDeg">60</span></label>
+      <input type="range" id="bxAng" min="0" max="180" step="1" value="60">
+    </div>
+    <div class="card">橙色箭头 = α×β，方向由<b>右手定则</b>给出，模 = ‖α‖‖β‖sinθ = 两向量张成的<b>平行四边形面积</b>。</div>
+    <div class="card green"><b>工程意义</b>：α×β 在电机/透平里就是<b>转矩/力矩</b>。磁场对载流导体力 F=I·l×B（电动机推力）；主轴力矩 M=r×F（叶轮气动力对轴）；角动量 L=r×mv。</div>
+  </section>
+
+  <!-- ③ 代数向量 ⇄ 矩阵 -->
+  <section class="panel" data-p="2">
+    <h2>核心桥接：矩阵 × 向量 = 列向量的线性组合</h2>
+    <div class="card">若 A=[c₁ c₂ … cₙ]（cⱼ 为 A 的第 j 列），x=(x₁,…,xₙ)ᵀ，则<br>
+    <code>A·x = x₁c₁ + x₂c₂ + … + xₙcₙ</code><br>
+    即：<b>矩阵乘向量 = 以 x 各分量为系数，对 A 的各列做线性组合</b>。A 的列向量是一组"方向/基构件"，x 是"配方/导航指令"。</div>
+    <div class="card warn"><b>与方程组等价</b>：线性方程组 Ax=b ⇔ "b 能否由 A 的列向量线性组合表示"。有解 ⇔ b 在 A 的列空间内；唯一解 ⇔ A 列满秩。</div>
+
+    <h2>交互：用两组基向量合成目标 b</h2>
+    <p>基向量 v₁=(2,1)ᵀ，v₂=(1,3)ᵀ。拖动目标 b=(b₁,b₂)，求系数 c₁、c₂ 使 c₁v₁+c₂v₂=b，即 A·c=b，A=[v₁ v₂]。</p>
+    <canvas class="cv" id="lincomb" width="1000" height="360"></canvas>
+    <div class="row">
+      <label>b₁：<span id="b1v">5</span></label>
+      <input type="range" id="b1" min="-6" max="8" step="0.5" value="5">
+      <label>b₂：<span id="b2v">2</span></label>
+      <input type="range" id="b2" min="-6" max="8" step="0.5" value="2">
+    </div>
+    <div class="row"><span id="lcOut" class="tag ok"></span></div>
+    <div class="card green"><b>工程意义</b>：nodal/潮流方程 <code>Y·v=i</code>、状态空间 <code>x'=A·x+B·u</code>、三相旋转磁动势合成、桁架轴力分解，本质都是 <b>Ax=b / A·x=b</b>——把物理状态/力拆成基向量（基函数、模态、杆方向）的线性组合来求解。</div>
+  </section>
+
+  <!-- ④ 工程意义总表 -->
+  <section class="panel" data-p="3">
+    <h2>向量运算 → 矩阵运算 → 工程意义（总表）</h2>
+    <table>
+      <tr><th>运算</th><th>几何含义（几何向量）</th><th>代数 / 矩阵写法</th><th>电气工程实例</th><th>能源动力实例</th></tr>
+      <tr><td>加法</td><td>三角形/平行四边形法则</td><td>a+b（对应分量相加）</td><td>KCL Σi=0（叠加前提）</td><td>桁架 ΣF=0、热流平衡</td></tr>
+      <tr><td>数乘</td><td>缩放/反向（λ<0 反向）</td><td>λa；U=R·I（欧姆定律）</td><td>标幺值 Xpu=X/Xbase</td><td>相似理论 v₂=λv₁</td></tr>
+      <tr><td>点积</td><td>α 在 β 上投影 × ‖β‖</td><td>α·β=‖α‖‖β‖cosθ</td><td>有功 P=Re(U·I*)；θ=90° 纯电抗不传功</td><td>功 W=F·s；热流法向分量</td></tr>
+      <tr><td>叉积</td><td>垂直平面的转矩方向</td><td>α×β（三维；[r]×F 矩阵式）</td><td>F=Il×B（电机推力）；T=r×F</td><td>M=r×F（叶轮力矩）；L=r×mv</td></tr>
+      <tr><td>线性组合</td><td>c₁v₁+…+cₙvₙ</td><td>A·c=b（A 的列组合=c 加权）</td><td>三相旋转磁动势；潮流 YU=I</td><td>桁架轴力分解；模态叠加 x=c₁v₁+c₂v₂</td></tr>
+    </table>
+    <div class="card"><b>给大一的底层的直觉</b>：向量不是数组，是"带方向的物理量(几何箭头)"或"一组状态数(代数列向量)"；
+    加法=守恒/叠加，数乘=比例/线性齐次，点积=投影/传能，叉积=转矩/转轴，线性组合=解方程/模态分解=矩阵乘向量。</div>
+    <div class="card warn"><b>再次提醒</b>：节点电压 v、相量 U/I、功率 P/Q/S 没有空间方向，不画几何箭头；把它们排成列向量 v、U 是为了解 Ax=b，它们是<b>代数向量/复数</b>，不是几何向量。</div>
+  </section>
+</div>
+
+<script>
+/* ---------- CDN 加载（jsDelivr 主用 + unpkg 回退 + 超时兜底） ---------- */
+function loadScript(src){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=()=>setTimeout(res,0);s.onerror=rej;document.head.appendChild(s);});}
+let eng3D=null;
+async function ensure3D(){
+  if(eng3D==='ready') return true;
+  if(eng3D==='fail') return false;
+  const cdn=['https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js','https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js'];
+  const bak=['https://unpkg.com/three@0.128.0/build/three.min.js','https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js'];
+  try{await loadScript(cdn[0]);if(!window.THREE)throw 0;await loadScript(cdn[1]);if(!window.THREE.OrbitControls)throw 0;}
+  catch(e){try{await loadScript(bak[0]);if(!window.THREE)throw 0;await loadScript(bak[1]);if(!window.THREE.OrbitControls)throw 0;}catch(e2){eng3D='fail';return false;}}
+  eng3D='ready';return true;
+}
+
+/* ---------- 2D 几何向量运算 ---------- */
+const geo={a:[Math.cos(40*Math.PI/180)*3,Math.sin(40*Math.PI/180)*3],
+            b:[Math.cos(110*Math.PI/180)*2.6,Math.sin(110*Math.PI/180)*2.6]};
+function drawGeo(){
+  const cv=document.getElementById('geo2d');const g=cv.getContext('2d');
+  const W=cv.width,H=cv.height;g.clearRect(0,0,W,H);
+  const ox=W/2,oy=H/2,sc=46;
+  // 网格
+  g.strokeStyle='#e3eaf2';g.lineWidth=1;
+  for(let x=-10;x<=10;x++){g.beginPath();g.moveTo(ox+x*sc,20);g.lineTo(ox+x*sc,H-20);g.stroke();}
+  for(let y=-4;y<=4;y++){g.beginPath();g.moveTo(40,oy+y*sc);g.lineTo(W-40,oy+y*sc);g.stroke();}
+  function toS(v){return [ox+v[0]*sc,oy-v[1]*sc];}
+  function arr(p,q,col,lw,hd){g.strokeStyle=col;g.fillStyle=col;g.lineWidth=lw;g.beginPath();g.moveTo(p[0],p[1]);g.lineTo(q[0],q[1]);g.stroke();
+    const a=Math.atan2(q[1]-p[1],q[0]-p[0]);const h=hd||0.5;
+    g.beginPath();g.moveTo(q[0],q[1]);g.lineTo(q[0]-9*Math.cos(a-h),q[1]-9*Math.sin(a-h));g.lineTo(q[0]-9*Math.cos(a+h),q[1]-9*Math.sin(a+h));g.closePath();g.fill();}
+  // 轴
+  g.strokeStyle='#9aa7b5';g.lineWidth=1;g.beginPath();g.moveTo(40,oy);g.lineTo(W-40,oy);g.moveTo(ox,20);g.lineTo(ox,H-20);g.stroke();
+  // 平行四边形
+  const s=[geo.a[0]+geo.b[0],geo.a[1]+geo.b[1]];
+  g.strokeStyle='rgba(43,182,115,.55)';g.lineWidth=2;g.setLineDash([6,5]);
+  arr(toS([0,0]),toS(geo.b),'rgba(43,182,115,.55)',2,0);arr(toS(geo.b),toS(s),'rgba(43,182,115,.55)',2,0);
+  g.setLineDash([]);
+  // 向量
+  arr(toS([0,0]),toS(geo.a),'#1f6feb',3);arr(toS([0,0]),toS(geo.b),'#e8553a',3);
+  arr(toS([0,0]),toS(s),'#2bb673',4,0.45);
+  // 投影 α 在 β 上
+  const ab=geo.a[0]*geo.b[0]+geo.a[1]*geo.b[1],bb=geo.b[0]*geo.b[0]+geo.b[1]*geo.b[1];
+  const proj=[geo.b[0]*ab/bb,geo.b[1]*ab/bb];
+  g.strokeStyle='#9b59b6';g.lineWidth=2;g.setLineDash([5,4]);
+  arr(toS([0,0]),toS(proj),'#9b59b6',2);g.setLineDash([]);
+  // 标签
+  g.font='15px sans-serif';g.fillStyle='#1f6feb';g.fillText('α',toS(geo.a)[0]+6,toS(geo.a)[1]-6);
+  g.fillStyle='#e8553a';g.fillText('β',toS(geo.b)[0]+6,toS(geo.b)[1]-6);
+  g.fillStyle='#2bb673';g.fillText('α+β',toS(s)[0]+8,toS(s)[1]-8);
+  const dot=(geo.a[0]*geo.b[0]+geo.a[1]*geo.b[1]).toFixed(2);
+  const cross=(geo.a[0]*geo.b[1]-geo.a[1]*geo.b[0]).toFixed(2);
+  document.getElementById('geoOut').className='tag '+(Math.abs(cross)>0.01?'ok':'no');
+  document.getElementById('geoOut').textContent='α·β='+dot+'（投影标量）｜ α×β 模='+Math.abs(cross)+'（平行四边形面积）';
+}
+
+/* ---------- 3D 叉积 ---------- */
+let cross3D=null;
+async function initCross3D(){
+  if(cross3D) return;
+  const ok=await ensure3D();
+  if(!ok){document.getElementById('status').className='err';document.getElementById('status').textContent='⚠ 3D 引擎加载失败（教育网可能限制 CDN，请切换热点；2D 模块可正常使用）';return;}
+  document.getElementById('status').className='ok';document.getElementById('status').textContent='✅ 3D 引擎就绪';
+  const stage=document.getElementById('stage3d');
+  const w=parseInt(stage.dataset.w)||stage.clientWidth||900;
+  const h=parseInt(stage.dataset.h)||460;
+  const scene=new THREE.Scene();
+  const cam=new THREE.PerspectiveCamera(50,w/h,0.1,100);cam.position.set(4.5,3.5,6);
+  const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setClearColor(0xeef2f7,1);renderer.setSize(w,h,false);stage.appendChild(renderer.domElement);
+  const ctl=new THREE.OrbitControls(cam,renderer.domElement);ctl.target.set(0,0,0);
+  scene.add(new THREE.AmbientLight(0xffffff,0.75));const dl=new THREE.DirectionalLight(0xffffff,0.6);dl.position.set(5,8,6);scene.add(dl);
+  // 坐标轴
+  scene.add(new THREE.ArrowHelper(new THREE.Vector3(1,0,0),new THREE.Vector3(0,0,0),3.2,0xcc4444,0.25,0.16));
+  scene.add(new THREE.ArrowHelper(new THREE.Vector3(0,1,0),new THREE.Vector3(0,0,0),3.2,0x44aa44,0.25,0.16));
+  scene.add(new THREE.ArrowHelper(new THREE.Vector3(0,0,1),new THREE.Vector3(0,0,0),3.2,0x4444cc,0.25,0.16));
+  const aArr=new THREE.ArrowHelper(new THREE.Vector3(1,0,0),new THREE.Vector3(0,0,0),1,0x1f6feb,0.3,0.18);
+  const bArr=new THREE.ArrowHelper(new THREE.Vector3(0,1,0),new THREE.Vector3(0,0,0),1,0xe8553a,0.3,0.18);
+  const cArr=new THREE.ArrowHelper(new THREE.Vector3(0,0,1),new THREE.Vector3(0,0,0),1,0xff8c1f,0.35,0.22);
+  scene.add(aArr);scene.add(bArr);scene.add(cArr);
+  cross3D={scene,cam,renderer,ctl,aArr,bArr,cArr};
+  setCross(parseFloat(document.getElementById('axAng').value),parseFloat(document.getElementById('bxAng').value));
+  (function animate(){requestAnimationFrame(animate);ctl.update();renderer.render(scene,cam);})();
+}
+function setCross(axDeg,bxDeg){
+  if(!cross3D) return;
+  const a=[Math.cos(axDeg*Math.PI/180)*2.6,Math.sin(axDeg*Math.PI/180)*2.6,0];
+  const b=[Math.cos(bxDeg*Math.PI/180)*2.4,Math.sin(bxDeg*Math.PI/180)*2.4*0.7,Math.sin(bxDeg*Math.PI/180)*2.4*0.7];
+  cross3D.aArr.setDirection(new THREE.Vector3(a[0],a[1],a[2]).normalize());cross3D.aArr.setLength(Math.hypot(a[0],a[1],a[2]),0.3,0.18);
+  cross3D.bArr.setDirection(new THREE.Vector3(b[0],b[1],b[2]).normalize());cross3D.bArr.setLength(Math.hypot(b[0],b[1],b[2]),0.3,0.18);
+  const cx=a[1]*b[2]-a[2]*b[1],cy=a[2]*b[0]-a[0]*b[2],cz=a[0]*b[1]-a[1]*b[0];
+  const cl=Math.hypot(cx,cy,cz);const cv=new THREE.Vector3(cx,cy,cz);
+  if(cl>1e-6){cross3D.cArr.setDirection(cv.normalize());cross3D.cArr.setLength(Math.min(3.2,cl*0.9),0.35,0.22);}
+  else{cross3D.cArr.setDirection(new THREE.Vector3(0,0,1));cross3D.cArr.setLength(0.0001,0.35,0.22);}
+}
+
+/* ---------- ③ 线性组合 A·c=b ---------- */
+function drawLC(){
+  const b1=parseFloat(document.getElementById('b1').value);
+  const b2=parseFloat(document.getElementById('b2').value);
+  document.getElementById('b1v').textContent=b1.toFixed(1);
+  document.getElementById('b2v').textContent=b2.toFixed(1);
+  // A=[v1 v2]=[[2,1],[1,3]], det=5
+  const det=2*3-1*1;const c1=(3*b1-1*b2)/det, c2=(-1*b1+2*b2)/det;
+  const cv=document.getElementById('lincomb');const g=cv.getContext('2d');
+  const W=cv.width,H=cv.height;g.clearRect(0,0,W,H);
+  const ox=W/2,oy=H/2,sc=44;
+  g.strokeStyle='#e3eaf2';g.lineWidth=1;
+  for(let x=-10;x<=10;x++){g.beginPath();g.moveTo(ox+x*sc,20);g.lineTo(ox+x*sc,H-20);g.stroke();}
+  for(let y=-5;y<=5;y++){g.beginPath();g.moveTo(40,oy+y*sc);g.lineTo(W-40,oy+y*sc);g.stroke();}
+  function toS(v){return [ox+v[0]*sc,oy-v[1]*sc];}
+  function arr(p,q,col,lw){g.strokeStyle=col;g.fillStyle=col;g.lineWidth=lw;g.beginPath();g.moveTo(p[0],p[1]);g.lineTo(q[0],q[1]);g.stroke();
+    const a=Math.atan2(q[1]-p[1],q[0]-p[0]);g.beginPath();g.moveTo(q[0],q[1]);g.lineTo(q[0]-9*Math.cos(a-0.5),q[1]-9*Math.sin(a-0.5));g.lineTo(q[0]-9*Math.cos(a+0.5),q[1]-9*Math.sin(a+0.5));g.closePath();g.fill();}
+  const v1=[2,1],v2=[1,3];
+  arr(toS([0,0]),toS(v1),'#1f6feb',3);arr(toS([0,0]),toS(v2),'#e8553a',3);
+  const s=[c1*v1[0]+c2*v2[0],c1*v1[1]+c2*v2[1]];
+  arr(toS([0,0]),toS(s),'#2bb673',4,0.45);
+  g.font='15px sans-serif';g.fillStyle='#1f6feb';g.fillText('v₁=(2,1)',toS(v1)[0]+6,toS(v1)[1]-6);
+  g.fillStyle='#e8553a';g.fillText('v₂=(1,3)',toS(v2)[0]+6,toS(v2)[1]-6);
+  g.fillStyle='#2bb673';g.fillText('b=( '+b1.toFixed(1)+' , '+b2.toFixed(1)+' )',toS(s)[0]+8,toS(s)[1]-8);
+  const ok=Math.abs(s[0]-b1)<0.05&&Math.abs(s[1]-b2)<0.05;
+  document.getElementById('lcOut').className='tag '+(ok?'ok':'no');
+  document.getElementById('lcOut').textContent='c₁='+c1.toFixed(2)+' , c₂='+c2.toFixed(2)+' ｜ c₁v₁+c₂v₂=b ? '+(ok?'成立 ✓':'偏差 '+(Math.hypot(s[0]-b1,s[1]-b2)).toFixed(2));
+}
+
+/* ---------- tab 切换（懒初始化 3D） ---------- */
+const tabs=[...document.querySelectorAll('.tabs button')];
+const panels=[...document.querySelectorAll('.panel')];
+tabs.forEach(b=>b.onclick=()=>{const t=+b.dataset.t;
+  tabs.forEach(x=>x.classList.toggle('on',x===b));
+  panels.forEach(p=>p.classList.toggle('on',+p.dataset.p===t));
+  if(t===1){setTimeout(()=>{if(!cross3D)initCross3D();},60);drawGeo();}
+  if(t===2)drawLC();
+});
+
+/* ---------- 绑定 ---------- */
+document.getElementById('aAng').oninput=e=>{geo.a=[Math.cos(+e.target.value*Math.PI/180)*3,Math.sin(+e.target.value*Math.PI/180)*3];document.getElementById('aDeg').textContent=e.target.value;drawGeo();};
+document.getElementById('bAng').oninput=e=>{geo.b=[Math.cos(+e.target.value*Math.PI/180)*2.6,Math.sin(+e.target.value*Math.PI/180)*2.6];document.getElementById('bDeg').textContent=e.target.value;drawGeo();};
+document.getElementById('axAng').oninput=e=>{document.getElementById('axDeg').textContent=e.target.value;if(cross3D)setCross(+e.target.value,parseFloat(document.getElementById('bxAng').value));};
+document.getElementById('bxAng').oninput=e=>{document.getElementById('bxDeg').textContent=e.target.value;if(cross3D)setCross(parseFloat(document.getElementById('axAng').value),+e.target.value);};
+document.getElementById('b1').oninput=drawLC;document.getElementById('b2').oninput=drawLC;
+
+drawGeo();drawLC();
+// 3D 引擎预加载（不阻塞 2D）
+ensure3D().then(ok=>{if(ok){document.getElementById('status').className='ok';document.getElementById('status').textContent='✅ 3D 引擎就绪';}else{document.getElementById('status').className='err';document.getElementById('status').textContent='⚠ 3D 引擎加载失败（教育网可能限制 CDN，请切换热点；2D 模块可正常使用）';}});
+setTimeout(()=>{if(eng3D!=='ready'&&eng3D!=='fail'){document.getElementById('status').className='err';document.getElementById('status').textContent='⚠ 3D 引擎加载超时（教育网可能限制 CDN；2D 模块可正常使用）';}},12000);
+</script>
+</body>
+</html>

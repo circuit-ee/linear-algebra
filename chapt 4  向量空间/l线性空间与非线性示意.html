@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+<title>线性空间和非线性曲面 · 3D 对比演示</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    width: 100%; height: 100%; overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #f0f9ff; color: #1e293b;
+    user-select: none; -webkit-user-select: none;
+  }
+  #app { position: relative; width: 100vw; height: 100vh; }
+  #scene { width: 100%; height: 100%; display: block; touch-action: none; }
+
+  .panel {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid rgba(59, 130, 246, 0.22);
+    border-radius: 16px;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    padding: 18px 20px;
+    box-shadow: 0 10px 40px rgba(59, 130, 246, 0.12);
+  }
+
+  /* ===== Left sidebar ===== */
+  #left-sidebar {
+    position: absolute;
+    top: 18px; left: 18px; bottom: 72px;
+    width: 370px;
+    display: flex; flex-direction: column; gap: 10px;
+    z-index: 10;
+  }
+  #title-bar { position: relative; top: auto; left: auto; flex-shrink: 0; padding: 14px 16px; }
+  #title-bar h1 { font-size: 26px; font-weight: 700; color: #1e40af; margin-bottom: 4px; }
+  #title-bar .subtitle { font-size: 14px; color: #6366f1; margin-bottom: 6px; font-weight: 600; }
+  #title-bar .desc { font-size: 16px; line-height: 1.6; color: #475569; }
+  #title-bar b { color: #1e40af; }
+  .formula-box {
+    font-size: 14px; color: #475569;
+    background: rgba(219, 234, 254, 0.4); border-radius: 8px;
+    padding: 8px 12px; margin-top: 8px;
+    font-family: "SF Mono", Menlo, monospace; line-height: 1.6;
+  }
+  .legend-row {
+    display: flex; align-items: center; gap: 6px; font-size: 14px; color: #475569; margin-top: 4px;
+  }
+  .legend-dot {
+    width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+  }
+
+  #analysis-panel {
+    position: relative; top: auto; left: auto;
+    flex: 1; overflow-y: auto; padding: 14px 16px;
+  }
+  #analysis-panel::-webkit-scrollbar { width: 5px; }
+  #analysis-panel::-webkit-scrollbar-thumb { background: rgba(59,130,246,0.3); border-radius: 3px; }
+
+  .step { margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid rgba(59,130,246,0.08); }
+  .step:last-child { border-bottom: none; }
+  .step-num {
+    display: inline-block; background: #3b82f6; color: #fff;
+    font-size: 10px; font-weight: 700; padding: 2px 7px;
+    border-radius: 4px; margin-bottom: 3px;
+  }
+  .step-title { font-size: 17px; font-weight: 700; color: #1e40af; margin-bottom: 4px; }
+  .step-body {
+    font-size: 15px; line-height: 1.7; color: #475569;
+  }
+  .step-body b { color: #dc2626; }
+  .step-body .res { color: #1e40af; font-weight: 700; }
+  .step-body .ok { color: #16a34a; font-weight: 700; }
+  .step-body .fail { color: #dc2626; font-weight: 700; }
+  .vec-table {
+    font-family: "SF Mono", Menlo, monospace; font-size: 12px;
+    background: rgba(219, 234, 254, 0.3); border-radius: 6px;
+    padding: 6px 10px; margin: 4px 0; line-height: 1.7;
+  }
+  .compare-table {
+    width: 100%; border-collapse: collapse; font-size: 12px; margin: 4px 0;
+  }
+  .compare-table th {
+    padding: 4px 6px; font-size: 11px; text-align: center; font-weight: 700;
+  }
+  .compare-table td {
+    padding: 4px 6px; text-align: center; font-family: "SF Mono", Menlo, monospace;
+    border-top: 1px solid rgba(59,130,246,0.1);
+  }
+  .th-lin { background: rgba(59,130,246,0.12); color: #1e40af; }
+  .th-non { background: rgba(234,88,12,0.12); color: #c2410c; }
+
+  /* ===== Right sidebar ===== */
+  #right-sidebar {
+    position: absolute;
+    top: 18px; right: 18px; bottom: 72px;
+    width: 310px;
+    display: flex; flex-direction: column; gap: 10px;
+    z-index: 10;
+  }
+  .panel-title {
+    font-size: 16px; color: #6366f1;
+    text-transform: uppercase; letter-spacing: 1.2px;
+    margin-bottom: 10px; font-weight: 700;
+  }
+  .data-section { margin-bottom: 6px; }
+  .data-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 4px 0; border-bottom: 1px solid rgba(59, 130, 246, 0.08);
+  }
+  .data-label { font-size: 15px; color: #64748b; }
+  .data-value { font-size: 17px; font-weight: 700; font-family: "SF Mono", Menlo, monospace; color: #1e293b; }
+  .data-value.ok { color: #16a34a; }
+  .data-value.fail { color: #dc2626; }
+
+  #control-panel { flex: 1; overflow-y: auto; }
+  #control-panel::-webkit-scrollbar { width: 5px; }
+  #control-panel::-webkit-scrollbar-thumb { background: rgba(59,130,246,0.3); border-radius: 3px; }
+
+  .ctrl-row { margin-bottom: 14px; }
+  .ctrl-row:last-child { margin-bottom: 0; }
+  .ctrl-label {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 6px;
+  }
+  .ctrl-label .name { font-size: 16px; color: #475569; font-weight: 600; }
+  .ctrl-label .val { font-size: 17px; font-family: "SF Mono", Menlo, monospace; font-weight: 700; color: #1e40af; }
+
+  input[type=range] {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 6px;
+    background: linear-gradient(to right, #dbeafe, #bfdbfe);
+    border-radius: 3px; outline: none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 20px; height: 20px;
+    background: #3b82f6; border-radius: 50%; cursor: pointer;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+    border: 3px solid #fff;
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 20px; height: 20px;
+    background: #3b82f6; border-radius: 50%; cursor: pointer;
+    border: 3px solid #fff; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+  }
+
+  .surface-toggle {
+    display: flex; gap: 4px; flex-wrap: wrap;
+  }
+  .surface-toggle button {
+    flex: 1; min-width: 0; padding: 7px 4px;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    background: transparent; color: #64748b;
+    border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;
+    transition: all 0.15s;
+  }
+  .surface-toggle button.active { background: rgba(234,88,12,0.12); color: #c2410c; border-color: rgba(234,88,12,0.4); }
+
+  .toggle-row {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
+  }
+  .toggle-row input[type=checkbox] {
+    width: 18px; height: 18px; accent-color: #3b82f6; cursor: pointer;
+  }
+  .toggle-row label { font-size: 13px; color: #475569; cursor: pointer; }
+
+  .btn {
+    padding: 12px 20px;
+    border: 1px solid rgba(59, 130, 246, 0.35);
+    background: rgba(255, 255, 255, 0.85); color: #1e40af;
+    border-radius: 10px; cursor: pointer; font-size: 17px; font-weight: 600;
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+    transition: all 0.15s;
+  }
+  .btn:hover { background: rgba(59, 130, 246, 0.12); transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
+
+  #loading {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: #f0f9ff; z-index: 100; gap: 16px;
+  }
+  .spinner {
+    width: 40px; height: 40px;
+    border: 4px solid #dbeafe; border-top-color: #3b82f6;
+    border-radius: 50%; animation: spin 0.9s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 900px) {
+    #left-sidebar { width: calc(100vw - 36px); max-width: 340px; bottom: 68px; }
+    #right-sidebar { display: none; }
+    .data-value { font-size: 15px; }
+    .btn { padding: 9px 15px; font-size: 15px; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <canvas id="scene"></canvas>
+
+  <div id="left-sidebar">
+    <div class="panel" id="title-bar">
+      <h1>🌐 线性空间和非线性曲面</h1>
+      <div class="subtitle">左右对比 · 封闭性检验 · 切空间</div>
+      <div class="desc">
+        <b>左图</b>：线性子空间（过原点 xy 平面 z=0），加法/数乘<b>封闭</b><br>
+        <b>右图</b>："非线性"曲面 (流形)，加法/数乘<b>不封闭</b>
+      </div>
+      <div class="formula-box">
+        子空间判定：∀ u,v∈S, ∀α∈ℝ → u+v ∈ S 且 αu ∈ S<br>
+        左图满足 → 线性(子)空间; 右图不满足 → 非线性/流形
+      </div>
+      <div class="formula-box" style="background:rgba(254,249,195,0.5);border:1px solid rgba(234,179,8,0.35)">
+        💡 左图取最"正"的过原点平面 z=0：无论 ux/uy/vx/vy/α 怎么调，u、v、u+v、αu 都贴在平面内，绝不会"跃出平面"。
+      </div>
+      <div class="legend-row"><div class="legend-dot" style="background:#2563eb"></div>向量 u (蓝)</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#059669"></div>向量 v (绿)</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#16a34a"></div>u+v / αu 在曲面上 ✓</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#dc2626"></div>u+v / αu 不在曲面上 ✗</div>
+    </div>
+
+    <div class="panel" id="analysis-panel">
+      <div class="panel-title">对比分析</div>
+      <div id="analysis-content"></div>
+    </div>
+  </div>
+
+  <div id="right-sidebar">
+    <div class="panel" id="data-panel">
+      <div class="panel-title">封闭性对比</div>
+      <div class="data-section">
+        <div class="data-row"><span class="data-label">左侧：线性空间</span><span class="data-value ok" id="d-lin-type">平面</span></div>
+        <div class="data-row"><span class="data-label">　加法 u+v</span><span class="data-value ok" id="d-lin-add">封闭 ✓</span></div>
+        <div class="data-row"><span class="data-label">　数乘 αu</span><span class="data-value ok" id="d-lin-scale">封闭 ✓</span></div>
+      </div>
+      <div class="data-section" style="margin-top:8px">
+        <div class="data-row"><span class="data-label">右侧：非线性曲面</span><span class="data-value fail" id="d-non-type">鞍面</span></div>
+        <div class="data-row"><span class="data-label">　加法 u+v</span><span class="data-value fail" id="d-non-add">不封闭 ✗</span></div>
+        <div class="data-row"><span class="data-label">　数乘 αu</span><span class="data-value fail" id="d-non-scale">不封闭 ✗</span></div>
+      </div>
+    </div>
+
+    <div class="panel" id="control-panel">
+      <div class="panel-title">参数调节</div>
+
+      <div class="ctrl-row">
+        <div class="ctrl-label"><span class="name">右侧曲面选择</span></div>
+        <div class="surface-toggle">
+          <button id="surf-saddle" class="active">鞍面</button>
+          <button id="surf-paraboloid">抛物面</button>
+          <button id="surf-sphere">半球面</button>
+        </div>
+      </div>
+
+      <div class="ctrl-row">
+        <div class="ctrl-label"><span class="name">点 u 的 x 坐标</span><span class="val" id="v-ux">0.8</span></div>
+        <input type="range" id="s-ux" min="-1.3" max="1.3" step="0.1" value="0.8">
+      </div>
+      <div class="ctrl-row" style="margin-top:-4px">
+        <div class="ctrl-label"><span class="name">点 u 的 y 坐标</span><span class="val" id="v-uy">0.3</span></div>
+        <input type="range" id="s-uy" min="-1.3" max="1.3" step="0.1" value="0.3">
+      </div>
+
+      <div class="ctrl-row">
+        <div class="ctrl-label"><span class="name">点 v 的 x 坐标</span><span class="val" id="v-vx">0.3</span></div>
+        <input type="range" id="s-vx" min="-1.3" max="1.3" step="0.1" value="0.3">
+      </div>
+      <div class="ctrl-row" style="margin-top:-4px">
+        <div class="ctrl-label"><span class="name">点 v 的 y 坐标</span><span class="val" id="v-vy">0.8</span></div>
+        <input type="range" id="s-vy" min="-1.3" max="1.3" step="0.1" value="0.8">
+      </div>
+
+      <div class="ctrl-row">
+        <div class="ctrl-label"><span class="name">数乘系数 α</span><span class="val" id="v-alpha">2.0</span></div>
+        <input type="range" id="s-alpha" min="-3" max="3" step="0.1" value="2">
+      </div>
+
+      <div class="ctrl-row">
+        <div class="ctrl-label"><span class="name">显示选项</span></div>
+        <div class="toggle-row"><input type="checkbox" id="show-sum" checked><label for="show-sum">显示 u+v (加法检验)</label></div>
+        <div class="toggle-row"><input type="checkbox" id="show-scale" checked><label for="show-scale">显示 αu (数乘检验)</label></div>
+        <div class="toggle-row"><input type="checkbox" id="show-tangent" checked><label for="show-tangent">显示切空间 (右侧)</label></div>
+        <div class="toggle-row"><input type="checkbox" id="show-span"><label for="show-span">显示 span{u,v} 张成平面</label></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toolbar">
+    <button class="btn" id="btn-play">▶ 动画演示 α</button>
+    <button class="btn" id="btn-reset">重置参数</button>
+  </div>
+
+  <div id="loading"><div class="spinner"></div><div>加载 3D 引擎...</div></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function() {
+  'use strict';
+
+  // ====== State ======
+  let nonlinType = 'saddle'; // 'saddle', 'paraboloid', 'sphere'
+  let ux = 0.8, uy = 0.3, vx = 0.3, vy = 0.8;
+  let alpha = 2.0;
+  let showSum = true, showScale = true, showTangent = true, showSpan = false;
+
+  // ====== Three.js ======
+  let scene, camera, renderer;
+  let sceneGroup;
+  let camTheta = -0.6, camPhi = 0.9, camRadius = 11;
+  let isPlaying = false, playDir = 1;
+
+  const X_OFFSET = 3.8; // distance between left and right surfaces
+
+  // ====== Surface definitions ======
+  // All parametrized by (x, y) for direct comparison
+  const LINEAR_SURF = {
+    name: '平面 z = 0（xy 平面）',
+    shortName: 'xy 平面',
+    isLinear: true,
+    f: function(x, y) { return 0; },
+    range: 1.8,
+    color: 0x93c5fd,
+    wireColor: 0x3b82f6,
+    normal: function() { return [0, 0, 1]; }
+  };
+
+  const NONLINEAR_SURFS = {
+    saddle: {
+      name: '鞍面 z = x² - y²',
+      shortName: '鞍面',
+      isLinear: false,
+      f: function(x, y) { return x*x - y*y; },
+      range: 1.5,
+      color: 0xfbbf24,
+      wireColor: 0xea580c,
+      normal: function(p) { return [-2*p[0], 2*p[1], 1]; },
+      tangentPlane: function(p) { return { point: p.slice(), normal: [-2*p[0], 2*p[1], 1] }; }
+    },
+    paraboloid: {
+      name: '抛物面 z = x² + y²',
+      shortName: '抛物面',
+      isLinear: false,
+      f: function(x, y) { return x*x + y*y; },
+      range: 1.3,
+      color: 0xfbbf24,
+      wireColor: 0xea580c,
+      normal: function(p) { return [-2*p[0], -2*p[1], 1]; },
+      tangentPlane: function(p) { return { point: p.slice(), normal: [-2*p[0], -2*p[1], 1] }; }
+    },
+    sphere: {
+      name: '半球面 z = √(4 - x² - y²)',
+      shortName: '半球面',
+      isLinear: false,
+      f: function(x, y) { var r2 = 4 - x*x - y*y; return r2 > 0 ? Math.sqrt(r2) : 0; },
+      range: 1.8,
+      color: 0xfbbf24,
+      wireColor: 0xea580c,
+      normal: function(p) { return [p[0], p[1], p[2]]; },
+      tangentPlane: function(p) { return { point: p.slice(), normal: [p[0], p[1], p[2]] }; }
+    }
+  };
+
+  // ====== onSurface test ======
+  function onSurface(surfDef, p) {
+    if (surfDef.isLinear) {
+      return Math.abs(p[2] - surfDef.f(p[0], p[1])) < 0.02;
+    } else {
+      var z = surfDef.f(p[0], p[1]);
+      return Math.abs(p[2] - z) < 0.06;
+    }
+  }
+
+  // ====== Surface mesh builder ======
+  function buildSurfaceMesh(surfDef) {
+    var segs = 28;
+    var r = surfDef.range;
+    var step = (2 * r) / segs;
+    var vertices = [];
+    var indices = [];
+
+    for (var i = 0; i <= segs; i++) {
+      for (var j = 0; j <= segs; j++) {
+        var x = -r + i * step;
+        var y = -r + j * step;
+        var z = surfDef.f(x, y);
+        vertices.push(x, y, z);
+      }
+    }
+    for (var i2 = 0; i2 < segs; i2++) {
+      for (var j2 = 0; j2 < segs; j2++) {
+        var a = i2 * (segs + 1) + j2;
+        var b = a + 1;
+        var c = a + (segs + 1);
+        var d = c + 1;
+        indices.push(a, b, c, b, d, c);
+      }
+    }
+
+    var geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+    geo.setIndex(indices);
+    geo.computeVertexNormals();
+
+    var fillMat = new THREE.MeshStandardMaterial({
+      color: surfDef.color, transparent: true, opacity: 0.4,
+      side: THREE.DoubleSide, metalness: 0.1, roughness: 0.7,
+      depthWrite: false
+    });
+    var fillMesh = new THREE.Mesh(geo, fillMat);
+
+    var wireGeo = new THREE.WireframeGeometry(geo);
+    var wireMat = new THREE.LineBasicMaterial({
+      color: surfDef.wireColor, transparent: true, opacity: 0.3
+    });
+    var wireMesh = new THREE.LineSegments(wireGeo, wireMat);
+
+    var group = new THREE.Group();
+    group.add(fillMesh);
+    group.add(wireMesh);
+    return group;
+  }
+
+  // ====== Arrow builder ======
+  function createArrow(from, to, color, radius) {
+    var group = new THREE.Group();
+    var start = new THREE.Vector3(from[0], from[1], from[2]);
+    var end = new THREE.Vector3(to[0], to[1], to[2]);
+    var dir = new THREE.Vector3().subVectors(end, start);
+    var len = dir.length();
+    if (len < 0.01) return group;
+
+    var mat = new THREE.MeshStandardMaterial({
+      color: color, emissive: color, emissiveIntensity: 0.3,
+      metalness: 0.3, roughness: 0.4
+    });
+
+    var shaftLen = len * 0.82;
+    var shaftGeo = new THREE.CylinderGeometry(radius, radius, shaftLen, 10);
+    var shaft = new THREE.Mesh(shaftGeo, mat);
+    shaft.position.copy(start.clone().add(dir.clone().multiplyScalar(0.41)));
+    shaft.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
+    group.add(shaft);
+
+    var tipLen = Math.min(len * 0.18, 0.25);
+    var tipGeo = new THREE.ConeGeometry(radius * 2.2, tipLen, 10);
+    var tip = new THREE.Mesh(tipGeo, mat);
+    tip.position.copy(start.clone().add(dir.clone().multiplyScalar((shaftLen + tipLen/2) / len)));
+    tip.quaternion.copy(shaft.quaternion);
+    group.add(tip);
+
+    return group;
+  }
+
+  // ====== Point marker ======
+  function createPointMarker(pos, color, radius) {
+    var r = radius || 0.07;
+    var geo = new THREE.SphereGeometry(r, 16, 16);
+    var mat = new THREE.MeshStandardMaterial({
+      color: color, emissive: color, emissiveIntensity: 0.5,
+      metalness: 0.2, roughness: 0.4
+    });
+    var mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(pos[0], pos[1], pos[2]);
+    return mesh;
+  }
+
+  // ====== Parallelogram ======
+  function buildParallelogram(u, v, color) {
+    var o = [0,0,0];
+    var uv = [u[0]+v[0], u[1]+v[1], u[2]+v[2]];
+    var geo = new THREE.BufferGeometry();
+    var verts = [
+      o[0], o[1], o[2], u[0], u[1], u[2], uv[0], uv[1], uv[2],
+      o[0], o[1], o[2], uv[0], uv[1], uv[2], v[0], v[1], v[2]
+    ];
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+    geo.setIndex([0,1,2, 3,4,5]);
+    geo.computeVertexNormals();
+    var mat = new THREE.MeshBasicMaterial({
+      color: color, transparent: true, opacity: 0.12,
+      side: THREE.DoubleSide, depthWrite: false
+    });
+    return new THREE.Mesh(geo, mat);
+  }
+
+  // ====== Mini axes ======
+  function buildMiniAxes(len) {
+    var group = new THREE.Group();
+    var axisColors = [0xef4444, 0x16a34a, 0x3b82f6];
+    for (var i = 0; i < 3; i++) {
+      var dir = [0,0,0]; dir[i] = 1;
+      group.add(createArrow([0,0,0], [dir[0]*len, dir[1]*len, dir[2]*len], axisColors[i], 0.02));
+    }
+    return group;
+  }
+
+  // ====== Text label ======
+  function createTextSprite(text, color, fontSize) {
+    var canvas = document.createElement('canvas');
+    canvas.width = 512; canvas.height = 128;
+    var ctx = canvas.getContext('2d');
+    ctx.fillStyle = color;
+    ctx.font = 'bold ' + (fontSize || 48) + 'px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, 256, 64);
+    var tex = new THREE.CanvasTexture(canvas);
+    var mat = new THREE.SpriteMaterial({ map: tex, transparent: true });
+    var sprite = new THREE.Sprite(mat);
+    sprite.scale.set(3, 0.75, 1);
+    return sprite;
+  }
+
+  function createSmallLabel(text, color) {
+    var canvas = document.createElement('canvas');
+    canvas.width = 256; canvas.height = 64;
+    var ctx = canvas.getContext('2d');
+    ctx.fillStyle = color;
+    ctx.font = 'bold 28px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, 128, 32);
+    var tex = new THREE.CanvasTexture(canvas);
+    var mat = new THREE.SpriteMaterial({ map: tex, transparent: true });
+    var sprite = new THREE.Sprite(mat);
+    sprite.scale.set(1.5, 0.375, 1);
+    return sprite;
+  }
+
+  // ====== Tangent plane ======
+  function buildTangentPlane(surfDef, point) {
+    var tp = surfDef.tangentPlane(point);
+    var nVec = tp.normal;
+    var normal = new THREE.Vector3(nVec[0], nVec[1], nVec[2]).normalize();
+    var planeSize = 3.5;
+    var planeGeo = new THREE.PlaneGeometry(planeSize, planeSize, 6, 6);
+    var planeMat = new THREE.MeshStandardMaterial({
+      color: 0x22c55e, transparent: true, opacity: 0.22,
+      side: THREE.DoubleSide, depthWrite: false,
+      metalness: 0.1, roughness: 0.8
+    });
+    var plane = new THREE.Mesh(planeGeo, planeMat);
+    plane.position.set(point[0], point[1], point[2]);
+    plane.lookAt(new THREE.Vector3(point[0]+normal.x, point[1]+normal.y, point[2]+normal.z));
+    return plane;
+  }
+
+  // ====== Span plane ======
+  function buildSpanPlane(u, v) {
+    var uVec = new THREE.Vector3(u[0], u[1], u[2]);
+    var vVec = new THREE.Vector3(v[0], v[1], v[2]);
+    var normal = new THREE.Vector3().crossVectors(uVec, vVec);
+    if (normal.length() < 0.01) return new THREE.Group();
+    normal.normalize();
+    var planeGeo = new THREE.PlaneGeometry(4.5, 4.5, 6, 6);
+    var planeMat = new THREE.MeshStandardMaterial({
+      color: 0x7c3aed, transparent: true, opacity: 0.12,
+      side: THREE.DoubleSide, depthWrite: false
+    });
+    var plane = new THREE.Mesh(planeGeo, planeMat);
+    plane.position.set(0, 0, 0);
+    plane.lookAt(normal);
+    var group = new THREE.Group();
+    group.add(plane);
+    return group;
+  }
+
+  // ====== Add vectors to a group ======
+  function addVectorsToGroup(group, surfDef, ux, uy, vx, vy, alpha) {
+    var u = [ux, uy, surfDef.f(ux, uy)];
+    var v = [vx, vy, surfDef.f(vx, vy)];
+    var uPlusV = [u[0]+v[0], u[1]+v[1], u[2]+v[2]];
+    var aU = [alpha*u[0], alpha*u[1], alpha*u[2]];
+
+    // Origin
+    group.add(createPointMarker([0,0,0], 0x64748b, 0.05));
+
+    // u vector (blue)
+    group.add(createArrow([0,0,0], u, 0x2563eb, 0.03));
+    group.add(createPointMarker(u, 0x2563eb, 0.06));
+
+    // v vector (green)
+    group.add(createArrow([0,0,0], v, 0x059669, 0.03));
+    group.add(createPointMarker(v, 0x059669, 0.06));
+
+    // u+v
+    if (showSum) {
+      var sumOn = onSurface(surfDef, uPlusV);
+      var sumColor = sumOn ? 0x16a34a : 0xdc2626;
+      group.add(createArrow([0,0,0], uPlusV, sumColor, 0.03));
+      group.add(createPointMarker(uPlusV, sumColor, 0.07));
+      group.add(buildParallelogram(u, v, sumColor));
+    }
+
+    // αu
+    if (showScale) {
+      var scaleOn = onSurface(surfDef, aU);
+      var scaleColor = scaleOn ? 0x16a34a : 0xdc2626;
+      group.add(createArrow([0,0,0], aU, scaleColor, 0.025));
+      group.add(createPointMarker(aU, scaleColor, 0.06));
+    }
+
+    // Tangent plane (only for nonlinear)
+    if (showTangent && !surfDef.isLinear && surfDef.tangentPlane) {
+      group.add(buildTangentPlane(surfDef, u));
+    }
+
+    // Span plane
+    if (showSpan) {
+      group.add(buildSpanPlane(u, v));
+    }
+
+    return { u: u, v: v, uPlusV: uPlusV, aU: aU, sumOn: sumOn, scaleOn: scaleOn };
+  }
+
+  // ====== Build 3D scene ======
+  function buildScene() {
+    if (sceneGroup) {
+      scene.remove(sceneGroup);
+      sceneGroup.traverse(function(o) {
+        if (o.geometry) o.geometry.dispose();
+        if (o.material) {
+          if (o.material.map) o.material.map.dispose();
+          o.material.dispose();
+        }
+      });
+    }
+    sceneGroup = new THREE.Group();
+
+    var linDef = LINEAR_SURF;
+    var nonDef = NONLINEAR_SURFS[nonlinType];
+
+    // ===== Left: Linear space =====
+    var leftGroup = new THREE.Group();
+    leftGroup.position.x = -X_OFFSET;
+    leftGroup.add(buildSurfaceMesh(linDef));
+    leftGroup.add(buildMiniAxes(2.2));
+
+    // Title
+    var leftLabel = createTextSprite('线性空间 (子空间)', '#1e40af', 44);
+    leftLabel.position.set(0, 2.8, 0);
+    leftGroup.add(leftLabel);
+
+    var leftEq = createSmallLabel(linDef.name, '#3b82f6');
+    leftEq.position.set(0, 2.2, 0);
+    leftGroup.add(leftEq);
+
+    // Vectors
+    var leftResult = addVectorsToGroup(leftGroup, linDef, ux, uy, vx, vy, alpha);
+
+    // Result labels
+    var leftResLabel = createSmallLabel(
+      'u+v: ' + (leftResult.sumOn ? '✓ 在曲面上' : '✗ 不在曲面上'),
+      leftResult.sumOn ? '#16a34a' : '#dc2626'
+    );
+    leftResLabel.position.set(0, -2.5, 0);
+    leftGroup.add(leftResLabel);
+
+    sceneGroup.add(leftGroup);
+
+    // ===== Right: Nonlinear space =====
+    var rightGroup = new THREE.Group();
+    rightGroup.position.x = X_OFFSET;
+    rightGroup.add(buildSurfaceMesh(nonDef));
+    rightGroup.add(buildMiniAxes(2.2));
+
+    // Title
+    var rightLabel = createTextSprite('"非线性"曲面 (流形)', '#c2410c', 44);
+    rightLabel.position.set(0, 2.8, 0);
+    rightGroup.add(rightLabel);
+
+    var rightEq = createSmallLabel(nonDef.name, '#ea580c');
+    rightEq.position.set(0, 2.2, 0);
+    rightGroup.add(rightEq);
+
+    // Vectors
+    var rightResult = addVectorsToGroup(rightGroup, nonDef, ux, uy, vx, vy, alpha);
+
+    var rightResLabel = createSmallLabel(
+      'u+v: ' + (rightResult.sumOn ? '✓ 在曲面上' : '✗ 不在曲面上'),
+      rightResult.sumOn ? '#16a34a' : '#dc2626'
+    );
+    rightResLabel.position.set(0, -2.5, 0);
+    rightGroup.add(rightResLabel);
+
+    sceneGroup.add(rightGroup);
+
+    // ===== VS divider =====
+    var vsLabel = createTextSprite('VS', '#6366f1', 64);
+    vsLabel.position.set(0, 0, 0);
+    vsLabel.scale.set(1.5, 0.75, 1);
+    sceneGroup.add(vsLabel);
+
+    scene.add(sceneGroup);
+  }
+
+  // ====== Analysis panel ======
+  function updateAnalysis() {
+    var linDef = LINEAR_SURF;
+    var nonDef = NONLINEAR_SURFS[nonlinType];
+
+    var u_lin = [ux, uy, linDef.f(ux, uy)];
+    var v_lin = [vx, vy, linDef.f(vx, vy)];
+    var sum_lin = [u_lin[0]+v_lin[0], u_lin[1]+v_lin[1], u_lin[2]+v_lin[2]];
+    var au_lin = [alpha*u_lin[0], alpha*u_lin[1], alpha*u_lin[2]];
+
+    var u_non = [ux, uy, nonDef.f(ux, uy)];
+    var v_non = [vx, vy, nonDef.f(vx, vy)];
+    var sum_non = [u_non[0]+v_non[0], u_non[1]+v_non[1], u_non[2]+v_non[2]];
+    var au_non = [alpha*u_non[0], alpha*u_non[1], alpha*u_non[2]];
+
+    var sumLinOn = onSurface(linDef, sum_lin);
+    var scaleLinOn = onSurface(linDef, au_lin);
+    var sumNonOn = onSurface(nonDef, sum_non);
+    var scaleNonOn = onSurface(nonDef, au_non);
+
+    var fmt = function(p) { return '(' + p[0].toFixed(2) + ', ' + p[1].toFixed(2) + ', ' + p[2].toFixed(2) + ')'; };
+
+    // Compute expected vs actual for nonlinear
+    var nonSumExplain = '';
+    if (!sumNonOn && nonDef.f) {
+      var zExpected = nonDef.f(sum_non[0], sum_non[1]);
+      nonSumExplain = '曲面在 (' + sum_non[0].toFixed(2) + ', ' + sum_non[1].toFixed(2) + ') 处 z = ' + zExpected.toFixed(2) +
+        '<br>但 u+v 的 z = ' + sum_non[2].toFixed(2) + ' → 偏差 ' + Math.abs(sum_non[2] - zExpected).toFixed(2);
+    }
+    var nonScaleExplain = '';
+    if (!scaleNonOn && nonDef.f) {
+      var zExp2 = nonDef.f(au_non[0], au_non[1]);
+      nonScaleExplain = '曲面在 (' + au_non[0].toFixed(2) + ', ' + au_non[1].toFixed(2) + ') 处 z = ' + zExp2.toFixed(2) +
+        '<br>但 αu 的 z = ' + au_non[2].toFixed(2) + ' → 偏差 ' + Math.abs(au_non[2] - zExp2).toFixed(2);
+    }
+
+    // Tangent plane info
+    var tangentInfo = '';
+    if (!nonDef.isLinear) {
+      var tp = nonDef.tangentPlane(u_non);
+      var n = tp.normal;
+      var nLen = Math.hypot(n[0], n[1], n[2]);
+      var nN = [n[0]/nLen, n[1]/nLen, n[2]/nLen];
+      tangentInfo = '<div class="step">' +
+        '<div class="step-num">切空间</div>' +
+        '<div class="step-title">非线性曲面的"局部线性近似"</div>' +
+        '<div class="step-body">' +
+          '在右侧曲面的 u 点处，切平面方程为：<br>' +
+          '<span class="res">' + nN[0].toFixed(2) + '(x-' + u_non[0].toFixed(2) + ') + ' + nN[1].toFixed(2) + '(y-' + u_non[1].toFixed(2) + ') + ' + nN[2].toFixed(2) + '(z-' + u_non[2].toFixed(2) + ') = 0</span><br>' +
+          '<span class="ok">切平面 = 该点附近"最佳线性近似" → 是一个仿射空间</span><br>' +
+          '<span style="color:#94a3b8">这就是微积分"以直代曲"思想：非线性全局弯曲，局部可用线性空间近似</span>' +
+        '</div>' +
+      '</div>';
+    }
+
+    var html =
+'<div class="step">' +
+  '<div class="step-num">对比</div>' +
+  '<div class="step-title">同一组 u, v 在两个空间上的加法检验</div>' +
+  '<div class="step-body">' +
+    '<table class="compare-table">' +
+      '<tr><th class="th-lin">左侧：' + linDef.shortName + '</th><th class="th-non">右侧：' + nonDef.shortName + '</th></tr>' +
+      '<tr><td>u = ' + fmt(u_lin) + '</td><td>u = ' + fmt(u_non) + '</td></tr>' +
+      '<tr><td>v = ' + fmt(v_lin) + '</td><td>v = ' + fmt(v_non) + '</td></tr>' +
+      '<tr><td>u+v = ' + fmt(sum_lin) + '</td><td>u+v = ' + fmt(sum_non) + '</td></tr>' +
+      '<tr><td>' + (sumLinOn ? '<span class="ok">✓ 在曲面上</span>' : '<span class="fail">✗ 不在</span>') + '</td>' +
+          '<td>' + (sumNonOn ? '<span class="ok">✓ 在曲面上</span>' : '<span class="fail">✗ 不在</span>') + '</td></tr>' +
+    '</table>' +
+    (sumNonOn ? '' : nonSumExplain) +
+  '</div>' +
+'</div>' +
+'<div class="step">' +
+  '<div class="step-num">数乘</div>' +
+  '<div class="step-title">数乘检验 α=' + alpha.toFixed(1) + '</div>' +
+  '<div class="step-body">' +
+    '<table class="compare-table">' +
+      '<tr><th class="th-lin">左侧：' + linDef.shortName + '</th><th class="th-non">右侧：' + nonDef.shortName + '</th></tr>' +
+      '<tr><td>αu = ' + fmt(au_lin) + '</td><td>αu = ' + fmt(au_non) + '</td></tr>' +
+      '<tr><td>' + (scaleLinOn ? '<span class="ok">✓ 在曲面上</span>' : '<span class="fail">✗ 不在</span>') + '</td>' +
+          '<td>' + (scaleNonOn ? '<span class="ok">✓ 在曲面上</span>' : '<span class="fail">✗ 不在</span>') + '</td></tr>' +
+    '</table>' +
+    (scaleNonOn ? '' : nonScaleExplain) +
+  '</div>' +
+'</div>' +
+'<div class="step">' +
+  '<div class="step-num">结论</div>' +
+  '<div class="step-title">线性 vs 非线性的本质</div>' +
+  '<div class="step-body">' +
+    '<b>线性空间</b> (' + linDef.shortName + '): 全局平直<br>' +
+    '　→ u+v, αu 都在空间内 → <span class="ok">加法、数乘封闭</span><br>' +
+    '　→ 叠加原理成立, 是线性代数的研究对象<br><br>' +
+    '<b>非线性空间</b> (' + nonDef.shortName + '): 全局弯曲<br>' +
+    '　→ u+v, αu 一般不在空间内 → <span class="fail">不封闭</span><br>' +
+    '　→ 叠加原理不成立, 需要微分几何工具<br>' +
+    '<span class="res">但局部可用切空间线性近似</span>' +
+  '</div>' +
+'</div>' +
+tangentInfo +
+'<div class="step">' +
+  '<div class="step-num">应用</div>' +
+  '<div class="step-title">工程与科学意义（大一能看懂）</div>' +
+  '<div class="step-body">' +
+    '<b>① 电路结点电压法 (MNA)</b>：含理想变压器的电路列 Y·V=I，V 的解在线性(仿射)空间里——叠加原理成立，可把变压器电流当额外未知量增广求解<br>' +
+    '<b>② 桁架静定/静不定</b>：力平衡 K·f=F 是线性方程组；若 rank(K)&lt;未知数个数，则有无穷多组内力解(欠约束)，需补约束<br>' +
+    '<b>③ 牛顿法"以直代曲"</b>：非线性方程 f(x)=0 在每步用切空间(切线/切平面)做线性近似，迭代逼近真解<br>' +
+    '<b>④ 有限元/结构线性化</b>：大变形本是非线性流形，工程先在小变形下线性化，再用线性空间工具求解<br>' +
+    '<b>⑤ 传感器/数据拟合</b>：多个传感器读数冲突(超定)时，在线性最小二乘意义下求"最贴合"解——这些都是后续《数值分析》《自动控制》《有限元》的共同思想' +
+  '</div>' +
+'</div>';
+
+    document.getElementById('analysis-content').innerHTML = html;
+  }
+
+  // ====== UI update ======
+  function updateUI() {
+    var linDef = LINEAR_SURF;
+    var nonDef = NONLINEAR_SURFS[nonlinType];
+
+    var u_lin = [ux, uy, linDef.f(ux, uy)];
+    var v_lin = [vx, vy, linDef.f(vx, vy)];
+    var sum_lin = [u_lin[0]+v_lin[0], u_lin[1]+v_lin[1], u_lin[2]+v_lin[2]];
+    var au_lin = [alpha*u_lin[0], alpha*u_lin[1], alpha*u_lin[2]];
+
+    var u_non = [ux, uy, nonDef.f(ux, uy)];
+    var v_non = [vx, vy, nonDef.f(vx, vy)];
+    var sum_non = [u_non[0]+v_non[0], u_non[1]+v_non[1], u_non[2]+v_non[2]];
+    var au_non = [alpha*u_non[0], alpha*u_non[1], alpha*u_non[2]];
+
+    var sumLinOn = onSurface(linDef, sum_lin);
+    var scaleLinOn = onSurface(linDef, au_lin);
+    var sumNonOn = onSurface(nonDef, sum_non);
+    var scaleNonOn = onSurface(nonDef, au_non);
+
+    document.getElementById('d-lin-type').textContent = linDef.shortName;
+    document.getElementById('d-lin-add').textContent = sumLinOn ? '封闭 ✓' : '不封闭 ✗';
+    document.getElementById('d-lin-add').className = 'data-value ' + (sumLinOn ? 'ok' : 'fail');
+    document.getElementById('d-lin-scale').textContent = scaleLinOn ? '封闭 ✓' : '不封闭 ✗';
+    document.getElementById('d-lin-scale').className = 'data-value ' + (scaleLinOn ? 'ok' : 'fail');
+
+    document.getElementById('d-non-type').textContent = nonDef.shortName;
+    document.getElementById('d-non-add').textContent = sumNonOn ? '封闭 ✓' : '不封闭 ✗';
+    document.getElementById('d-non-add').className = 'data-value ' + (sumNonOn ? 'ok' : 'fail');
+    document.getElementById('d-non-scale').textContent = scaleNonOn ? '封闭 ✓' : '不封闭 ✗';
+    document.getElementById('d-non-scale').className = 'data-value ' + (scaleNonOn ? 'ok' : 'fail');
+  }
+
+  function refresh() {
+    buildScene();
+    updateUI();
+    updateAnalysis();
+  }
+
+  // ====== Camera ======
+  function updateCam() {
+    camera.position.x = camRadius * Math.sin(camPhi) * Math.sin(camTheta);
+    camera.position.y = camRadius * Math.cos(camPhi);
+    camera.position.z = camRadius * Math.sin(camPhi) * Math.cos(camTheta);
+    camera.lookAt(0, 0, 0);
+  }
+
+  // ====== Init ======
+  function init() {
+    var canvas = document.getElementById('scene');
+    scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0xf0f9ff, 0.022);
+
+    camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+    updateCam();
+
+    renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setClearColor(0xf0f9ff, 1);
+
+    scene.add(new THREE.AmbientLight(0x60a5fa, 0.5));
+    var dl = new THREE.DirectionalLight(0xffffff, 0.8);
+    dl.position.set(5, 10, 7); scene.add(dl);
+    var fl = new THREE.DirectionalLight(0x3b82f6, 0.3);
+    fl.position.set(-5, 3, -5); scene.add(fl);
+
+    var floor = new THREE.Mesh(
+      new THREE.PlaneGeometry(30, 30),
+      new THREE.MeshStandardMaterial({ color: 0xe0e7ff, transparent: true, opacity: 0.2 })
+    );
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.y = -3;
+    scene.add(floor);
+
+    setupControls();
+
+    window.addEventListener('resize', function() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    document.getElementById('loading').style.display = 'none';
+    refresh();
+    animate();
+  }
+
+  // ====== Controls ======
+  function setupControls() {
+    function setNonlin(s) {
+      nonlinType = s;
+      ['saddle', 'paraboloid', 'sphere'].forEach(function(name) {
+        document.getElementById('surf-' + name).className = (name === s) ? 'active' : '';
+      });
+      refresh();
+    }
+    ['saddle', 'paraboloid', 'sphere'].forEach(function(s) {
+      document.getElementById('surf-' + s).addEventListener('click', function() { setNonlin(s); });
+    });
+
+    function bindSlider(id, valId, setter) {
+      var el = document.getElementById(id);
+      el.addEventListener('input', function(e) {
+        var val = parseFloat(e.target.value);
+        document.getElementById(valId).textContent = val.toFixed(1);
+        setter(val);
+        refresh();
+      });
+    }
+    bindSlider('s-ux', 'v-ux', function(v) { ux = v; });
+    bindSlider('s-uy', 'v-uy', function(v) { uy = v; });
+    bindSlider('s-vx', 'v-vx', function(v) { vx = v; });
+    bindSlider('s-vy', 'v-vy', function(v) { vy = v; });
+    bindSlider('s-alpha', 'v-alpha', function(v) { alpha = v; });
+
+    document.getElementById('show-sum').addEventListener('change', function(e) { showSum = e.target.checked; refresh(); });
+    document.getElementById('show-scale').addEventListener('change', function(e) { showScale = e.target.checked; refresh(); });
+    document.getElementById('show-tangent').addEventListener('change', function(e) { showTangent = e.target.checked; refresh(); });
+    document.getElementById('show-span').addEventListener('change', function(e) { showSpan = e.target.checked; refresh(); });
+
+    document.getElementById('btn-play').addEventListener('click', function() {
+      isPlaying = !isPlaying;
+      document.getElementById('btn-play').textContent = isPlaying ? '⏸ 暂停' : '▶ 动画演示 α';
+    });
+
+    document.getElementById('btn-reset').addEventListener('click', function() {
+      ux = 0.8; uy = 0.3; vx = 0.3; vy = 0.8; alpha = 2.0;
+      document.getElementById('s-ux').value = ux; document.getElementById('v-ux').textContent = ux.toFixed(1);
+      document.getElementById('s-uy').value = uy; document.getElementById('v-uy').textContent = uy.toFixed(1);
+      document.getElementById('s-vx').value = vx; document.getElementById('v-vx').textContent = vx.toFixed(1);
+      document.getElementById('s-vy').value = vy; document.getElementById('v-vy').textContent = vy.toFixed(1);
+      document.getElementById('s-alpha').value = alpha; document.getElementById('v-alpha').textContent = alpha.toFixed(1);
+      refresh();
+    });
+
+    // Camera drag
+    var canvasEl = renderer.domElement;
+    var drag = false, lx = 0, ly = 0, pinch = 0;
+    canvasEl.addEventListener('mousedown', function(e) { drag = true; lx = e.clientX; ly = e.clientY; });
+    window.addEventListener('mousemove', function(e) {
+      if (!drag) return;
+      camTheta -= (e.clientX - lx) * 0.007;
+      camPhi -= (e.clientY - ly) * 0.007;
+      camPhi = Math.max(0.15, Math.min(Math.PI - 0.15, camPhi));
+      lx = e.clientX; ly = e.clientY; updateCam();
+    });
+    window.addEventListener('mouseup', function() { drag = false; });
+    canvasEl.addEventListener('wheel', function(e) {
+      e.preventDefault();
+      camRadius += e.deltaY * 0.01;
+      camRadius = Math.max(6, Math.min(20, camRadius));
+      updateCam();
+    }, { passive: false });
+    canvasEl.addEventListener('touchstart', function(e) {
+      if (e.touches.length === 1) { drag = true; lx = e.touches[0].clientX; ly = e.touches[0].clientY; }
+      else if (e.touches.length === 2) { drag = false; pinch = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY); }
+    }, { passive: false });
+    canvasEl.addEventListener('touchmove', function(e) {
+      e.preventDefault();
+      if (e.touches.length === 1 && drag) {
+        camTheta -= (e.touches[0].clientX - lx) * 0.007;
+        camPhi -= (e.touches[0].clientY - ly) * 0.007;
+        camPhi = Math.max(0.15, Math.min(Math.PI - 0.15, camPhi));
+        lx = e.touches[0].clientX; ly = e.touches[0].clientY; updateCam();
+      } else if (e.touches.length === 2) {
+        var d = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+        camRadius += (pinch - d) * 0.04;
+        camRadius = Math.max(6, Math.min(20, camRadius));
+        pinch = d; updateCam();
+      }
+    }, { passive: false });
+    canvasEl.addEventListener('touchend', function() { drag = false; pinch = 0; });
+  }
+
+  // ====== Animate ======
+  function animate() {
+    requestAnimationFrame(animate);
+    if (isPlaying) {
+      alpha += 0.02 * playDir;
+      if (alpha > 3) { alpha = 3; playDir = -1; }
+      if (alpha < -3) { alpha = -3; playDir = 1; }
+      document.getElementById('s-alpha').value = alpha;
+      document.getElementById('v-alpha').textContent = alpha.toFixed(1);
+      refresh();
+    }
+    renderer.render(scene, camera);
+  }
+
+  function tryStart() {
+    if (typeof THREE === 'undefined') { setTimeout(tryStart, 50); return; }
+    try { init(); } catch(e) {
+      document.getElementById('loading').innerHTML = '<div style="color:#dc2626">3D 引擎加载失败<br><span style="font-size:13px;color:#64748b">请检查网络后刷新</span></div>';
+      console.error(e);
+    }
+  }
+  tryStart();
+})();
+</script>
+</body>
+</html>

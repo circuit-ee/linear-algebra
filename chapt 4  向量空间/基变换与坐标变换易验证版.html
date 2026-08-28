@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>基变换与坐标变换动画演示</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa, #e4e7f1);
+            color: #2d3748;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1500px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        h1 {
+            text-align: center;
+            color: #2d3748;
+            font-size: 2.5rem;
+            margin-bottom: 30px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .main-content {
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+        }
+        .left-panel {
+            flex: 1;
+            min-width: 600px;
+        }
+        .right-panel {
+            width: 480px;
+        }
+        .canvas-container {
+            text-align: center;
+            margin: 20px 0;
+            position: relative;
+            overflow: auto;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            background-color: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        }
+        canvas {
+            display: block;
+            margin: 0 auto;
+            background-color: rgba(255, 255, 255, 0.8);
+        }
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+        button {
+            padding: 12px 25px;
+            font-size: 16px;
+            background: linear-gradient(45deg, #3182ce, #63b3ed);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            margin: 0 10px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+        button:disabled {
+            background: linear-gradient(45deg, #a0aec0, #cbd5e0);
+            transform: none;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+        /* 滑动条样式 */
+        .zoom-control {
+            margin: 20px auto;
+            max-width: 400px;
+            padding: 15px;
+            background: rgba(237, 242, 247, 0.7);
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        .zoom-control label {
+            font-weight: bold;
+            color: #2c5282;
+            display: block;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+        .zoom-slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #cbd5e0;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        .zoom-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #3182ce;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+            border: 2px solid white;
+        }
+        .zoom-slider::-moz-range-thumb {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #3182ce;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+            border: 2px solid white;
+            border: none;
+        }
+        .zoom-value {
+            text-align: center;
+            margin-top: 10px;
+            font-weight: bold;
+            color: #2b6cb0;
+            font-size: 1.1rem;
+        }
+        .info {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 25px;
+            border-radius: 15px;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        .info h3 {
+            color: #2b6cb0;
+            margin-top: 0;
+            font-size: 1.4rem;
+            border-bottom: 2px solid rgba(43, 108, 176, 0.2);
+            padding-bottom: 10px;
+            font-weight: bold;
+        }
+        .info h4 {
+            color: #2c5282;
+            margin: 15px 0 8px 0;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        .info p {
+            font-size: 1.05rem;
+            line-height: 1.6;
+        }
+        .formula {
+            background: rgba(237, 242, 247, 0.7);
+            padding: 18px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            margin: 12px 0;
+            color: #2d3748;
+            font-size: 1.1rem;
+            border-left: 4px solid #3182ce;
+            font-weight: bold;
+        }
+        .matrix-box {
+            display: inline-block;
+            vertical-align: middle;
+            margin: 5px;
+        }
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(237, 242, 247, 0.7);
+            padding: 8px 15px;
+            border-radius: 20px;
+        }
+        .color-box {
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>基变换与坐标变换动画演示</h1>
+        
+        <div class="main-content">
+            <div class="left-panel">
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="color-box" style="background-color: #1e40af;"></div>
+                        <span>原始基 & 坐标系</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="color-box" style="background-color: #10b981;"></div>
+                        <span>新基 & 坐标系</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="color-box" style="background-color: #ef4444;"></div>
+                        <span>向量（不变）</span>
+                    </div>
+                </div>
+                
+                <div class="canvas-container">
+                    <canvas id="canvas" width="600" height="500"></canvas>
+                </div>
+                
+                <div class="controls">
+                    <button onclick="startAnimation()">开始动画</button>
+                    <button onclick="resetAnimation()">重置</button>
+                    <button onclick="togglePause()">暂停/继续</button>
+                </div>
+                
+                <!-- 缩放控制滑动条 -->
+                <div class="zoom-control">
+                    <label for="zoomSlider">缩放控制：</label>
+                    <input type="range" id="zoomSlider" class="zoom-slider" min="0.5" max="3" step="0.1" value="1">
+                    <div class="zoom-value">当前缩放：<span id="zoomValue">100%</span></div>
+                </div>
+            </div>
+            
+            <div class="right-panel">
+                <div class="info">
+                    <h3>概念说明</h3>
+                    <p><strong>基变换</strong>：改变坐标系的基向量，但保持向量本身不变</p>
+                    <p><strong>坐标变换</strong>：向量在新基下的坐标表示</p>
+                    
+                    <h3>当前状态</h3>
+                    <p id="status" style="font-weight: bold; color: #2b6cb0;">准备开始...</p>
+                    
+                    <h3>数学表示</h3>
+                    <div class="formula">
+                        原始基：e = {(1,0), (0,1)}<br>
+                        向量坐标：<strong>(x, y) = <span id="oldCoords">(3, 1)</span></strong>
+                    </div>
+                    <div class="formula">
+                        新基：ε' = {(1,1), (-1,1)}<br>
+                        向量坐标：<strong>(x', y') = <span id="newCoords">(2, -1)</span></strong>
+                    </div>
+                    
+                    <h3>变换矩阵</h3>
+                    <h4>过渡矩阵 P（新基→旧基）</h4>
+                    <div class="formula">
+                        P = <span class="matrix-box">[[1, -1],<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[1, 1]]</span>
+                    </div>
+                    <p style="font-size: 0.95em; color: #4a5568;">列向量为新基向量在旧基下的坐标</p>
+                    
+                    <h4>坐标变换矩阵 P⁻¹（旧坐标→新坐标）</h4>
+                    <div class="formula">
+                        P⁻¹ = ½ × <span class="matrix-box">[[1, 1],<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[-1, 1]]</span><br>
+                        = <span class="matrix-box">[[0.5, 0.5],<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[-0.5, 0.5]]</span>
+                    </div>
+                    
+                    <h3>坐标验证</h3>
+                    <div class="formula">
+                        <strong>(x', y')ᵀ = P⁻¹ · (x, y)ᵀ</strong><br>
+                        = [[0.5, 0.5], [-0.5, 0.5]] · [3, 1]ᵀ<br>
+                        = [(0.5×3 + 0.5×1), (-0.5×3 + 0.5×1)]ᵀ<br>
+                        = <strong>[2, -1]ᵀ ✓</strong>
+                    </div>
+                    <p style="font-size: 0.95em; color: #4a5568; margin-top: 10px; font-weight: bold;">
+                        验证通过！新坐标计算结果与动画显示一致。
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let animationId = null;
+        let isPaused = false;
+        let animationProgress = 0;
+        
+        // 新增：缩放控制
+        let zoom = 1;
+        const zoomSlider = document.getElementById('zoomSlider');
+        const zoomValue = document.getElementById('zoomValue');
+        
+        // 向量坐标
+        const vector = { x: 3, y: 1 };
+        
+        // 原始基
+        const oldBasis = {
+            e1: { x: 1, y: 0 },
+            e2: { x: 0, y: 1 }
+        };
+        
+        // 新基
+        const newBasis = {
+            e1: { x: 1, y: 1 },
+            e2: { x: -1, y: 1 }
+        };
+        
+        // 计算新坐标
+        function calculateNewCoords() {
+            const det = newBasis.e1.x * newBasis.e2.y - newBasis.e1.y * newBasis.e2.x;
+            const x_new = (vector.x * newBasis.e2.y - vector.y * newBasis.e2.x) / det;
+            const y_new = (newBasis.e1.x * vector.y - newBasis.e1.y * vector.x) / det;
+            
+            return { x: x_new, y: y_new };
+        }
+        
+        const newCoords = calculateNewCoords();
+        
+        // 更新：坐标转换函数，加入缩放因子
+        function toCanvasCoords(x, y) {
+            return {
+                x: canvas.width / 2 + x * 50 * zoom,
+                y: canvas.height / 2 - y * 50 * zoom
+            };
+        }
+        
+        // 绘制网格
+        function drawGrid(color, basis, alpha = 0.3) {
+            ctx.strokeStyle = color;
+            ctx.globalAlpha = alpha;
+            ctx.lineWidth = 1;
+            
+            for (let i = -10; i <= 10; i++) {
+                const start1 = toCanvasCoords(
+                    basis.e1.x * i + basis.e2.x * -10,
+                    basis.e1.y * i + basis.e2.y * -10
+                );
+                const end1 = toCanvasCoords(
+                    basis.e1.x * i + basis.e2.x * 10,
+                    basis.e1.y * i + basis.e2.y * 10
+                );
+                
+                ctx.beginPath();
+                ctx.moveTo(start1.x, start1.y);
+                ctx.lineTo(end1.x, end1.y);
+                ctx.stroke();
+                
+                const start2 = toCanvasCoords(
+                    basis.e1.x * -10 + basis.e2.x * i,
+                    basis.e1.y * -10 + basis.e2.y * i
+                );
+                const end2 = toCanvasCoords(
+                    basis.e1.x * 10 + basis.e2.x * i,
+                    basis.e1.y * 10 + basis.e2.y * i
+                );
+                
+                ctx.beginPath();
+                ctx.moveTo(start2.x, start2.y);
+                ctx.lineTo(end2.x, end2.y);
+                ctx.stroke();
+            }
+            
+            ctx.globalAlpha = 1;
+        }
+        
+        // 更新：绘制基向量，使用高对比度颜色
+        function drawBasisVectors(color, basis, label) {
+            const center = toCanvasCoords(0, 0);
+            
+            const end1 = toCanvasCoords(basis.e1.x, basis.e1.y);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(center.x, center.y);
+            ctx.lineTo(end1.x, end1.y);
+            ctx.stroke();
+            
+            drawArrowhead(center, end1, color);
+            
+            ctx.fillStyle = color;
+            ctx.font = 'bold 16px Arial';
+            ctx.fillText(label + '₁', end1.x + 10, end1.y - 5);
+            
+            const end2 = toCanvasCoords(basis.e2.x, basis.e2.y);
+            ctx.beginPath();
+            ctx.moveTo(center.x, center.y);
+            ctx.lineTo(end2.x, end2.y);
+            ctx.stroke();
+            
+            drawArrowhead(center, end2, color);
+            ctx.fillText(label + '₂', end2.x + 10, end2.y - 5);
+        }
+        
+        // 绘制箭头
+        function drawArrowhead(start, end, color) {
+            const angle = Math.atan2(end.y - start.y, end.x - start.x);
+            const arrowLength = 15;
+            const arrowAngle = Math.PI / 6;
+            
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(end.x, end.y);
+            ctx.lineTo(
+                end.x - arrowLength * Math.cos(angle - arrowAngle),
+                end.y - arrowLength * Math.sin(angle - arrowAngle)
+            );
+            ctx.lineTo(
+                end.x - arrowLength * Math.cos(angle + arrowAngle),
+                end.y - arrowLength * Math.sin(angle + arrowAngle)
+            );
+            ctx.closePath();
+            ctx.fill();
+        }
+        
+        // 更新：绘制向量，使用高对比度颜色
+        function drawVector(x, y, color, label) {
+            const start = toCanvasCoords(0, 0);
+            const end = toCanvasCoords(x, y);
+            
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(start.x, start.y);
+            ctx.lineTo(end.x, end.y);
+            ctx.stroke();
+            
+            drawArrowhead(start, end, color);
+            
+            ctx.fillStyle = color;
+            ctx.font = 'bold 18px Arial';
+            const midX = (start.x + end.x) / 2;
+            const midY = (start.y + end.y) / 2;
+            ctx.fillText(label, midX + 10, midY - 10);
+        }
+        
+        // 绘制坐标轴
+        function drawAxes() {
+            ctx.strokeStyle = '#a0aec0';
+            ctx.lineWidth = 2;
+            
+            ctx.beginPath();
+            ctx.moveTo(0, canvas.height / 2);
+            ctx.lineTo(canvas.width, canvas.height / 2);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(canvas.width / 2, 0);
+            ctx.lineTo(canvas.width / 2, canvas.height);
+            ctx.stroke();
+        }
+        
+        // 更新：绘制函数，加入缩放逻辑
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            drawAxes();
+            
+            drawGrid('#1e40af', oldBasis, 0.25);
+            
+            if (animationProgress > 0.3) {
+                const newGridAlpha = Math.min((animationProgress - 0.3) / 0.7, 1) * 0.25;
+                drawGrid('#10b981', newBasis, newGridAlpha);
+            }
+            
+            drawBasisVectors('#1e40af', oldBasis, 'e');
+            
+            if (animationProgress > 0.5) {
+                const basisAlpha = Math.min((animationProgress - 0.5) / 0.5, 1);
+                ctx.globalAlpha = basisAlpha;
+                drawBasisVectors('#10b981', newBasis, 'ε');
+                ctx.globalAlpha = 1;
+            }
+            
+            drawVector(vector.x, vector.y, '#ef4444', 'v');
+            
+            updateStatus();
+        }
+        
+        // 动画函数
+        function animate() {
+            if (isPaused) return;
+            
+            animationProgress += 0.01;
+            if (animationProgress > 1) animationProgress = 1;
+            
+            draw();
+            
+            if (animationProgress < 1) {
+                animationId = requestAnimationFrame(animate);
+            } else {
+                document.getElementById('status').textContent = '动画完成！观察向量在新基下的坐标表示。';
+            }
+        }
+        
+        // 更新状态信息
+        function updateStatus() {
+            const statusEl = document.getElementById('status');
+            if (animationProgress < 0.3) {
+                statusEl.textContent = '显示原始坐标系...';
+            } else if (animationProgress < 0.5) {
+                statusEl.textContent = '引入新坐标系网格...';
+            } else if (animationProgress < 0.8) {
+                statusEl.textContent = '显示新基向量...';
+            } else if (animationProgress < 1) {
+                statusEl.textContent = '向量在新基下的坐标: (' + newCoords.x.toFixed(1) + ', ' + newCoords.y.toFixed(1) + ')';
+            }
+            
+            document.getElementById('oldCoords').textContent = `(${vector.x}, ${vector.y})`;
+            document.getElementById('newCoords').textContent = `(${newCoords.x.toFixed(1)}, ${newCoords.y.toFixed(1)})`;
+        }
+        
+        // 控制函数
+        function startAnimation() {
+            if (animationId) cancelAnimationFrame(animationId);
+            animationProgress = 0;
+            isPaused = false;
+            animate();
+        }
+        
+        function resetAnimation() {
+            if (animationId) cancelAnimationFrame(animationId);
+            animationProgress = 0;
+            isPaused = false;
+            draw();
+            document.getElementById('status').textContent = '准备开始...';
+        }
+        
+        function togglePause() {
+            isPaused = !isPaused;
+            if (!isPaused && animationProgress < 1) {
+                animate();
+            }
+        }
+        
+        // 新增：缩放控制事件
+        zoomSlider.addEventListener('input', function() {
+            zoom = parseFloat(this.value);
+            zoomValue.textContent = Math.round(zoom * 100) + '%';
+            // 重新计算画布尺寸
+            const baseWidth = 600;
+            const baseHeight = 500;
+            canvas.width = baseWidth * zoom;
+            canvas.height = baseHeight * zoom;
+            draw();
+        });
+        
+        // 初始化
+        resetAnimation();
+    </script>
+</body>
+</html>

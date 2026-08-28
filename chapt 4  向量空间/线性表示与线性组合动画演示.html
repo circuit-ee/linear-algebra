@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>线性组合动画演示</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #333;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            max-width: 900px;
+            width: 90%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        #canvas {
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            display: block;
+            margin: 0 auto 30px;
+            background: #fafafa;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .control-group {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .control-group h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .slider-container {
+            margin-bottom: 15px;
+        }
+
+        .slider-container label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: none;
+        }
+
+        .value-display {
+            text-align: center;
+            font-size: 1.1em;
+            color: #667eea;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .info-panel {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .info-panel h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .formula {
+            font-family: 'Courier New', monospace;
+            font-size: 1.2em;
+            text-align: center;
+            margin: 15px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 5px;
+            color: #333;
+        }
+
+        .description {
+            line-height: 1.6;
+            color: #666;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 3px;
+            border-radius: 2px;
+        }
+        
+        /* 新增：缩放控制样式 */
+        .zoom-control {
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 2px solid #e9ecef;
+        }
+        
+        .zoom-control h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+        
+        .zoom-slider-container {
+            margin-bottom: 10px;
+        }
+        
+        .zoom-value-display {
+            text-align: center;
+            font-size: 1.1em;
+            color: #667eea;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>线性组合动画演示</h1>
+        
+        <canvas id="canvas" width="800" height="500"></canvas>
+        
+        <div class="controls">
+            <div class="control-group">
+                <h3>控制面板</h3>
+                <div class="slider-container">
+                    <label for="coeff1">系数 c₁: <span id="c1-value">1.0</span></label>
+                    <input type="range" id="coeff1" min="-2" max="2" step="0.1" value="1">
+                </div>
+                <div class="slider-container">
+                    <label for="coeff2">系数 c₂: <span id="c2-value">1.0</span></label>
+                    <input type="range" id="coeff2" min="-2" max="2" step="0.1" value="1">
+                </div>
+                
+                <!-- 新增缩放控制 -->
+                <div class="zoom-control">
+                    <h3>缩放控制</h3>
+                    <div class="zoom-slider-container">
+                        <label for="zoomSlider">画布缩放: <span id="zoom-value">100%</span></label>
+                        <input type="range" id="zoomSlider" min="0.5" max="3" step="0.1" value="1">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="info-panel">
+                <h3>线性组合公式</h3>
+                <div class="formula" id="formula-display">
+                    c₁v₁ + c₂v₂ = (3, 2)
+                </div>
+                <div class="description">
+                    通过调整系数 c₁ 和 c₂，观察向量 v₁ 和 v₂ 如何组合形成新的向量。
+                    线性组合是线性代数中的核心概念，展示了向量空间的生成方式。
+                </div>
+            </div>
+        </div>
+        
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background: #dc2626;"></div>
+                <span>向量 v₁</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #16a34a;"></div>
+                <span>向量 v₂</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #2563eb;"></div>
+                <span>线性组合结果</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        
+        // 新增：缩放因子
+        let zoom = 1;
+        const baseScale = 40; // 基础缩放比例
+        const scale = baseScale; // 实际使用的基础比例
+
+        // 原始向量
+        const v1 = { x: 3, y: 1 };
+        const v2 = { x: -1, y: 2 };
+
+        // 获取控件
+        const coeff1Slider = document.getElementById('coeff1');
+        const coeff2Slider = document.getElementById('coeff2');
+        const c1Value = document.getElementById('c1-value');
+        const c2Value = document.getElementById('c2-value');
+        const formulaDisplay = document.getElementById('formula-display');
+        
+        // 新增：缩放控件
+        const zoomSlider = document.getElementById('zoomSlider');
+        const zoomValue = document.getElementById('zoom-value');
+        
+        // 更新：根据缩放因子调整实际绘制尺寸
+        function getDrawScale() {
+            return baseScale * zoom;
+        }
+
+        // 更新：绘制坐标轴
+        function drawAxes() {
+            const drawScale = getDrawScale();
+            ctx.strokeStyle = '#6b7280'; // 深灰色
+            ctx.lineWidth = 2;
+            
+            // X轴
+            ctx.beginPath();
+            ctx.moveTo(0, centerY);
+            ctx.lineTo(canvas.width, centerY);
+            ctx.stroke();
+            
+            // Y轴
+            ctx.beginPath();
+            ctx.moveTo(centerX, 0);
+            ctx.lineTo(centerX, canvas.height);
+            ctx.stroke();
+            
+            // 绘制刻度和标签
+            ctx.fillStyle = '#1f2937'; // 深灰色
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'center';
+            
+            // X轴刻度
+            for (let i = -5; i <= 5; i++) {
+                if (i !== 0) {
+                    const x = centerX + i * drawScale;
+                    ctx.beginPath();
+                    ctx.moveTo(x, centerY - 5);
+                    ctx.lineTo(x, centerY + 5);
+                    ctx.stroke();
+                    ctx.fillText(i.toString(), x, centerY + 20);
+                }
+            }
+            
+            // Y轴刻度
+            ctx.textAlign = 'right';
+            for (let i = -5; i <= 5; i++) {
+                if (i !== 0) {
+                    const y = centerY - i * drawScale;
+                    ctx.beginPath();
+                    ctx.moveTo(centerX - 5, y);
+                    ctx.lineTo(centerX + 5, y);
+                    ctx.stroke();
+                    ctx.fillText(i.toString(), centerX - 10, y + 5);
+                }
+            }
+        }
+
+        // 更新：根据缩放因子调整向量绘制
+        function drawVector(startX, startY, vec, color, label, dashed = false, progress = 1) {
+            const drawScale = getDrawScale();
+            const endX = startX + vec.x * drawScale * progress;
+            const endY = startY - vec.y * drawScale * progress;
+            
+            ctx.strokeStyle = color;
+            ctx.fillStyle = color;
+            ctx.lineWidth = 4; // 加粗线条
+            
+            if (dashed) {
+                ctx.setLineDash([5, 5]);
+            } else {
+                ctx.setLineDash([]);
+            }
+            
+            ctx.beginPath();
+            ctx.moveTo(startX, startY);
+            ctx.lineTo(endX, endY);
+            ctx.stroke();
+            
+            // 绘制箭头
+            const angle = Math.atan2(startY - endY, endX - startX);
+            const arrowLength = 15;
+            const arrowAngle = Math.PI / 6;
+            
+            ctx.beginPath();
+            ctx.moveTo(endX, endY);
+            ctx.lineTo(
+                endX - arrowLength * Math.cos(angle - arrowAngle),
+                endY + arrowLength * Math.sin(angle - arrowAngle)
+            );
+            ctx.moveTo(endX, endY);
+            ctx.lineTo(
+                endX - arrowLength * Math.cos(angle + arrowAngle),
+                endY + arrowLength * Math.sin(angle + arrowAngle)
+            );
+            ctx.stroke();
+            
+            // 绘制标签
+            ctx.setLineDash([]);
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(label, endX + 15, endY - 10);
+        }
+
+        // 动画变量
+        let animationProgress = 0;
+        let targetProgress = 0;
+        const animationSpeed = 0.05;
+
+        // 更新：主动画循环，加入缩放支持
+        function animate() {
+            // 清除画布
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 绘制坐标轴
+            drawAxes();
+            
+            const c1 = parseFloat(coeff1Slider.value);
+            const c2 = parseFloat(coeff2Slider.value);
+            
+            // 更新显示的数值
+            c1Value.textContent = c1.toFixed(1);
+            c2Value.textContent = c2.toFixed(1);
+            
+            // 计算缩放后的向量
+            const scaledV1 = { x: v1.x * c1, y: v1.y * c1 };
+            const scaledV2 = { x: v2.x * c2, y: v2.y * c2 };
+            const result = { 
+                x: scaledV1.x + scaledV2.x, 
+                y: scaledV1.y + scaledV2.y 
+            };
+            
+            // 更新公式显示
+            formulaDisplay.textContent = 
+                `${c1.toFixed(1)}(3, 1) + ${c2.toFixed(1)}(-1, 2) = (${result.x.toFixed(1)}, ${result.y.toFixed(1)})`;
+            
+            // 平滑动画
+            animationProgress += (targetProgress - animationProgress) * animationSpeed;
+            
+            if (Math.abs(targetProgress - animationProgress) > 0.001) {
+                // 绘制缩放后的向量v1（动画效果）
+                drawVector(centerX, centerY, scaledV1, '#dc2626', `c₁v₁`, false, animationProgress);
+                
+                // 绘制从c1v1终点开始的缩放向量v2
+                const intermediateX = centerX + scaledV1.x * getDrawScale() * animationProgress;
+                const intermediateY = centerY - scaledV1.y * getDrawScale() * animationProgress;
+                drawVector(intermediateX, intermediateY, scaledV2, '#16a34a', `c₂v₂`, false, animationProgress);
+                
+                // 绘制最终结果向量的虚线预览
+                drawVector(centerX, centerY, result, '#2563eb', '结果', true, animationProgress);
+            } else {
+                // 动画完成，绘制最终状态
+                drawVector(centerX, centerY, scaledV1, '#dc2626', `c₁v₁`);
+                
+                const intermediateX = centerX + scaledV1.x * getDrawScale();
+                const intermediateY = centerY - scaledV1.y * getDrawScale();
+                drawVector(intermediateX, intermediateY, scaledV2, '#16a34a', `c₂v₂`);
+                
+                drawVector(centerX, centerY, result, '#2563eb', '结果');
+            }
+            
+            requestAnimationFrame(animate);
+        }
+
+        // 事件监听器
+        coeff1Slider.addEventListener('input', () => {
+            targetProgress = 0;
+            setTimeout(() => targetProgress = 1, 50);
+        });
+
+        coeff2Slider.addEventListener('input', () => {
+            targetProgress = 0;
+            setTimeout(() => targetProgress = 1, 50);
+        });
+        
+        // 新增：缩放控制事件
+        zoomSlider.addEventListener('input', function() {
+            zoom = parseFloat(this.value);
+            zoomValue.textContent = Math.round(zoom * 100) + '%';
+        });
+
+        // 启动动画
+        targetProgress = 1;
+        animate();
+    </script>
+</body>
+</html>
