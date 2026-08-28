@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>特征值与特征向量 – 垂线连接正确位置</title>
+<style>
+body{font-family:Arial,Helvetica,sans-serif;background:#f0f0f0;margin:0;padding:20px;font-size:18px;font-weight:bold}
+.container{max-width:1200px;margin:auto;background:#fff;padding:20px;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,.1)}
+.canvas-container{text-align:center;margin:20px 0}
+canvas{border:1px solid #ddd;background:#fff}
+.controls{text-align:center;margin:20px 0}
+button{padding:15px 30px;margin:0 10px;font-size:20px;font-weight:bold;border:none;border-radius:5px;background:#4CAF50;color:#fff;cursor:pointer;transition:.3s}
+button:hover{background:#45a049}
+button:disabled{background:#ccc;cursor:not-allowed}
+.info{padding:20px;background:#f9f9f9;border-left:4px solid #4CAF50;margin:20px 0}
+.step-info{font-weight:bold;margin-bottom:10px;font-size:20px}
+.matrix-info{font-family:'Courier New',monospace;margin:10px 0;font-size:18px;font-weight:bold}
+.input-section{text-align:center;margin:20px 0;padding:15px;background:#f0f8ff;border-radius:5px}
+.input-section h3{font-size:24px;font-weight:bold}
+.matrix-input{width:80px;height:40px;padding:8px;margin:5px;text-align:center;font-family:monospace;font-size:18px;font-weight:bold}
+.error{color:red;font-size:18px;font-weight:bold;margin-top:10px}
+.zoom-section{text-align:center;margin:20px 0;padding:15px;background:#f9f9f9;border-radius:5px}
+.zoom-section label{font-weight:bold;margin-right:10px;font-size:18px}
+.zoom-section input[type="range"]{width:250px;height:8px;vertical-align:middle}
+.zoom-section span{margin-left:10px;font-weight:bold;color:#4CAF50;font-size:18px}
+h1{font-size:36px;font-weight:bold}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1 style="text-align:center">特征值与特征向量 – 垂线连接正确位置</h1>
+
+  <!-- 矩阵输入 -->
+  <div class="input-section">
+    <h3>输入变换矩阵 A（2×2）</h3>
+    <div>
+      <input type="number" id="a11" class="matrix-input" value="1.5" step="0.1">
+      <input type="number" id="a12" class="matrix-input" value="0.5" step="0.1">
+    </div>
+    <div>
+      <input type="number" id="a21" class="matrix-input" value="0.5" step="0.1">
+      <input type="number" id="a22" class="matrix-input" value="1.5" step="0.1">
+    </div>
+    <button onclick="updateMatrix()">更新矩阵</button>
+    <div id="errorMsg" class="error"></div>
+  </div>
+
+  <!-- 缩放控制 -->
+  <div class="zoom-section">
+    <label for="zoomSlider">缩放:</label>
+    <input type="range" id="zoomSlider" min="0.5" max="3" step="0.1" value="1">
+    <span id="zoomValue">100%</span>
+  </div>
+
+  <!-- 信息面板 -->
+  <div class="info">
+    <div class="step-info">当前步骤：<span id="stepInfo">初始状态 – 标准基与向量</span></div>
+    <div class="matrix-info">
+      变换矩阵 A = <span id="matrixDisplay">[[1.5,0.5],[0.5,1.5]]</span><br>
+      特征值：<span id="eigenValues">λ₁=2, λ₂=1</span><br>
+      特征向量：<span id="eigenVectors">v₁=[0.71,0.71], v₂=[-0.71,0.71]</span>
+    </div>
+  </div>
+
+  <!-- 画布 -->
+  <div class="canvas-container">
+    <canvas id="canvas" width="800" height="600"></canvas>
+  </div>
+
+  <!-- 控制 -->
+  <div class="controls">
+    <button id="startBtn" onclick="startAnimation()">开始动画</button>
+    <button id="nextBtn" onclick="nextStep()" disabled>下一步</button>
+    <button id="resetBtn" onclick="reset()">重置</button>
+  </div>
+</div>
+
+<script>
+/* ---------- 全局 ---------- */
+const canvas=document.getElementById('canvas'), ctx=canvas.getContext('2d');
+const centerX=canvas.width/2, centerY=canvas.height/2, scale=50, gridSize=10;
+
+let A=[[1.5,0.5],[0.5,1.5]];
+let eigenVectors=[
+  {vec:[0.707106781,0.707106781], color:'#CC0000', label:'v₁', lambda:2},
+  {vec:[-0.707106781,0.707106781], color:'#00AAAA', label:'v₂', lambda:1}
+];
+const c=[2,1];
+
+/* 高对比度颜色方案 */
+const BEFORE_c='#FF6600';
+const AFTER_d='#0066FF';
+const DEEP_BLUE='#666666';
+const COMP_COLOR='#AA00AA';
+const LIGHT_BLUE='#999999';
+
+let currentStep=0;
+const steps=[
+  '初始状态 – 标准基与向量',
+  '步骤1 – 线性变换动画（c→d，颜色区分）',
+  '步骤2 – 保留所有，叠加特征基网格',
+  '步骤3 – 垂线连接正确位置+乘λ合成'
+];
+let animationProgress=0, animationId=null;
+
+/* 缩放因子 */
+let scaleFactor=1;
+
+/* ---------- 特征系统计算 ---------- */
+function calculateEigenVectors(m){
+  const a=m[0][0], b=m[0][1], c=m[1][0], d=m[1][1];
+  const trace=a+d, det=a*d-b*c, disc=trace*trace-4*det;
+  if(disc<0) throw new Error('复特征值不适合演示');
+  const l1=(trace+Math.sqrt(disc))/2, l2=(trace-Math.sqrt(disc))/2;
+  let v1,v2;
+  if(b!==0){v1=[b,l1-a]; v2=[b,l2-a];}
+  else if(c!==0){v1=[l1-d,c]; v2=[l2-d,c];}
+  else{v1=[1,0]; v2=[0,1];}
+  const norm=v=>{const n=Math.hypot(v[0],v[1]); return [v[0]/n,v[1]/n];};
+  v1=norm(v1); v2=norm(v2);
+  return {eigenValues:[l1,l2], eigenVectors:[
+    {vec:v1, color:'#CC0000', label:'v₁', lambda:l1},
+    {vec:v2, color:'#00AAAA', label:'v₂', lambda:l2}
+  ]};
+}
+
+function updateMatrix(){
+  try{
+    const a11=parseFloat(document.getElementById('a11').value),
+          a12=parseFloat(document.getElementById('a12').value),
+          a21=parseFloat(document.getElementById('a21').value),
+          a22=parseFloat(document.getElementById('a22').value);
+    const res=calculateEigenVectors([[a11,a12],[a21,a22]]);
+    A=[[a11,a12],[a21,a22]]; eigenVectors=res.eigenVectors;
+    document.getElementById('matrixDisplay').textContent=`[[${a11},${a12}],[${a21},${a22}]]`;
+    document.getElementById('eigenValues').textContent=`λ₁=${res.eigenValues[0].toFixed(2)}, λ₂=${res.eigenValues[1].toFixed(2)}`;
+    document.getElementById('eigenVectors').textContent=
+      `v₁=[${res.eigenVectors[0].vec[0].toFixed(2)},${res.eigenVectors[0].vec[1].toFixed(2)}], `+
+      `v₂=[${res.eigenVectors[1].vec[0].toFixed(2)},${res.eigenVectors[1].vec[1].toFixed(2)}]`;
+    document.getElementById('errorMsg').textContent='';
+    reset();
+  }catch(e){document.getElementById('errorMsg').textContent=e.message;}
+}
+
+/* ---------- 绘图 ---------- */
+function drawGrid(){
+  ctx.strokeStyle='#e0e0e0'; ctx.lineWidth=1/scaleFactor;
+  for(let i=-gridSize;i<=gridSize;i++){
+    ctx.beginPath(); ctx.moveTo(centerX+i*scale,centerY-gridSize*scale); ctx.lineTo(centerX+i*scale,centerY+gridSize*scale); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(centerX-gridSize*scale,centerY+i*scale); ctx.lineTo(centerX+gridSize*scale,centerY+i*scale); ctx.stroke();
+  }
+  ctx.strokeStyle='#333'; ctx.lineWidth=2/scaleFactor;
+  ctx.beginPath(); ctx.moveTo(0,centerY); ctx.lineTo(canvas.width,centerY); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(centerX,0); ctx.lineTo(centerX,canvas.height); ctx.stroke();
+  ctx.fillStyle='#333'; ctx.font=`bold ${18/scaleFactor}px Arial`; ctx.textAlign='center'; ctx.textBaseline='top';
+  for(let i=-gridSize;i<=gridSize;i++){if(i!==0){ctx.fillText(i,centerX+i*scale,centerY+5/scaleFactor); ctx.fillText(-i,centerX-20/scaleFactor,centerY+i*scale);}}
+  ctx.fillText('O',centerX-20/scaleFactor,centerY+5/scaleFactor);
+}
+
+function drawEigenGrid(){
+  const v1=eigenVectors[0].vec, v2=eigenVectors[1].vec;
+  ctx.lineWidth=1/scaleFactor; ctx.setLineDash([3/scaleFactor,3/scaleFactor]);
+  for(let i=-gridSize;i<=gridSize;i++){
+    ctx.strokeStyle=eigenVectors[0].color+'4D'; ctx.beginPath(); ctx.moveTo(centerX+(i*v1[0]-gridSize*v2[0])*scale,centerY-(i*v1[1]-gridSize*v2[1])*scale); ctx.lineTo(centerX+(i*v1[0]+gridSize*v2[0])*scale,centerY-(i*v1[1]+gridSize*v2[1])*scale); ctx.stroke();
+    ctx.strokeStyle=eigenVectors[1].color+'4D'; ctx.beginPath(); ctx.moveTo(centerX+(i*v2[0]-gridSize*v1[0])*scale,centerY-(i*v2[1]-gridSize*v1[1])*scale); ctx.lineTo(centerX+(i*v2[0]+gridSize*v1[0])*scale,centerY-(i*v2[1]+gridSize*v1[1])*scale); ctx.stroke();
+  }
+  ctx.setLineDash([]);
+}
+
+function drawVector(x,y,color,label,lineWidth=3){
+  const endX=centerX+x*scale, endY=centerY-y*scale;
+  ctx.strokeStyle=color; ctx.fillStyle=color; ctx.lineWidth=lineWidth/scaleFactor;
+  ctx.beginPath(); ctx.moveTo(centerX,centerY); ctx.lineTo(endX,endY); ctx.stroke();
+  const angle=Math.atan2(centerY-endY,endX-centerX);
+  ctx.beginPath(); ctx.moveTo(endX,endY);
+  ctx.lineTo(endX-10*Math.cos(angle-Math.PI/6)/scaleFactor, endY+10*Math.sin(angle-Math.PI/6)/scaleFactor);
+  ctx.lineTo(endX-10*Math.cos(angle+Math.PI/6)/scaleFactor, endY+10*Math.sin(angle+Math.PI/6)/scaleFactor);
+  ctx.closePath(); ctx.fill();
+  if(label){ctx.font=`bold ${18/scaleFactor}px Arial`; ctx.fillText(label,endX+15/scaleFactor,endY-15/scaleFactor);}
+}
+
+function drawTransformedVector(ox,oy,color,label,prog=1){
+  const tx=A[0][0]*ox+A[0][1]*oy, ty=A[1][0]*ox+A[1][1]*oy;
+  const cx=ox+(tx-ox)*prog, cy=oy+(ty-oy)*prog;
+  drawVector(cx,cy,color,label,3);
+  if(prog<1){
+    ctx.strokeStyle='#999'; ctx.lineWidth=1/scaleFactor; ctx.setLineDash([5/scaleFactor,5/scaleFactor]);
+    ctx.beginPath(); ctx.moveTo(centerX+ox*scale,centerY-oy*scale); ctx.lineTo(centerX+tx*scale,centerY-ty*scale); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+}
+
+function drawDecomposeThenScale(){
+  const v1=eigenVectors[0].vec, v2=eigenVectors[1].vec;
+  const det=v1[0]*v2[1]-v1[1]*v2[0];
+  const a=(c[0]*v2[1]-c[1]*v2[0])/det, b=(v1[0]*c[1]-v1[1]*c[0])/det;
+  const comp1x=a*v1[0], comp1y=a*v1[1], comp2x=b*v2[0], comp2y=b*v2[1];
+  const scaled1x=comp1x*eigenVectors[0].lambda, scaled1y=comp1y*eigenVectors[0].lambda;
+  const scaled2x=comp2x*eigenVectors[1].lambda, scaled2y=comp2y*eigenVectors[1].lambda;
+  const prog=animationProgress;
+  const curr1x=comp1x+(scaled1x-comp1x)*prog, curr1y=comp1y+(scaled1y-comp1y)*prog;
+  const curr2x=comp2x+(scaled2x-comp2x)*prog, curr2y=comp2y+(scaled2y-comp2y)*prog;
+
+  /* 深灰色虚线：c顶端 → 各投影分量顶端（未乘λ） */
+  ctx.strokeStyle=DEEP_BLUE; ctx.lineWidth=1/scaleFactor; ctx.setLineDash([5/scaleFactor,5/scaleFactor]);
+  ctx.beginPath(); ctx.moveTo(centerX+c[0]*scale,centerY-c[1]*scale);
+  ctx.lineTo(centerX+comp1x*scale,centerY-comp1y*scale); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(centerX+c[0]*scale,centerY-c[1]*scale);
+  ctx.lineTo(centerX+comp2x*scale,centerY-comp2y*scale); ctx.stroke();
+  ctx.setLineDash([]);
+
+  /* 分解分量（紫色实线箭头）从原点出发 */
+  ctx.lineWidth=2/scaleFactor; ctx.setLineDash([]);
+  ctx.strokeStyle=COMP_COLOR; ctx.fillStyle=COMP_COLOR;
+  ctx.beginPath(); ctx.moveTo(centerX,centerY); ctx.lineTo(centerX+curr1x*scale,centerY-curr1y*scale); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(centerX,centerY); ctx.lineTo(centerX+curr2x*scale,centerY-curr2y*scale); ctx.stroke();
+
+  /* 当前合成向量 d（实线蓝色） */
+  drawVector(curr1x+curr2x,curr1y+curr2y,AFTER_d,'d',3);
+
+  /* 浅灰色虚线：d顶端 → 各投影分量顶端（已乘λ） */
+  ctx.strokeStyle=LIGHT_BLUE; ctx.lineWidth=1/scaleFactor; ctx.setLineDash([4/scaleFactor,4/scaleFactor]);
+  ctx.beginPath(); ctx.moveTo(centerX+(curr1x+curr2x)*scale,centerY-(curr1y+curr2y)*scale);
+  ctx.lineTo(centerX+curr1x*scale,centerY-curr1y*scale); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(centerX+(curr1x+curr2x)*scale,centerY-(curr1y+curr2y)*scale);
+  ctx.lineTo(centerX+curr2x*scale,centerY-curr2y*scale); ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+/* ---------- 主绘制 ---------- */
+function draw(){
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.translate(centerX, centerY);
+  ctx.scale(scaleFactor, scaleFactor);
+  ctx.translate(-centerX, -centerY);
+  
+  if(currentStep===0){
+    drawGrid();
+    eigenVectors.forEach(e=>drawVector(e.vec[0],e.vec[1],e.color,e.label));
+    drawVector(c[0],c[1],BEFORE_c,'c');
+    return;
+  }
+  if(currentStep===1){
+    drawGrid();
+    eigenVectors.forEach(e=>{
+      drawVector(e.vec[0],e.vec[1],e.color,e.label+' (原)');
+      drawTransformedVector(e.vec[0],e.vec[1],e.color,e.label+'\'');
+    });
+    drawVector(c[0],c[1],BEFORE_c,'c (原)');
+    drawTransformedVector(c[0],c[1],AFTER_d,'d',animationProgress);
+    return;
+  }
+  if(currentStep===2){
+    drawGrid();
+    drawEigenGrid();
+    eigenVectors.forEach(e=>drawVector(e.vec[0],e.vec[1],e.color,e.label,4));
+    drawVector(c[0],c[1],BEFORE_c,'c');
+    drawVector(A[0][0]*c[0]+A[0][1]*c[1],A[1][0]*c[0]+A[1][1]*c[1],AFTER_d,'d');
+  }
+  if(currentStep===3){
+    drawGrid();
+    drawEigenGrid();
+    eigenVectors.forEach(e=>drawVector(e.vec[0],e.vec[1],e.color,e.label,4));
+    drawDecomposeThenScale();
+  }
+}
+
+/* ---------- 控制 ---------- */
+function startAnimation(){
+  currentStep=1; animationProgress=0;
+  document.getElementById('startBtn').disabled=true;
+  document.getElementById('nextBtn').disabled=true;
+  document.getElementById('stepInfo').textContent=steps[currentStep];
+  (function anim(){
+    animationProgress+=0.02;
+    if(animationProgress>=1){animationProgress=1; document.getElementById('nextBtn').disabled=false;}
+    draw();
+    if(animationProgress<1) requestAnimationFrame(anim);
+  })();
+}
+function nextStep(){
+  currentStep++;
+  if(currentStep>=steps.length) currentStep=steps.length-1;
+  document.getElementById('stepInfo').textContent=steps[currentStep];
+  draw();
+}
+function reset(){
+  currentStep=0; animationProgress=0;
+  document.getElementById('startBtn').disabled=false;
+  document.getElementById('nextBtn').disabled=true;
+  document.getElementById('stepInfo').textContent=steps[currentStep];
+  draw();
+}
+
+/* 缩放控制 */
+document.getElementById('zoomSlider').addEventListener('input', function(e) {
+  scaleFactor = parseFloat(e.target.value);
+  document.getElementById('zoomValue').textContent = Math.round(scaleFactor * 100) + '%';
+  draw();
+});
+
+/* 初始化 */
+draw();
+</script>
+</body>
+</html>

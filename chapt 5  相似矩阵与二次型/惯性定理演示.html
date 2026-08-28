@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>惯性定理演示 - 保留中间图形版</title>
+    <style>
+        /* 样式部分 - 全面放大版本 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', 'Arial Black', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e7f1 100%);
+            min-height: 100vh;
+            padding: 30px;
+            color: #1a202c;
+            font-size: 28px;
+            font-weight: 700;
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            border-radius: 25px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            border: 2px solid rgba(255, 255, 255, 0.7);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4a6fa5 0%, #6b5b95 100%);
+            color: white;
+            padding: 60px 40px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header h1 {
+            font-size: 4em;
+            margin-bottom: 25px;
+            position: relative;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            font-size: 2em;
+            opacity: 0.9;
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+            font-weight: 700;
+        }
+
+        .content {
+            padding: 60px 40px;
+        }
+
+        .section {
+            margin-bottom: 80px;
+            opacity: 0;
+            transform: translateY(60px);
+            transition: all 0.7s cubic-bezier(0.22, 0.61, 0.36, 1);
+        }
+
+        .section.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .section-title {
+            font-size: 3em;
+            color: #2d3748;
+            margin-bottom: 40px;
+            text-align: center;
+            position: relative;
+            font-weight: 800;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90px;
+            height: 6px;
+            background: linear-gradient(to right, #4a6fa5, #6b5b95);
+            border-radius: 3px;
+        }
+
+        /* 情况说明和按钮的容器 */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 30px;
+            margin-bottom: 35px;
+            flex-wrap: wrap;
+        }
+
+        .warning {
+            background: linear-gradient(to right, rgba(255, 245, 230, 0.9), rgba(255, 240, 220, 0.9));
+            border: 2px solid rgba(255, 183, 77, 0.5);
+            border-radius: 18px;
+            padding: 30px;
+            position: relative;
+            transition: all 0.4s ease;
+            flex: 1;
+            min-width: 400px;
+            margin: 0;
+            font-size: 1.1em;
+        }
+
+        .warning::before {
+            content: '💡';
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 2em;
+            opacity: 0.8;
+        }
+
+        .warning strong {
+            color: #e65100;
+            font-weight: 900;
+        }
+
+        .step-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: center;
+            min-width: 180px;
+        }
+
+        .step-counter {
+            text-align: center;
+            font-size: 1.3em;
+            color: #4a5568;
+            font-weight: 700;
+            background: rgba(237, 242, 247, 0.8);
+            padding: 12px 18px;
+            border-radius: 30px;
+            white-space: nowrap;
+        }
+
+        .step-counter strong {
+            color: #4a6fa5;
+            font-size: 1.2em;
+        }
+
+        /* 主要内容区域 */
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 40px;
+            margin-bottom: 60px;
+            align-items: start;
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.85);
+            border-radius: 20px;
+            padding: 35px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s ease;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .panel:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.12);
+        }
+
+        .panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 8px;
+            background: linear-gradient(to right, #4a6fa5, #6b5b95);
+        }
+
+        .panel-title {
+            font-size: 1.8em;
+            font-weight: 800;
+            margin-bottom: 25px;
+            color: #2d3748;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .panel-icon {
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, #4a6fa5, #6b5b95);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 22px;
+            flex-shrink: 0;
+        }
+
+        /* 矩阵样式 */
+        .matrix-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 30px 0;
+            font-size: 1.4em;
+            font-weight: 700;
+        }
+
+        .matrix {
+            position: relative;
+            display: inline-block;
+            padding: 0 12px;
+        }
+
+        .matrix::before,
+        .matrix::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 6px;
+            border: 3px solid #4a6fa5;
+            border-radius: 3px;
+        }
+
+        .matrix::before {
+            left: 0;
+            border-right: none;
+            border-radius: 12px 0 0 12px;
+        }
+
+        .matrix::after {
+            right: 0;
+            border-left: none;
+            border-radius: 0 12px 12px 0;
+        }
+
+        .matrix-content {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            padding: 18px;
+            text-align: center;
+            font-family: 'Courier New', 'Consolas', 'Arial Black', monospace;
+            font-weight: 700;
+        }
+
+        .matrix-element {
+            padding: 10px 15px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            position: relative;
+            min-width: 50px;
+            font-size: 1.1em;
+            font-weight: 800;
+        }
+
+        .matrix-element.positive {
+            background: rgba(76, 175, 80, 0.25);
+            color: #1b5e20;
+            border: 3px solid rgba(76, 175, 80, 0.5);
+        }
+
+        .matrix-element.negative {
+            background: rgba(239, 83, 80, 0.25);
+            color: #b71c1c;
+            border: 3px solid rgba(239, 83, 80, 0.5);
+        }
+
+        .matrix-element.zero {
+            background: rgba(158, 158, 158, 0.15);
+            color: #616161;
+            border: 3px solid rgba(158, 158, 158, 0.3);
+        }
+
+        /* 二次型样式 */
+        .quadratic-form {
+            font-size: 1.5em;
+            text-align: center;
+            padding: 25px;
+            background: rgba(245, 247, 250, 0.8);
+            border-radius: 14px;
+            margin: 25px 0;
+            font-family: 'Courier New', 'Consolas', 'Arial Black', monospace;
+            font-weight: 700;
+            word-wrap: break-word;
+            line-height: 1.6;
+        }
+
+        .term {
+            display: inline-block;
+            margin: 8px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            position: relative;
+            font-weight: 800;
+        }
+
+        .term.positive-term {
+            background: rgba(76, 175, 80, 0.3);
+            color: #1b5e20;
+        }
+
+        .term.negative-term {
+            background: rgba(239, 83, 80, 0.3);
+            color: #b71c1c;
+        }
+
+        /* 惯性指数显示 */
+        .inertia-display {
+            background: rgba(237, 242, 247, 0.7);
+            border-radius: 14px;
+            padding: 25px;
+            margin: 25px 0;
+            text-align: center;
+        }
+
+        .inertia-item {
+            display: inline-block;
+            margin: 8px 12px;
+            padding: 12px 18px;
+            border-radius: 30px;
+            font-weight: 800;
+            transition: all 0.3s ease;
+            font-size: 1.1em;
+        }
+
+        .positive-index {
+            background: rgba(76, 175, 80, 0.3);
+            color: #1b5e20;
+        }
+
+        .negative-index {
+            background: rgba(239, 83, 80, 0.3);
+            color: #b71c1c;
+        }
+
+        .zero-index {
+            background: rgba(158, 158, 158, 0.2);
+            color: #424242;
+        }
+
+        .inertia-item.pulse {
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+
+        /* 中间面板：几何图形展示区 - 仅保留中间 */
+        .geometry-display {
+            background: rgba(245, 247, 250, 0.8);
+            border-radius: 16px;
+            padding: 30px;
+            margin: 30px 0;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .graph-container {
+            width: 100%;
+            height: 350px;
+            background: #fafafa;
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+            border: 3px solid rgba(74, 111, 165, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .graph-svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .graph-ellipse {
+            fill: none;
+            stroke-width: 4;
+            transition: all 0.5s ease;
+            stroke-linecap: round;
+        }
+
+        .graph-ellipse.positive {
+            stroke: #2e7d32;
+        }
+
+        .graph-ellipse.negative {
+            stroke: #c62828;
+        }
+
+        .graph-axis {
+            stroke: #37474f;
+            stroke-width: 3;
+            stroke-linecap: round;
+        }
+
+        .axis-label {
+            font-size: 20px;
+            fill: #263238;
+            font-weight: 800;
+        }
+
+        /* 变换类型选择 */
+        .transform-types {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 25px 0;
+            flex-wrap: wrap;
+        }
+
+        .transform-btn {
+            background: linear-gradient(135deg, #4a6fa5, #6b5b95);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.2em;
+            font-weight: 700;
+        }
+
+        .transform-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 7px 20px rgba(74, 111, 165, 0.4);
+        }
+
+        .transform-btn.active {
+            background: linear-gradient(135deg, #ffb74d, #ff9800);
+            transform: scale(1.1);
+        }
+
+        /* 步骤详情 */
+        .step-details {
+            background: rgba(237, 242, 247, 0.7);
+            border-radius: 16px;
+            padding: 30px;
+            margin-top: 30px;
+        }
+
+        .step-item {
+            display: flex;
+            align-items: flex-start;
+            margin: 20px 0;
+            padding: 18px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 12px;
+            opacity: 0;
+            transform: translateX(-30px);
+            transition: all 0.4s ease;
+            border-left: 6px solid transparent;
+        }
+
+        .step-item.visible {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .step-item.active {
+            border-left-color: #ffb74d;
+            background: rgba(255, 245, 230, 0.8);
+        }
+
+        .step-item.completed {
+            border-left-color: #4caf50;
+            background: rgba(232, 245, 232, 0.8);
+        }
+
+        .step-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #4a6fa5, #6b5b95);
+            color: white;
+            border-radius: 50%;
+            font-weight: 900;
+            margin-right: 18px;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .step-content {
+            flex: 1;
+        }
+
+        .step-formula {
+            background: rgba(245, 247, 250, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 12px 0;
+            font-family: 'Courier New', 'Consolas', 'Arial Black', monospace;
+            text-align: center;
+            font-size: 1.1em;
+            font-weight: 700;
+            border: 1px solid rgba(74, 111, 165, 0.2);
+        }
+
+        /* 控制按钮 */
+        .btn-container {
+            text-align: center;
+            margin: 40px 0;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #4a6fa5, #6b5b95);
+            color: white;
+            border: none;
+            padding: 18px 35px;
+            border-radius: 35px;
+            cursor: pointer;
+            font-size: 1.4em;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            font-weight: 800;
+            letter-spacing: 0.8px;
+            box-shadow: 0 6px 25px rgba(74, 111, 165, 0.4);
+            min-width: 120px;
+        }
+
+        .btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(74, 111, 165, 0.5);
+        }
+
+        .btn:disabled {
+            background: #cbd5e0;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn.secondary {
+            background: linear-gradient(135deg, #ffb74d, #ff9800);
+        }
+
+        .btn.success {
+            background: linear-gradient(135deg, #4caf50, #2e7d32);
+        }
+
+        /* 总结区域 */
+        .summary-panel {
+            background: linear-gradient(135deg, rgba(74, 111, 165, 0.1), rgba(107, 91, 149, 0.1));
+            border: 3px solid rgba(74, 111, 165, 0.4);
+            border-radius: 20px;
+            padding: 40px;
+            margin: 30px auto;
+            text-align: center;
+            max-width: 90%;
+        }
+
+        .invariant-property {
+            background: rgba(255, 245, 230, 0.8);
+            border: 2px solid rgba(255, 183, 77, 0.4);
+            border-radius: 14px;
+            padding: 25px;
+            margin: 25px 0;
+            font-weight: 800;
+            color: #e65100;
+            font-size: 1.1em;
+        }
+
+        .comparison-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 30px 0;
+        }
+
+        .variable-info {
+            font-size: 1em;
+            line-height: 1.7;
+            margin: 15px 0;
+        }
+
+        .final-result {
+            background: rgba(232, 245, 232, 0.8);
+            border: 2px solid rgba(76, 175, 80, 0.4);
+            border-radius: 14px;
+            padding: 25px;
+            margin: 25px 0;
+            font-weight: 800;
+            color: #1b5e20;
+            font-size: 1.2em;
+        }
+
+        /* 高亮动画 */
+        .highlight {
+            animation: pulse-highlight 1s infinite;
+            box-shadow: 0 0 20px currentColor;
+            transform: scale(1.08);
+        }
+
+        @keyframes pulse-highlight {
+            0% { transform: scale(1.08); box-shadow: 0 0 10px currentColor; }
+            50% { transform: scale(1.15); box-shadow: 0 0 30px currentColor; }
+            100% { transform: scale(1.08); box-shadow: 0 0 10px currentColor; }
+        }
+
+        /* 响应式设计调整 */
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+            
+            .panel {
+                max-width: 900px;
+                margin: 0 auto;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .section-header {
+                flex-direction: column;
+            }
+            
+            .step-controls {
+                width: 100%;
+                flex-direction: row;
+                justify-content: center;
+            }
+            
+            .comparison-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 3em;
+            }
+        }
+
+        /* 页面加载动画 */
+        .fade-in {
+            animation: fadeIn 0.8s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 公式文本特殊样式 */
+        .formula-text {
+            font-family: 'Courier New', 'Consolas', 'Arial Black', monospace;
+            font-weight: 800;
+            letter-spacing: 1px;
+            font-size: 0.85em;
+        }
+
+        /* 公式框样式 */
+        .formula-box {
+            text-align: center;
+            font-size: 1.3em;
+            margin: 20px 0;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>惯性定理演示</h1>
+            <p>正负惯性指数在任意满秩线性变换下保持不变</p>
+        </div>
+
+        <div class="content">
+            <!-- 主要演示区域 -->
+            <div class="section" id="main-section">
+                <h2 class="section-title">惯性定理核心演示</h2>
+                
+                <!-- 情况说明和按钮组 -->
+                <div class="section-header">
+                    <div class="warning">
+                        <strong>惯性定理：</strong>对于一个实二次型，经过任意满秩线性变换后，其规范形中正系数的个数（正惯性指数）和负系数的个数（负惯性指数）保持不变。
+                    </div>
+                    <div class="step-controls">
+                        <button class="btn secondary" onclick="stepAnimation()" id="step-btn">⏭️ 下一步</button>
+                        <div class="step-counter" id="step-counter">准备就绪</div>
+                        <div style="font-size: 0.9em; color: #666; margin-top: 10px;">
+                            快捷键：<strong>1</strong> / <strong>→</strong> / <strong>空格</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="main-content">
+                    <!-- 左侧：变换前 -->
+                    <div class="panel">
+                        <div class="panel-title">
+                            <div class="panel-icon">📊</div>
+                            原始二次型
+                        </div>
+                        
+                        <div class="quadratic-form" id="original-form">
+                            f(x<span class="formula-text"><sub>1</sub></span>, x<span class="formula-text"><sub>2</sub></span>) = 
+                            <span class="term positive-term" data-coeff="positive">3x<span class="formula-text"><sub>1</sub></span><sup>2</sup></span>
+                            <span class="term negative-term" data-coeff="negative">-2x<span class="formula-text"><sub>2</sub></span><sup>2</sup></span>
+                        </div>
+
+                        <div class="matrix-container">
+                            <div class="matrix">
+                                <div class="matrix-content">
+                                    <div class="matrix-element positive" data-index="1">3</div>
+                                    <div class="matrix-element zero" data-index="0">0</div>
+                                    <div class="matrix-element zero" data-index="0">0</div>
+                                    <div class="matrix-element negative" data-index="-1">-2</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="inertia-display" id="original-inertia">
+                            <div class="inertia-item positive-index pulse" id="original-positive">
+                                正惯性指数: <strong>1</strong>
+                            </div>
+                            <div class="inertia-item negative-index pulse" id="original-negative">
+                                负惯性指数: <strong>1</strong>
+                            </div>
+                            <div class="inertia-item zero-index" id="original-zero">
+                                零惯性指数: <strong>0</strong>
+                            </div>
+                        </div>
+
+                        <!-- 左侧图形容器已删除 -->
+                    </div>
+
+                    <!-- 中间：变换过程 -->
+                    <div class="panel">
+                        <div class="panel-title">
+                            <div class="panel-icon">🔄</div>
+                            满秩线性变换
+                        </div>
+                        
+                        <div class="formula-box" style="margin-bottom: 15px;">
+                            <span class="formula-text">x</span> = P<span class="formula-text">y</span>
+                        </div>
+
+                        <div class="transform-types" id="transform-types">
+                            <button class="transform-btn active" data-transform="rotation">旋转变换</button>
+                            <button class="transform-btn" data-transform="shear">剪切变换</button>
+                            <button class="transform-btn" data-transform="scale">缩放变换</button>
+                            <button class="transform-btn" data-transform="compose">复合变换</button>
+                        </div>
+
+                        <div class="formula-box" id="transform-matrix" style="margin: 15px 0;">
+                            <strong>变换矩阵：</strong><br>
+                            <span class="formula-text">P = [[cos30°, -sin30°], [sin30°, cos30°]]</span>
+                        </div>
+
+                        <!-- 中间图形区域保留 -->
+                        <div class="geometry-display">
+                            <div>变换过程动画</div>
+                            <div class="graph-container" id="transform-graph">
+                                <svg class="graph-svg" viewBox="0 0 300 300" style="background: #fafafa;">
+                                    <!-- 虚线坐标轴 -->
+                                    <line class="graph-axis" x1="150" y1="20" x2="150" y2="280" stroke="#90a4ae" stroke-width="2" stroke-dasharray="8,8"></line>
+                                    <line class="graph-axis" x1="20" y1="150" x2="280" y2="150" stroke="#90a4ae" stroke-width="2" stroke-dasharray="8,8"></line>
+                                    
+                                    <!-- 变换中的图形 -->
+                                    <g id="transforming-graphic">
+                                        <path class="graph-ellipse positive" d="M 50 150 Q 150 50 250 150" fill="none" stroke="#2e7d32" stroke-width="4" opacity="0.6"></path>
+                                        <path class="graph-ellipse positive" d="M 50 150 Q 150 250 250 150" fill="none" stroke="#2e7d32" stroke-width="4" opacity="0.6"></path>
+                                        <path class="graph-ellipse negative" d="M 150 50 Q 250 150 150 250" fill="none" stroke="#c62828" stroke-width="4" opacity="0.6"></path>
+                                        <path class="graph-ellipse negative" d="M 150 50 Q 50 150 150 250" fill="none" stroke="#c62828" stroke-width="4" opacity="0.6"></path>
+                                    </g>
+                                    
+                                    <!-- 新坐标系 -->
+                                    <line class="graph-axis" x1="150" y1="20" x2="150" y2="280" stroke="#4a6fa5" stroke-width="3" opacity="0.7" transform="rotate(30 150 150)"></line>
+                                    <line class="graph-axis" x1="20" y1="150" x2="280" y2="150" stroke="#6b5b95" stroke-width="3" opacity="0.7" transform="rotate(30 150 150)"></line>
+                                    <text class="axis-label" x="160" y="40" transform="rotate(30 150 150)">y<span class="formula-text"><sub>2</sub></span></text>
+                                    <text class="axis-label" x="260" y="140" transform="rotate(30 150 150)">y<span class="formula-text"><sub>1</sub></span></text>
+                                </svg>
+                            </div>
+                        </div>
+
+                        <div class="inertia-display">
+                            <div class="inertia-item positive-index" id="transform-positive">
+                                正惯性指数: <strong>1</strong> <span style="color: #4caf50;">✓</span>
+                            </div>
+                            <div class="inertia-item negative-index" id="transform-negative">
+                                负惯性指数: <strong>1</strong> <span style="color: #4caf50;">✓</span>
+                            </div>
+                            <div class="inertia-item zero-index" id="transform-zero">
+                                保持不变！
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 右侧：变换后 -->
+                    <div class="panel">
+                        <div class="panel-title">
+                            <div class="panel-icon">📈</div>
+                            变换后二次型
+                        </div>
+                        
+                        <div class="quadratic-form" id="transformed-form">
+                            f(y<span class="formula-text"><sub>1</sub></span>, y<span class="formula-text"><sub>2</sub></span>) = 
+                            <span class="term positive-term" data-coeff="positive">
+                                <span class="formula-text" id="positive-coeff">3</span>y<span class="formula-text"><sub>1</sub></span><sup>2</sup>
+                            </span>
+                            <span class="term positive-term" data-coeff="positive">
+                                + y<span class="formula-text"><sub>1</sub></span>y<span class="formula-text"><sub>2</sub></span>
+                            </span>
+                            <span class="term negative-term" data-coeff="negative">
+                                -2y<span class="formula-text"><sub>2</sub></span><sup>2</sup>
+                            </span>
+                        </div>
+
+                        <div class="matrix-container">
+                            <div class="matrix">
+                                <div class="matrix-content" id="transformed-matrix">
+                                    <div class="matrix-element positive">3</div>
+                                    <div class="matrix-element positive">0.5</div>
+                                    <div class="matrix-element positive">0.5</div>
+                                    <div class="matrix-element negative">-2</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="formula-box" id="diagonalization" style="margin: 15px 0;">
+                            <strong>对角化后：</strong><br>
+                            f(z<span class="formula-text"><sub>1</sub></span>, z<span class="formula-text"><sub>2</sub></span>) = 3.2z<span class="formula-text"><sub>1</sub></span><sup>2</sup> - 2.2z<span class="formula-text"><sub>2</sub></span><sup>2</sup>
+                        </div>
+
+                        <div class="inertia-display" id="final-inertia">
+                            <div class="inertia-item positive-index pulse">
+                                正惯性指数: <strong>1</strong>
+                            </div>
+                            <div class="inertia-item negative-index pulse">
+                                负惯性指数: <strong>1</strong>
+                            </div>
+                            <div class="inertia-item zero-index">
+                                零惯性指数: <strong>0</strong>
+                            </div>
+                        </div>
+
+                        <!-- 右侧图形容器已删除 -->
+                    </div>
+                </div>
+
+                <!-- 步骤详情 -->
+                <div class="step-details" id="step-details">
+                    <div class="step-item" id="step-1">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <strong>原始二次型分析：</strong>确定惯性指数<br>
+                            <div class="step-formula">
+                                f = 3x<span class="formula-text"><sub>1</sub></span><sup>2</sup> - 2x<span class="formula-text"><sub>2</sub></span><sup>2</sup><br>
+                                正惯性指数 = 1，负惯性指数 = 1
+                            </div>
+                            记录变换前的正负系数个数
+                        </div>
+                    </div>
+
+                    <div class="step-item" id="step-2">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <strong>选择满秩变换：</strong>以旋转变换为例<br>
+                            <div class="step-formula">
+                                <span class="formula-text">P = [[cos30°, -sin30°], [sin30°, cos30°]]</span>
+                            </div>
+                            满秩保证变换可逆
+                        </div>
+                    </div>
+
+                    <div class="step-item" id="step-3">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <strong>计算变换后的二次型：</strong><br>
+                            <div class="step-formula">
+                                f(y) = y<span class="formula-text"><sup>T</sup></span>(P<span class="formula-text"><sup>T</sup></span>AP)y = 3y<span class="formula-text"><sub>1</sub></span><sup>2</sup> + y<span class="formula-text"><sub>1</sub></span>y<span class="formula-text"><sub>2</sub></span> - 2y<span class="formula-text"><sub>2</sub></span><sup>2</sup>
+                            </div>
+                            通过配方法化为规范形
+                        </div>
+                    </div>
+
+                    <div class="step-item" id="step-4">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <strong>验证惯性指数不变：</strong>对角化后得到<br>
+                            <div class="step-formula">
+                                f(z) = 3.2z<span class="formula-text"><sub>1</sub></span><sup>2</sup> - 2.2z<span class="formula-text"><sub>2</sub></span><sup>2</sup>
+                            </div>
+                            <strong>结论：</strong>正系数1个，负系数1个，与变换前完全相同！
+                        </div>
+                    </div>
+                </div>
+
+                <div class="btn-container">
+                    <button class="btn primary" onclick="startAnimation()">🎬 开始动画</button>
+                    <button class="btn" onclick="resetAnimation()">🔄 重置</button>
+                    <button class="btn success" onclick="showSummary()">📊 查看总结</button>
+                </div>
+            </div>
+
+            <!-- 总结区域 -->
+            <div class="section" id="summary-section">
+                <h2 class="section-title">惯性定理核心要点</h2>
+                
+                <div class="summary-panel">
+                    <div class="invariant-property">
+                        <strong>不变量：</strong>正惯性指数 (p) 和负惯性指数 (q) 是二次型的固有属性，不随满秩线性变换而改变
+                    </div>
+
+                    <div class="comparison-container">
+                        <div class="panel">
+                            <div class="panel-title">
+                                <div class="panel-icon">🔢</div>
+                                规范形唯一性
+                            </div>
+                            
+                            <div class="quadratic-form">
+                                任意二次型都可化为：<br>
+                                f = y<span class="formula-text"><sub>1</sub></span><sup>2</sup> + ... + y<span class="formula-text"><sub>p</sub></span><sup>2</sup><br>
+                                - y<span class="formula-text"><sub>p+1</sub></span><sup>2</sup> - ... - y<span class="formula-text"><sub>p+q</sub></span><sup>2</sup>
+                            </div>
+                            
+                            <div class="variable-info">
+                                <strong>其中：</strong><br>
+                                p = 正惯性指数<br>
+                                q = 负惯性指数<br>
+                                n-p-q = 零惯性指数
+                            </div>
+                        </div>
+
+                        <div class="panel">
+                            <div class="panel-title">
+                                <div class="panel-icon">🎯</div>
+                                判别应用
+                            </div>
+                            
+                            <div class="quadratic-form" style="font-size: 1.1em;">
+                                <strong>正定：</strong> p = n, q = 0<br>
+                                <strong>负定：</strong> p = 0, q = n<br>
+                                <strong>不定：</strong> p > 0, q > 0<br>
+                                <strong>半正定：</strong> q = 0<br>
+                                <strong>半负定：</strong> p = 0
+                            </div>
+                            
+                            <div class="variable-info">
+                                <strong>几何意义：</strong><br>
+                                p 和 q 决定了二次曲面的类型
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="final-result">
+                        <strong>核心结论：</strong><br>
+                        惯性定理揭示了二次型在满秩变换下的内在不变性，正负惯性指数是二次型的本质特征，决定了二次型的分类和性质。
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 动画状态管理
+        let currentStep = 0;
+        let transformType = 'rotation';
+        const totalSteps = 4;
+
+        // 变换矩阵定义（纯文本表示）
+        const transformMatrices = {
+            rotation: {
+                name: '旋转变换',
+                matrix: [[0.866, -0.5], [0.5, 0.866]],
+                formula: 'P = [[cos30°, -sin30°], [sin30°, cos30°]]'
+            },
+            shear: {
+                name: '剪切变换',
+                matrix: [[1, 0.5], [0, 1]],
+                formula: 'P = [[1, 0.5], [0, 1]]'
+            },
+            scale: {
+                name: '缩放变换',
+                matrix: [[1.5, 0], [0, 0.8]],
+                formula: 'P = [[1.5, 0], [0, 0.8]]'
+            },
+            compose: {
+                name: '复合变换',
+                matrix: [[1.2, -0.3], [0.4, 0.9]],
+                formula: 'P = [[1.2, -0.3], [0.4, 0.9]]'
+            }
+        };
+
+        // 步骤定义
+        const steps = [
+            {
+                title: "原始二次型分析",
+                action: () => {
+                    highlightElements(['original-positive', 'original-negative']);
+                    updateCounter(1);
+                    showStep('step-1');
+                }
+            },
+            {
+                title: "应用满秩变换",
+                action: () => {
+                    applyTransform();
+                    updateCounter(2);
+                    showStep('step-2');
+                }
+            },
+            {
+                title: "化为规范形",
+                action: () => {
+                    diagonalize();
+                    updateCounter(3);
+                    showStep('step-3');
+                }
+            },
+            {
+                title: "验证惯性指数不变",
+                action: () => {
+                    compareInertia();
+                    updateCounter(4);
+                    showStep('step-4');
+                    completeAnimation();
+                }
+            }
+        ];
+
+        // 高亮元素
+        function highlightElements(elementIds) {
+            // 清除之前的高亮
+            document.querySelectorAll('.highlight, .pulse').forEach(el => {
+                el.classList.remove('highlight', 'pulse');
+            });
+
+            // 高亮指定元素
+            elementIds.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.classList.add('highlight', 'pulse');
+                }
+            });
+        }
+
+        // 应用变换
+        function applyTransform() {
+            const transform = transformMatrices[transformType];
+            
+            // 更新变换矩阵显示
+            document.getElementById('transform-matrix').innerHTML = 
+                '<strong>变换矩阵：</strong><br><span class="formula-text">' + transform.formula + '</span>';
+            
+            // 更新变换后的二次型
+            document.getElementById('transformed-form').innerHTML = 
+                'f(y<span class="formula-text"><sub>1</sub></span>, y<span class="formula-text"><sub>2</sub></span>) = ' +
+                '<span class="term positive-term" data-coeff="positive">3y<span class="formula-text"><sub>1</sub></span><sup>2</sup></span>' +
+                '<span class="term positive-term" data-coeff="positive">+ y<span class="formula-text"><sub>1</sub></span>y<span class="formula-text"><sub>2</sub></span></span>' +
+                '<span class="term negative-term" data-coeff="negative">-2y<span class="formula-text"><sub>2</sub></span><sup>2</sup></span>';
+            
+            // 更新变换后的矩阵
+            document.getElementById('transformed-matrix').innerHTML = `
+                <div class="matrix-element positive">3</div>
+                <div class="matrix-element positive">0.5</div>
+                <div class="matrix-element positive">0.5</div>
+                <div class="matrix-element negative">-2</div>
+            `;
+            
+            // 添加动画效果
+            const originalElements = document.querySelectorAll('#original-form .term');
+            const transformedElements = document.querySelectorAll('#transformed-form .term');
+            
+            originalElements.forEach((el, i) => {
+                if (transformedElements[i]) {
+                    el.style.opacity = '0.5';
+                    transformedElements[i].style.opacity = '0';
+                    transformedElements[i].style.transform = 'scale(0.8)';
+                    
+                    setTimeout(() => {
+                        transformedElements[i].style.transition = 'all 0.5s ease';
+                        transformedElements[i].style.opacity = '1';
+                        transformedElements[i].style.transform = 'scale(1)';
+                    }, i * 200);
+                }
+            });
+        }
+
+        // 对角化
+        function diagonalize() {
+            // 更新对角化结果
+            document.getElementById('diagonalization').innerHTML = 
+                '<strong>对角化后：</strong><br>f(z<span class="formula-text"><sub>1</sub></span>, z<span class="formula-text"><sub>2</sub></span>) = 3.2z<span class="formula-text"><sub>1</sub></span><sup>2</sup> - 2.2z<span class="formula-text"><sub>2</sub></span><sup>2</sup>';
+            
+            // 添加对角化动画
+            const matrixElements = document.querySelectorAll('#transformed-matrix .matrix-element');
+            matrixElements.forEach(el => {
+                el.style.transition = 'all 0.5s ease';
+                el.style.transform = 'rotate(360deg) scale(0.8)';
+                
+                setTimeout(() => {
+                    el.style.transform = 'rotate(0deg) scale(1)';
+                }, 500);
+            });
+        }
+
+        // 比较惯性指数
+        function compareInertia() {
+            // 高亮显示不变的惯性指数
+            highlightElements(['original-positive', 'transform-positive', 'final-positive', 
+                             'original-negative', 'transform-negative', 'final-negative']);
+            
+            // 添加验证标记
+            document.querySelectorAll('.inertia-item').forEach(el => {
+                if (!el.innerHTML.includes('✓')) {
+                    const checkmark = document.createElement('span');
+                    checkmark.innerHTML = ' ✓';
+                    checkmark.style.color = '#4caf50';
+                    checkmark.style.fontWeight = 'bold';
+                    el.appendChild(checkmark);
+                }
+            });
+        }
+
+        // 显示步骤
+        function showStep(stepId) {
+            const step = document.getElementById(stepId);
+            if (step) {
+                step.classList.add('visible', 'active');
+                
+                // 标记之前的步骤为完成
+                const stepNumber = parseInt(stepId.split('-')[1]);
+                for (let i = 1; i < stepNumber; i++) {
+                    const prevStep = document.getElementById(`step-${i}`);
+                    if (prevStep) {
+                        prevStep.classList.remove('active');
+                        prevStep.classList.add('completed');
+                    }
+                }
+            }
+        }
+
+        // 更新计数器
+        function updateCounter(step) {
+            const counter = document.getElementById('step-counter');
+            counter.innerHTML = `步骤: <strong>${step}</strong>/${totalSteps}`;
+        }
+
+        // 完成动画
+        function completeAnimation() {
+            const btn = document.getElementById('step-btn');
+            btn.textContent = '✅ 完成';
+            btn.disabled = true;
+            btn.style.background = 'linear-gradient(135deg, #4caf50, #2e7d32)';
+            
+            // 显示总结
+            setTimeout(() => {
+                document.getElementById('summary-section').scrollIntoView({ behavior: 'smooth' });
+            }, 1000);
+        }
+
+        // 逐步动画
+        function stepAnimation() {
+            if (currentStep < totalSteps) {
+                currentStep++;
+                steps[currentStep - 1].action();
+            } else {
+                alert('演示已完成！');
+            }
+        }
+
+        // 开始动画
+        function startAnimation() {
+            resetAnimation();
+            let step = 0;
+            const interval = setInterval(() => {
+                step++;
+                if (step <= totalSteps) {
+                    steps[step - 1].action();
+                } else {
+                    clearInterval(interval);
+                }
+            }, 2500);
+        }
+
+        // 重置动画
+        function resetAnimation() {
+            currentStep = 0;
+            
+            // 清除高亮
+            document.querySelectorAll('.highlight, .pulse').forEach(el => {
+                el.classList.remove('highlight', 'pulse');
+            });
+            
+            // 隐藏步骤
+            document.querySelectorAll('.step-item.visible').forEach(el => {
+                el.classList.remove('visible', 'active', 'completed');
+            });
+            
+            // 清除验证标记
+            document.querySelectorAll('.inertia-item span').forEach(el => {
+                if (el.textContent.includes('✓')) {
+                    el.remove();
+                }
+            });
+            
+            // 重置变换后的内容
+            document.getElementById('transformed-form').innerHTML = 
+                'f(y<span class="formula-text"><sub>1</sub></span>, y<span class="formula-text"><sub>2</sub></span>) = ' +
+                '<span class="term positive-term" data-coeff="positive">' +
+                '<span class="formula-text" id="positive-coeff">3</span>y<span class="formula-text"><sub>1</sub></span><sup>2</sup></span>' +
+                '<span class="term positive-term" data-coeff="positive">+ y<span class="formula-text"><sub>1</sub></span>y<span class="formula-text"><sub>2</sub></span></span>' +
+                '<span class="term negative-term" data-coeff="negative">-2y<span class="formula-text"><sub>2</sub></span><sup>2</sup></span>';
+            
+            document.getElementById('transformed-matrix').innerHTML = `
+                <div class="matrix-element positive">3</div>
+                <div class="matrix-element positive">0.5</div>
+                <div class="matrix-element positive">0.5</div>
+                <div class="matrix-element negative">-2</div>
+            `;
+            
+            updateCounter(0);
+            document.getElementById('step-counter').innerHTML = '准备就绪';
+            
+            const btn = document.getElementById('step-btn');
+            btn.textContent = '⏭️ 下一步';
+            btn.disabled = false;
+            btn.style.background = 'linear-gradient(135deg, #ffb74d, #ff9800)';
+        }
+
+        // 切换变换类型
+        document.querySelectorAll('.transform-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.transform-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                transformType = this.dataset.transform;
+                
+                // 重置演示
+                resetAnimation();
+                
+                // 更新变换矩阵显示
+                const transform = transformMatrices[transformType];
+                document.getElementById('transform-matrix').innerHTML = 
+                    '<strong>变换矩阵：</strong><br><span class="formula-text">' + transform.formula + '</span>';
+            });
+        });
+
+        // 显示总结
+        function showSummary() {
+            document.getElementById('summary-section').scrollIntoView({ behavior: 'smooth' });
+            document.getElementById('summary-section').classList.add('visible');
+        }
+
+        // 页面加载动画
+        window.addEventListener('load', () => {
+            const sections = document.querySelectorAll('.section');
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, { threshold: 0.1 });
+
+            sections.forEach(section => {
+                observer.observe(section);
+            });
+
+            // 显示第一个部分
+            setTimeout(() => {
+                document.getElementById('main-section').classList.add('visible');
+            }, 300);
+        });
+
+        // 添加交互效果
+        document.querySelectorAll('.btn, .transform-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                this.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    this.style.transform = '';
+                }, 100);
+            });
+        });
+
+        // 键盘快捷键
+        document.addEventListener('keydown', (e) => {
+            if (e.key === '1' || e.key === 'ArrowRight' || e.key === ' ') {
+                e.preventDefault();
+                stepAnimation();
+            } else if (e.key === 'r' || e.key === 'R') {
+                resetAnimation();
+            } else if (e.key === 's' || e.key === 'S') {
+                showSummary();
+            }
+        });
+
+        // 初始化显示快捷键提示
+        document.addEventListener('DOMContentLoaded', () => {
+            const shortcutHint = document.createElement('div');
+            shortcutHint.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                background: rgba(74, 111, 165, 0.9);
+                color: white;
+                padding: 15px 20px;
+                border-radius: 10px;
+                font-size: 16px;
+                font-weight: 600;
+                z-index: 1000;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            `;
+            shortcutHint.innerHTML = '快捷键：<strong>1</strong> 下一步 | <strong>R</strong> 重置 | <strong>S</strong> 总结';
+            document.body.appendChild(shortcutHint);
+            
+            // 5秒后自动隐藏提示
+            setTimeout(() => {
+                shortcutHint.style.opacity = '0';
+                shortcutHint.style.transition = 'opacity 1s';
+                setTimeout(() => shortcutHint.remove(), 1000);
+            }, 5000);
+        });
+    </script>
+</body>
+</html>

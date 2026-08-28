@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>二次型分类与惯性定理 · 工程意义解读</title>
+<style>
+  :root{
+    --bg:#f7f9fc; --card:#ffffff; --ink:#1f2933; --sub:#576574;
+    --brand:#2b6cb0; --brand2:#2f855a; --warn:#c05621; --danger:#c53030;
+    --line:#e4e9f0; --soft:#eef3f8; --code:#ebf4ff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{font-size:20px;}
+  body{
+    background:var(--bg); color:var(--ink); line-height:1.7;
+    font-family:-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    padding:24px 16px 60px;
+  }
+  .wrap{max-width:1000px;margin:0 auto;}
+  header.hero{
+    background:linear-gradient(135deg,#2b6cb0,#2f855a); color:#fff;
+    border-radius:18px; padding:34px 30px; margin-bottom:26px;
+    box-shadow:0 8px 24px rgba(43,108,176,.18);
+  }
+  header.hero h1{font-size:2rem;margin-bottom:10px;line-height:1.3;}
+  header.hero p{font-size:1.1rem;opacity:.95;}
+  section.card{
+    background:var(--card); border:1px solid var(--line); border-radius:16px;
+    padding:28px 28px; margin-bottom:22px; box-shadow:0 4px 14px rgba(0,0,0,.04);
+  }
+  section.card h2{font-size:1.5rem;color:var(--brand);margin-bottom:14px;
+    border-left:6px solid var(--brand);padding-left:12px;}
+  section.card h3{font-size:1.18rem;color:var(--ink);margin:18px 0 8px;}
+  p{margin:8px 0;}
+  .lead{font-size:1.05rem;color:var(--sub);}
+  .formula{
+    background:var(--code); border:1px solid #cfe3ff; border-radius:10px;
+    padding:14px 16px; margin:14px 0; font-size:1.15rem; text-align:center;
+    font-family:"Cambria Math","Times New Roman",serif; letter-spacing:.5px;
+  }
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+  @media(max-width:760px){
+    .grid2,.grid3{grid-template-columns:1fr;}
+    html{font-size:18px;}
+    header.hero{padding:26px 20px;}
+    section.card{padding:22px 18px;}
+  }
+  .defn{border:1px dashed var(--brand);background:#f0f7ff;border-radius:10px;padding:14px 16px;margin:12px 0;}
+  .defn b{color:var(--brand);}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:.98rem;}
+  th,td{border:1px solid var(--line);padding:10px 12px;text-align:center;}
+  th{background:var(--soft);color:var(--brand);}
+  tr:nth-child(even) td{background:#fafcfe;}
+  .tag{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.85rem;font-weight:600;}
+  .tag.pd{background:#e6fffa;color:var(--brand2);}
+  .tag.nd{background:#fff5f5;color:var(--danger);}
+  .tag.psd{background:#f0fff4;color:var(--brand2);}
+  .tag.nsd{background:#fffaf0;color:var(--warn);}
+  .tag.ind{background:#f7fafc;color:var(--sub);border:1px solid var(--line);}
+  .ctrl{background:var(--soft);border-radius:12px;padding:18px;margin:14px 0;}
+  .ctrl label{display:flex;align-items:center;gap:10px;margin:10px 0;font-size:1rem;flex-wrap:wrap;}
+  .ctrl input[type=range]{flex:1;min-width:120px;accent-color:var(--brand);}
+  .val{display:inline-block;min-width:44px;text-align:center;font-weight:700;color:var(--brand);}
+  /* 画布：固定纵横比由 JS 按容器宽度设置 height，CSS 只控制宽度 100% */
+  canvas{display:block;width:100%;background:#fff;border:1px solid var(--line);border-radius:12px;}
+  #cv{height:420px;}
+  .mini{height:220px;}
+  .result{margin-top:14px;padding:16px;border-radius:12px;font-size:1.08rem;line-height:1.6;}
+  .result.pd{background:#f0fff4;border:1px solid #9ae6b4;color:#276749;}
+  .result.nd{background:#fff5f5;border:1px solid #feb2b2;color:#9b2c2c;}
+  .result.psd{background:#fffff0;border:1px solid #faf089;color:#975a16;}
+  .result.nsd{background:#fffaf0;border:1px solid #fbd38d;color:#975a16;}
+  .result.ind{background:#f7fafc;border:1px solid var(--line);color:var(--ink);}
+  .app{display:flex;gap:14px;align-items:flex-start;margin:14px 0;padding:16px;border-radius:12px;background:var(--soft);}
+  .app .num{flex:0 0 auto;width:44px;height:44px;border-radius:50%;background:var(--brand);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.2rem;}
+  .app .body{flex:1;}
+  .app h3{margin:0 0 6px;color:var(--brand);}
+  .note{font-size:.95rem;color:var(--sub);background:#fffbea;border-left:4px solid var(--warn);padding:10px 14px;border-radius:8px;margin:12px 0;}
+  .small{font-size:.92rem;color:var(--sub);}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;margin:8px 0;font-size:.92rem;color:var(--sub);}
+  .legend i{display:inline-block;width:14px;height:14px;border-radius:3px;margin-right:5px;vertical-align:middle;}
+  footer{text-align:center;color:var(--sub);font-size:.9rem;margin-top:10px;}
+  button.btn{background:var(--brand);color:#fff;border:0;border-radius:8px;padding:10px 18px;font-size:1rem;cursor:pointer;}
+  button.btn:hover{background:#234e80;}
+  .preset{border:1px solid var(--line);border-radius:8px;padding:8px 12px;margin:6px 6px 0 0;display:inline-block;font-size:.92rem;cursor:pointer;background:#fff;}
+  .preset:hover{background:var(--soft);}
+  .figcap{font-size:.95rem;color:var(--sub);margin-top:8px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <h1>二次型分类与惯性定理</h1>
+  <p>从「xᵀAx 是正是负」读懂优化、稳定与结构力学 —— 面向大一新生的工程意义解读</p>
+</header>
+
+<!-- 原理铺垫 -->
+<section class="card">
+  <h2>一、二次型是什么：一句话 + 一个几何画面</h2>
+  <p>给定一个实对称矩阵 <b>A</b>（n×n，且 Aᵀ=A），关于变量 x=(x₁,…,xₙ) 的<b>二次型</b>就是</p>
+  <div class="formula">f(x) = xᵀ A x &nbsp;= Σᵢ Σⱼ aᵢⱼ xᵢ xⱼ</div>
+  <p>它是只含二次项（xᵢ² 与 xᵢxⱼ）的齐次多项式。因为 A 可取对称部分 (A+Aᵀ)/2 而不改变 f(x)，所以<b>研究二次型只需研究实对称矩阵</b>。</p>
+  <div class="defn">
+    <b>几何直觉（n=2）：</b>曲线 f(x)=xᵀAx=1 的形状，完全由 A 的"正负"决定——<br>
+    A 正定 → 椭圆（有下界、碗状）；A 不定 → 双曲线（有正有负、鞍状）。<br>
+    二维截面是「等高线」，三维曲面是「碗还是鞍」。<br>
+    <b>着色含义：</b>画布上<b>浅绿</b>表示 f(x)&gt;0 的区域，<b>浅红</b>表示 f(x)&lt;0 的区域，蓝色曲线为 f(x)=1 的等高线。<b>四个象限都会着色</b>，因为 f(x) 是齐次二次函数，正负区域关于原点对称。
+  </div>
+  <p class="lead">下面用 2×2 的可调矩阵，亲手转动 A 的 4 个参数，观察正负区域、曲线形状与分类结论如何实时变化。</p>
+</section>
+
+<!-- 交互1：分类判定 -->
+<section class="card">
+  <h2>二、交互：实时判定二次型分类（2×2）</h2>
+  <div class="ctrl">
+    <label>A = [ <span class="val" id="vA11">2</span>
+      <input type="range" id="A11" min="-4" max="4" step="0.1" value="2">
+      <span class="val" id="vA12">0</span>
+      <input type="range" id="A12" min="-4" max="4" step="0.1" value="0"> ]</label>
+    <label style="margin-left:34px;"><span class="val" id="vA21">0</span>
+      <input type="range" id="A21" min="-4" max="4" step="0.1" value="0">
+      <span class="val" id="vA22">1</span>
+      <input type="range" id="A22" min="-4" max="4" step="0.1" value="1"> ]</label>
+    <p class="small">拖动改变 a₁₁,a₁₂,a₂₁,a₂₂（自动对称化为 (A+Aᵀ)/2）。下方着色为 f(x) 的正(绿)/负(红) 区域，蓝色曲线为 f(x)=1 等高线。</p>
+    <div>
+      <span class="preset" data-p="pd">正定示例</span>
+      <span class="preset" data-p="nd">负定示例</span>
+      <span class="preset" data-p="psd">半正定示例</span>
+      <span class="preset" data-p="ind">不定示例</span>
+      <span class="preset" data-p="reset">重置(单位阵)</span>
+    </div>
+  </div>
+  <canvas id="cv"></canvas>
+  <div class="legend">
+    <span><i style="background:#c6f6d5;border:1px solid #9ae6b4;"></i>正区域 f&gt;0</span>
+    <span><i style="background:#fed7d7;border:1px solid #feb2b2;"></i>负区域 f&lt;0</span>
+    <span><i style="background:#2b6cb0"></i>f=1 等高线</span>
+  </div>
+  <div class="result" id="res">拖动滑块开始探索。</div>
+  <div class="grid3" style="margin-top:14px;">
+    <div><b>特征值 λ₁,λ₂</b><br><span id="eig" class="small">—</span></div>
+    <div><b>顺序主子式</b><br><span id="minors" class="small">Δ₁=a₁₁, Δ₂=det A</span></div>
+    <div><b>惯性指数 (p,q,r)</b><br><span id="inert" class="small">正/负/零</span></div>
+  </div>
+</section>
+
+<!-- 分类表 -->
+<section class="card">
+  <h2>三、五种分类与 Sylvester 判定准则</h2>
+  <p>实对称矩阵 A 对应的二次型按「对所有 x≠0，f(x) 的符号」分为五类。对 2×2，可用顺序主子式快速判定。</p>
+  <table>
+    <tr><th>类型</th><th>定义（∀x≠0）</th><th>2×2 判定（Sylvester）</th><th>几何/直观</th></tr>
+    <tr><td><span class="tag pd">正定</span></td><td>f(x)&gt;0</td><td>a₁₁&gt;0 且 detA&gt;0（λ₁,λ₂&gt;0）</td><td>全平面绿色 · 碗</td></tr>
+    <tr><td><span class="tag nd">负定</span></td><td>f(x)&lt;0</td><td>a₁₁&lt;0 且 detA&gt;0（λ₁,λ₂&lt;0）</td><td>全平面红色 · 倒碗</td></tr>
+    <tr><td><span class="tag psd">半正定</span></td><td>f(x)≥0，且可取 0（≠0 时）</td><td>detA=0，其余主子式≥0（有 λ=0）</td><td>绿色+一条零线</td></tr>
+    <tr><td><span class="tag nsd">半负定</span></td><td>f(x)≤0，且可取 0</td><td>detA=0，符号相反</td><td>红色+一条零线</td></tr>
+    <tr><td><span class="tag ind">不定</span></td><td>既可正又可负</td><td>detA&lt;0（λ 异号）</td><td>绿红各半 · 鞍点</td></tr>
+  </table>
+  <div class="note"><b>原理提示：</b>实对称矩阵必可正交对角化 A=QΛQᵀ，作可逆变换 x=Qy 得 f=yᵀΛy=Σλᵢyᵢ²。因此 f 的符号完全由特征值 λᵢ 的符号决定——这正是分类的本质。</div>
+</section>
+
+<!-- 惯性定理 -->
+<section class="card">
+  <h2>四、惯性定理：合同变换下「正负零个数」不变</h2>
+  <p>对任意可逆线性变换 x=Cy（即 A→CᵀAC，称为<b>合同变换</b>），二次型的标准形中</p>
+  <div class="formula">正特征值个数 p 、负特征值个数 q 、零特征值个数 r = n−p−q</div>
+  <p>都<b>保持不变</b>。这就是<b>惯性定理</b>（Sylvester），(p,q,r) 称为 A 的<b>惯性指数</b>。</p>
+  <div class="defn">
+    <b>为什么重要：</b>无论你用什么可逆坐标变换化简二次型，得到的标准形里"几个正平方项、几个负平方项"是唯一确定的——这是二次型最深刻的不变量，也是判断类型（正定⇔p=n,q=0）的依据。
+  </div>
+  <p class="lead">在下方交互中切换矩阵，你会看到：虽然曲线被"拉伸/旋转"，但惯性指数 (p,q,r) 只由类型决定，不会在同类内突变。</p>
+</section>
+
+<!-- 工程应用（配图） -->
+<section class="card">
+  <h2>五、工程意义：三个真实应用场景（配直观示意图）</h2>
+
+  <div class="app">
+    <div class="num">1</div>
+    <div class="body">
+      <h3>优化 · 正定 = 严格凸 = 有唯一极小</h3>
+      <p>无约束优化 min F(x) 在驻点处看<b> Hessian 矩阵 H=∇²F</b>：若 H 正定，则该点是<b>严格局部（乃至全局）极小</b>，且极小点唯一。机器学习/深度学习的损失函数、最小二乘问题，都依赖"设计矩阵 XᵀX 半正定（常加扰动使其正定）"来保证解的存在与唯一。</p>
+      <p class="small"><b>思路：</b>判断 H 是否正定（顺序主子式 / 特征值全正）→ 决定是否收敛到唯一最优解。</p>
+    </div>
+  </div>
+  <canvas class="mini" id="cvOpt"></canvas>
+  <p class="figcap">图1 · 优化：Hessian 正定 → 损失函数呈"碗形"，梯度下降必落到唯一碗底（全局极小）。</p>
+
+  <div class="app">
+    <div class="num">2</div>
+    <div class="body">
+      <h3>系统稳定性 · 李雅普诺夫判据（二次型判稳）</h3>
+      <p>对线性系统 ẋ=Ax，要判断它是否渐近稳定（所有解 t→∞ 时回到平衡 x=0），可构造一个<b>正定二次型</b>作为李雅普诺夫函数 V(x)=xᵀPx（P 正定）。沿系统轨线对时间求导得</p>
+      <div class="formula">V̇(x) = xᵀ(AᵀP+PA)x</div>
+      <p>若能找到正定 P 使 V̇(x) 为<b>负定</b>二次型（即 V 沿时间严格递减、能量耗散），则系统渐近稳定。等价地，对<b>任意给定正定 Q</b>，<b>李雅普诺夫方程 AᵀP+PA=−Q 有唯一正定解 P</b> 当且仅当 A 的所有特征值实部&lt;0（系统稳定）。</p>
+      <p class="small"><b>思路：</b>把"系统是否稳定"转化为"是否存在正定 P 使 V=xᵀPx 正定且 V̇ 负定"——二次型的符号判定，替代了直接解微分方程。飞机自动驾驶、电网、放大器防自激都靠这一判据。</p>
+    </div>
+  </div>
+  <canvas class="mini" id="cvLya"></canvas>
+  <p class="figcap">图2 · 稳定性：V(x) 像一只"碗"（正定），状态轨迹沿碗壁向内螺旋下落至原点 → 能量持续耗散、系统渐近稳定。</p>
+
+  <div class="app">
+    <div class="num">3</div>
+    <div class="body">
+      <h3>结构力学 · 刚度矩阵正定 = 结构稳定</h3>
+      <p>离散结构的<b>刚度矩阵 K</b> 决定应变能 U=½ uᵀKu。若 K 正定 → 任意非零位移都储存正能量，结构是<b>几何稳定的</b>（无刚体运动）；若 K 半正定（detK=0）→ 存在<b>刚体模态</b>（如悬空梁未约束），需加约束使其正定后才能求静力响应 K u = f。</p>
+      <p class="small"><b>思路：</b>检查 K 是否正定/半正定（惯性指数）→ 判断结构是否约束充分、能否求解。</p>
+    </div>
+  </div>
+  <canvas class="mini" id="cvStruct"></canvas>
+  <p class="figcap">图3 · 结构力学：两端固定的弹簧-质点系统，刚度矩阵正定 → 任意位移都产生回复力（稳定）；若去掉一端约束则降为半正定（可整体平移）。</p>
+</section>
+
+<!-- 总结 -->
+<section class="card">
+  <h2>六、一句话总结</h2>
+  <table>
+    <tr><th>工程问题</th><th>看二次型的什么</th><th>结论</th></tr>
+    <tr><td>优化 / 最小二乘</td><td>Hessian 是否正定</td><td>正定→唯一极小，解稳定</td></tr>
+    <tr><td>系统稳定（李雅普诺夫）</td><td>存在正定 V=xᵀPx 使 V̇ 负定（AᵀP+PA=−Q 有正定解）</td><td>存在→渐近稳定</td></tr>
+    <tr><td>结构刚度 / 振动</td><td>刚度矩阵 K 正定/半正定</td><td>正定→稳定；半正定→有刚体模态</td></tr>
+  </table>
+  <p class="lead" style="margin-top:12px;"><b>核心思想：</b>二次型的"符号"（正定/负定/半定/不定）与惯性指数 (p,q,r)，是把抽象的矩阵性质转化为"能量是否耗散、解是否唯一、结构是否稳定"等工程判据的桥梁。</p>
+</section>
+
+<footer>单文件 H5 · 原生 JS 绘图 · 浅色大字号 · 适配手机端 · 拖动滑块即可探索</footer>
+
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const cv = $("cv"), ctx = cv.getContext("2d");
+
+// ============ 尺寸管理（带守护，避免布局未完成时清成 0/极小值） ============
+function resize(canvas){
+  const dpr = window.devicePixelRatio || 1;
+  const cssW = canvas.clientWidth;
+  const cssH = canvas.clientHeight;
+  // 守护：布局未完成（尺寸异常）时保持原尺寸，不重置画布
+  if(!cssW || !cssH || cssW<10 || cssH<10) return false;
+  const W = Math.max(1, Math.round(cssW*dpr));
+  const H = Math.max(1, Math.round(cssH*dpr));
+  if(canvas.width !== W || canvas.height !== H){
+    canvas.width = W; canvas.height = H;
+  }
+  return true;
+}
+
+// ============ 交互控件 ============
+const sliders = ["A11","A12","A21","A22"];
+sliders.forEach(id=>{
+  $(id).addEventListener("input", ()=>{ syncSym(); scheduleDraw(); });
+});
+
+document.querySelectorAll(".preset").forEach(el=>{
+  el.addEventListener("click", ()=>{
+    const m = {pd:[2,0,0,1], nd:[-2,0,0,-1], psd:[1,1,1,1], ind:[1,0,0,-1], reset:[1,0,0,1]};
+    const v = m[el.dataset.p]; if(!v) return;
+    $("A11").value=v[0]; $("A12").value=v[1]; $("A21").value=v[2]; $("A22").value=v[3];
+    syncSym(); scheduleDraw();
+  });
+});
+
+function getA(){
+  return {
+    a:+$("A11").value, b:(+$("A12").value + +$("A21").value)/2,
+    c:+$("A22").value
+  };
+}
+function syncSym(){
+  const A=getA();
+  $("vA11").textContent=A.a; $("vA12").textContent=A.b;
+  $("vA21").textContent=A.b; $("vA22").textContent=A.c;
+}
+
+// 实对称 2x2 特征值
+function eigen2(a,b,c){
+  const tr=a+c, det=a*c-b*b, D=tr*tr-4*det;
+  const sq = Math.sqrt(Math.max(D,0));
+  return [(tr-sq)/2, (tr+sq)/2];
+}
+
+function classify(A){
+  const {a,b,c}=A; const det=a*c-b*b;
+  let [lam1,lam2] = eigen2(a,b,c);
+  let type, cls="ind";
+  if(det>0 && a>0){ type="正定 (Positive Definite)"; cls="pd"; }
+  else if(det>0 && a<0){ type="负定 (Negative Definite)"; cls="nd"; }
+  else if(det<0){ type="不定 (Indefinite)"; cls="ind"; }
+  else {
+    if(lam1>0 || lam2>0){ type="半正定 (Positive Semidefinite)"; cls="psd"; }
+    else if(lam1<0 || lam2<0){ type="半负定 (Negative Semidefinite)"; cls="nsd"; }
+    else { type="零矩阵 (Zero)"; cls="psd"; }
+  }
+  let p=0,q=0,r=0;
+  [lam1,lam2].forEach(l=>{ if(Math.abs(l)>1e-9){ if(l>0) p++; else q++; } else r++; });
+  return {type,cls,lam1,lam2,det,p,q,r};
+}
+
+// ============ 绘制（核心：自包含变换 + 直接 putImageData） ============
+function drawRegion(A, cx, cy, scale, w, h){
+  // 自包含：保存/强制单位变换/恢复，杜绝变换累积
+  ctx.save();
+  ctx.setTransform(1,0,0,1,0,0);
+  const img = ctx.createImageData(w, h);
+  const data = img.data;
+  const {a,b,c}=A;
+  for(let py=0; py<h; py++){
+    const y = (cy - py)/scale;   // 屏幕 y 向上为正
+    for(let px=0; px<w; px++){
+      const x = (px - cx)/scale;
+      const f = a*x*x + 2*b*x*y + c*y*y;
+      const idx = (py*w + px)*4;
+      if(f > 1e-3){
+        data[idx]=198; data[idx+1]=246; data[idx+2]=213; data[idx+3]=255; // 浅绿
+      } else if(f < -1e-3){
+        data[idx]=254; data[idx+1]=215; data[idx+2]=215; data[idx+3]=255; // 浅红
+      } else {
+        data[idx]=255; data[idx+1]=255; data[idx+2]=255; data[idx+3]=255; // 零线附近留白
+      }
+    }
+  }
+  // 直接在主画布物理像素上贴图（坐标已对齐，无需离屏中转）
+  ctx.putImageData(img, 0, 0);
+  ctx.restore();
+}
+
+let drawScheduled = false;
+function scheduleDraw(){
+  if(drawScheduled) return;
+  drawScheduled = true;
+  requestAnimationFrame(()=>{ drawScheduled = false; draw(); });
+}
+
+function draw(){
+  if(!resize(cv)) return;          // 尺寸异常则跳过本次
+  const w=cv.width, h=cv.height;
+  if(w<=0 || h<=0) return;
+  ctx.setTransform(1,0,0,1,0,0);  // 单位变换，物理像素直写
+  ctx.clearRect(0,0,w,h);
+
+  const A=getA(); const {a,b,c}=A;
+  const cx=w/2, cy=h/2;
+  const scale = Math.min(w,h)*0.42 / Math.sqrt(Math.max(Math.abs(a),Math.abs(c),1));
+
+  // 1) 正负区域着色
+  drawRegion(A, cx, cy, scale, w, h);
+
+  // 2) f(x)=1 等高线（蓝色）
+  ctx.strokeStyle="#2b6cb0";
+  ctx.lineWidth = 2.2;
+  ctx.beginPath();
+  let first=true;
+  const N=360;
+  for(let k=0;k<N;k++){
+    const t=2*Math.PI*k/N;
+    const ct=Math.cos(t), st=Math.sin(t);
+    const q=a*ct*ct + 2*b*ct*st + c*st*st;
+    let x,y;
+    if(Math.abs(q)>1e-6){
+      const s = scale/Math.sqrt(Math.abs(q));
+      x = s*ct; y = s*st;
+      if(q<0){ x=-x; y=-y; }
+    } else {
+      x = ct*scale*4; y = st*scale*4;
+    }
+    const px=cx+x, py=cy-y;
+    if(first){ ctx.moveTo(px,py); first=false; } else { ctx.lineTo(px,py); }
+  }
+  ctx.closePath(); ctx.stroke();
+
+  // 3) 坐标轴
+  ctx.strokeStyle="#cbd5e0"; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0,cy); ctx.lineTo(w,cy); ctx.moveTo(cx,0); ctx.lineTo(cx,h); ctx.stroke();
+  ctx.fillStyle="#576574"; ctx.font = "13px sans-serif";
+  ctx.fillText("x₁", w-26, cy-8);
+  ctx.fillText("x₂", cx+8, h-10);
+
+  // 4) 结果面板
+  const info=classify(A);
+  const res=$("res"); res.className="result "+info.cls;
+  const detA=(a*c-b*b).toFixed(2), a11=A.a.toFixed(2);
+  const interp = info.cls==="pd" ? "所有方向 f>0（全绿），曲面为椭圆/碗，有唯一极小（正定→稳定/可优化）。"
+                : info.cls==="nd" ? "所有方向 f<0（全红），曲面为倒置椭圆/碗。"
+                : info.cls==="psd" ? "f≥0 且某方向=0（绿+零线，半正定/有刚体模态）。"
+                : info.cls==="nsd" ? "f≤0 且某方向=0（红+零线，半负定）。"
+                : "f 既可正又可负（绿红各半，det<0，λ 异号），曲面为鞍形/双曲线。";
+  res.innerHTML=`<b>分类：${info.type}</b><br>
+    f(x)=${a.toFixed(2)}x₁² + ${2*b.toFixed(2)}x₁x₂ + ${c.toFixed(2)}x₂² &nbsp;|&nbsp;
+    detA=${detA}, a₁₁=${a11}<br>
+    <span class="small">解读：惯性指数 (p,q,r)=(${info.p},${info.q},${info.r}) —— ${interp}</span>`;
+  $("eig").textContent   = `λ₁≈${info.lam1.toFixed(2)}, λ₂≈${info.lam2.toFixed(2)}`;
+  $("minors").textContent= `Δ₁=a₁₁=${a11}, Δ₂=detA=${detA}`;
+  $("inert").textContent = `(${info.p},${info.q},${info.r})`;
+}
+
+// ============ 工程场景配图（各自独立 resize + 自包含变换） ============
+function setupMini(id, drawFn){
+  const c = $(id);
+  if(!resize(c)) return;
+  const ctx2 = c.getContext("2d");
+  ctx2.setTransform(1,0,0,1,0,0);
+  ctx2.clearRect(0,0,c.width,c.height);
+  drawFn(ctx2, c.width, c.height);
+}
+
+function drawOpt(ctx2, w, h){
+  ctx2.fillStyle="#f0f9ff"; ctx2.fillRect(0,0,w,h);
+  ctx2.strokeStyle="#38a169"; ctx2.lineWidth=1.4;
+  const cx=w/2, cy=h/2+10;
+  for(let s=0.6; s<2.4; s+=0.35){
+    ctx2.beginPath();
+    ctx2.ellipse(cx, cy, 30*s, 20*s, 0, 0, Math.PI*2);
+    ctx2.stroke();
+  }
+  ctx2.fillStyle="#e53e3e";
+  ctx2.beginPath(); ctx2.arc(cx, cy, 5, 0, Math.PI*2); ctx2.fill();
+  ctx2.fillStyle="#333"; ctx2.font="13px sans-serif";
+  ctx2.fillText("唯一极小点(碗底)", cx-52, cy+34);
+}
+
+function drawLya(ctx2, w, h){
+  ctx2.fillStyle="#fff5f5"; ctx2.fillRect(0,0,w,h);
+  ctx2.strokeStyle="#d53f8c"; ctx2.lineWidth=2;
+  ctx2.beginPath();
+  const cx=w/2, cy=h/2;
+  for(let t=0;t<260;t++){
+    const ang=t*0.12;
+    const r=Math.max(2, 78 - t*0.30);
+    const x=cx+r*Math.cos(ang), y=cy+r*Math.sin(ang);
+    if(t===0) ctx2.moveTo(x,y); else ctx2.lineTo(x,y);
+  }
+  ctx2.stroke();
+  ctx2.fillStyle="#2d3748";
+  ctx2.beginPath(); ctx2.arc(cx, cy, 4, 0, Math.PI*2); ctx2.fill();
+  ctx2.font="12px sans-serif";
+  ctx2.fillText("V↓(能量耗散)", cx+8, cy-8);
+  ctx2.fillText("→ 渐近稳定", cx-44, cy+30);
+}
+
+function drawStruct(ctx2, w, h){
+  ctx2.fillStyle="#f7fafc"; ctx2.fillRect(0,0,w,h);
+  ctx2.strokeStyle="#4a5568"; ctx2.lineWidth=2;
+  const base=h-40, left=30, right=w-30;
+  ctx2.beginPath(); ctx2.moveTo(10,base+18); ctx2.lineTo(w-10,base+18); ctx2.stroke();
+  ctx2.fillStyle="#3182ce";
+  ctx2.fillRect(left, base-70, 8, 70);
+  ctx2.fillRect(right-8, base-70, 8, 70);
+  ctx2.fillStyle="#2d3748";
+  ctx2.beginPath(); ctx2.arc(left+45, base-45, 7, 0, Math.PI*2); ctx2.fill();
+  ctx2.beginPath(); ctx2.arc(right-45, base-45, 7, 0, Math.PI*2); ctx2.fill();
+  ctx2.strokeStyle="#4a5568"; ctx2.setLineDash([5,5]);
+  ctx2.beginPath(); ctx2.moveTo(left+8,base-45); ctx2.lineTo(left+38,base-45); ctx2.stroke();
+  ctx2.beginPath(); ctx2.moveTo(right-38,base-45); ctx2.lineTo(right-8,base-45); ctx2.stroke();
+  ctx2.setLineDash([]);
+  ctx2.font="12px sans-serif"; ctx2.fillStyle="#333";
+  ctx2.fillText("K 正定 → 任意位移均有回复力(稳定)", left-10, base-80);
+}
+
+function drawAllMinis(){
+  setupMini("cvOpt", drawOpt);
+  setupMini("cvLya", drawLya);
+  setupMini("cvStruct", drawStruct);
+}
+
+// ============ 单一初始化入口（避免多时机竞态） ============
+syncSym();
+function initDraw(){ resize(cv); draw(); drawAllMinis(); }
+
+if(document.readyState==="loading"){
+  document.addEventListener("DOMContentLoaded", initDraw, {once:true});
+} else {
+  initDraw();
+}
+window.addEventListener("load", initDraw, {once:true});
+
+// 用 ResizeObserver 监听画布容器尺寸变化（单次触发/防抖由 rAF 完成）
+if(typeof ResizeObserver !== "undefined"){
+  const ro = new ResizeObserver(()=> scheduleDraw());
+  ro.observe(cv);
+} else {
+  window.addEventListener("resize", ()=> scheduleDraw());
+}
+</script>
+</body>
+</html>

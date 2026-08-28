@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<title>矩阵变换：球体→椭球体（高对比度增强版）</title>
+<style>
+body{margin:0;padding:30px;background:linear-gradient(135deg,#f5f7fa, #eef2f6, #e1e8f0);color:#2c3e50;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;min-height:100vh;font-size:20px;font-weight:bold;}
+.container{max-width:98%;margin:0 auto;background:rgba(255,255,255,0.85);backdrop-filter:blur(10px);padding:30px;border-radius:15px;box-shadow:0 8px 32px rgba(0,0,0,0.1);border:1px solid rgba(200,210,230,0.5);}
+h1{text-align:center;color:#1e3a8a;margin-bottom:30px;font-size:3rem;font-weight:bold;text-shadow:0 0 8px rgba(30,58,138,0.15);}
+.controls,.matrix-input,.rotation-control{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:15px;margin:25px 0;}
+button{padding:15px 25px;font-size:18px;cursor:pointer;background:linear-gradient(45deg,#2563eb,#3b82f6);color:white;border:none;border-radius:30px;transition:all 0.3s ease;box-shadow:0 4px 15px rgba(37,99,235,0.25);font-weight:bold;}
+button:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(37,99,235,0.35);}
+.canvas-container{display:flex;justify-content:space-around;flex-wrap:wrap;margin:30px 0;width:100%;gap:20px;}
+canvas{border:3px solid #000000;background:#ffffff;border-radius:8px;box-shadow:0 4px 15px rgba(0,0,0,0.08);max-width:100%;height:auto;}
+.info-panel{background:#f0f7ff;padding:25px;border-radius:10px;margin:30px 0;font-size:18px;line-height:1.8;border:1px solid #dbeafe;}
+.info-panel h3{color:#1e3a8a;margin-top:0;border-bottom:1px solid #dbeafe;padding-bottom:12px;font-size:1.6rem;font-weight:bold;}
+.math-formula{font-family:'Courier New',monospace;background:#e0f2fe;padding:4px 8px;border-radius:4px;color:#0c4a6e;font-size:18px;font-weight:bold;}
+.eigen-info{display:flex;justify-content:space-around;flex-wrap:wrap;margin:30px 0;gap:15px;}
+.eigen-card{background:#eff6ff;padding:25px;border-radius:10px;min-width:280px;border:1px solid #dbeafe;box-shadow:0 4px 10px rgba(0,0,0,0.05);transition:transform 0.3s ease;flex:1;max-width:350px;font-size:18px;}
+.eigen-card:hover{transform:translateY(-3px);background:#e0f2fe;}
+.eigen-card h4{color:#1e3a8a;margin-top:0;text-align:center;font-size:1.5rem;font-weight:bold;}
+.slider-container,.rotation-container{display:flex;justify-content:center;align-items:center;gap:15px;margin:25px 0;}
+input[type=range]{width:50%;height:12px;border-radius:8px;background:#e0e7ff;outline:none;-webkit-appearance:none;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:30px;height:30px;border-radius:50%;background:#2563eb;cursor:pointer;box-shadow:0 0 8px rgba(37,99,235,0.6);}
+input[type=range]::-moz-range-thumb{width:30px;height:30px;border-radius:50%;background:#2563eb;border:none;box-shadow:0 0 8px rgba(37,99,235,0.6);}
+.slider-value,.rotation-value{font-weight:bold;color:#2563eb;min-width:60px;font-size:18px;}
+.matrix-input input{width:90px;padding:12px;margin:5px;text-align:center;background:#ffffff;border:2px solid #d1d5db;border-radius:8px;color:#1e293b;font-size:20px;font-weight:bold;}
+.matrix-input input:focus{border-color:#3b82f6;outline:none;box-shadow:0 0 8px rgba(59,130,246,0.4);}
+.zoom-control{display:inline-flex;align-items:center;gap:10px;padding:10px 15px;background:rgba(232, 244, 253, 0.7);border-radius:50px;}
+.zoom-label{font-size:18px;color:#2c3e50;font-weight:bold;}
+input[type="range"]#zoomSlider{width:150px;}
+.zoom-value{font-size:18px;color:#d35400;font-weight:bold;min-width:50px;}
+label{font-size:18px;font-weight:bold;}
+h3{font-size:1.6rem;font-weight:bold;margin:15px 0;}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>矩阵变换：球体→椭球体（高对比度增强版）</h1>
+
+<div class="matrix-input">
+<h3>输入矩阵（3×3）：</h3>
+<div id="matrixInputs"></div>
+<button onclick="updateMatrix()">更新矩阵</button>
+<button onclick="resetToIdentity()">单位矩阵</button>
+<button onclick="generateRandomMatrix()">随机矩阵</button>
+</div>
+
+<div class="rotation-control">
+<label for="rotationSlider">旋转角度：</label>
+<input type="range" id="rotationSlider" min="0" max="6.2832" step="0.01" value="0">
+<span class="rotation-value" id="rotationValue">0.00</span>
+</div>
+
+<div class="controls">
+<button onclick="startAnimation()">开始动画</button>
+<button onclick="pauseAnimation()">暂停</button>
+<button onclick="resetAnimation()">重置</button>
+<button onclick="showEigenInfo()">显示特征向量</button>
+<div class="zoom-control">
+<span class="zoom-label">缩放:</span>
+<input type="range" id="zoomSlider" min="0.5" max="3" step="0.1" value="1">
+<span class="zoom-value" id="zoomValue">100%</span>
+</div>
+</div>
+
+<div class="slider-container">
+<label for="speedSlider">动画速度：</label>
+<input type="range" id="speedSlider" min="0.1" max="3" step="0.1" value="1">
+<span class="slider-value" id="speedValue">1.0</span>
+</div>
+
+<div class="canvas-container">
+<div><h3>原始空间（单位球）</h3><canvas id="canvas1"></canvas></div>
+<div><h3>变换后空间（椭球）</h3><canvas id="canvas2"></canvas></div>
+</div>
+
+<div class="eigen-info" id="eigenInfo"></div>
+<div class="info-panel">
+<h3>说明</h3>
+<p>• 左侧 = <strong>三维坐标系 + 单位球网格</strong>（可旋转）</p>
+<p>• 右侧 = 对<strong>同一网格点</strong>做矩阵变换得到的<strong>椭球面</strong></p>
+<p>• <strong>三条</strong>特征向量箭头（红/绿/蓝）末端分别落在球面/椭球表面，长短=|λ|</p>
+</div>
+</div>
+
+<script>
+/* ---------- 全局变量 ---------- */
+let animationId, isPaused = false, currentFrame = 0, speed = 1.0;
+let matrix = [[2, 0.5, 0.3], [0.5, 1.5, 0.2], [0.3, 0.2, 1]];
+let eigenvalues = [], eigenvectors = [], animationStarted = false, rotationAngle = 0;
+let zoomScale = 1, canvasSize = 700;
+const canvas1 = document.getElementById('canvas1'), ctx1 = canvas1.getContext('2d');
+const canvas2 = document.getElementById('canvas2'), ctx2 = canvas2.getContext('2d');
+
+/* ---------- 3D 工具 ---------- */
+const rotateY = (v, t) => {
+    const [x, y, z] = v, ct = Math.cos(t), st = Math.sin(t);
+    return [x * ct - z * st, y, x * st + z * ct];
+};
+const multiplyMatrixVector = (A, v) => A.map(r => r[0] * v[0] + r[1] * v[1] + r[2] * v[2]);
+
+/* ---------- 绘制：统一先旋转再画 ---------- */
+function drawVector(ctx, cx, cy, baseScale, v3, color, label, width = 4, dash = false) {
+    const scale = baseScale * zoomScale;
+    const [rx, ry, rz] = rotateY(v3, rotationAngle);
+    const px = rx * scale, py = (ry + rz * 0.3) * scale;
+    ctx.save();
+    ctx.strokeStyle = color; ctx.lineWidth = width * zoomScale;
+    if (dash) ctx.setLineDash([8, 8]);
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + px, cy - py); ctx.stroke();
+    const ang = Math.atan2(-py, px), ar = 15 * zoomScale;
+    ctx.beginPath();
+    ctx.moveTo(cx + px, cy - py);
+    ctx.lineTo(cx + px - ar * Math.cos(ang - Math.PI / 6), cy - py + ar * Math.sin(ang - Math.PI / 6));
+    ctx.moveTo(cx + px, cy - py);
+    ctx.lineTo(cx + px - ar * Math.cos(ang + Math.PI / 6), cy - py + ar * Math.sin(ang + Math.PI / 6));
+    ctx.stroke(); ctx.restore();
+    if (label) { ctx.fillStyle = color; ctx.font = `${20 * zoomScale}px Arial`; ctx.fillText(label, cx + px + 12, cy - py - 8); }
+}
+
+/* ---------- 网格：同一组球面点，右侧先变换再画 ---------- */
+function drawGridSphereOrEllipsoid(ctx, cx, cy, baseScale, rotation, matrix, isTransformed) {
+    const scale = baseScale * zoomScale;
+    const nLon = 24, nLat = 16;
+    const proj = v => {
+        const [rx, ry, rz] = rotateY(v, rotation);
+        return [rx * scale, (ry + rz * 0.3) * scale];
+    };
+
+    for (let i = 0; i < nLon; i++) {
+        const lon = (i / nLon) * 2 * Math.PI;
+        ctx.strokeStyle = isTransformed ? 'rgba(255, 0, 0, 0.6)' : 'rgba(0, 0, 255, 0.6)';
+        ctx.lineWidth = 1.5 * zoomScale;
+        ctx.beginPath();
+        for (let j = 0; j <= nLat; j++) {
+            const lat = (j / nLat) * Math.PI - Math.PI / 2;
+            let p = [Math.cos(lat) * Math.cos(lon), Math.cos(lat) * Math.sin(lon), Math.sin(lat)];
+            if (isTransformed) p = multiplyMatrixVector(matrix, p);
+            const [px2, py2] = proj(p);
+            if (j === 0) ctx.moveTo(cx + px2, cy - py2);
+            else ctx.lineTo(cx + px2, cy - py2);
+        }
+        ctx.stroke();
+    }
+    for (let j = 0; j <= nLat; j++) {
+        const lat = (j / nLat) * Math.PI - Math.PI / 2;
+        ctx.strokeStyle = isTransformed ? 'rgba(255, 0, 0, 0.6)' : 'rgba(0, 0, 255, 0.6)';
+        ctx.lineWidth = 1.5 * zoomScale;
+        ctx.beginPath();
+        for (let i = 0; i <= nLon; i++) {
+            const lon = (i / nLon) * 2 * Math.PI;
+            let p = [Math.cos(lat) * Math.cos(lon), Math.cos(lat) * Math.sin(lon), Math.sin(lat)];
+            if (isTransformed) p = multiplyMatrixVector(matrix, p);
+            const [px2, py2] = proj(p);
+            if (i === 0) ctx.moveTo(cx + px2, cy - py2);
+            else ctx.lineTo(cx + px2, cy - py2);
+        }
+        ctx.closePath(); ctx.stroke();
+    }
+}
+
+function drawCoordinateSystem(ctx, centerX, centerY, baseScale) {
+    const scale = baseScale * zoomScale;
+    ctx.strokeStyle = '#000000'; ctx.lineWidth = 2.5 * zoomScale;
+    ctx.beginPath(); ctx.moveTo(0, centerY); ctx.lineTo(ctx.canvas.width, centerY); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(centerX, 0); ctx.lineTo(centerX, ctx.canvas.height); ctx.stroke();
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)'; ctx.lineWidth = 1 * zoomScale;
+    const gridRange = Math.ceil(5 / zoomScale);
+    for (let i = -gridRange; i <= gridRange; i++) {
+        if (i !== 0) {
+            ctx.beginPath(); ctx.moveTo(centerX + i * scale, 0); ctx.lineTo(centerX + i * scale, ctx.canvas.height); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0, centerY + i * scale); ctx.lineTo(ctx.canvas.width, centerY + i * scale); ctx.stroke();
+        }
+    }
+}
+
+function draw3DAxes(ctx, centerX, centerY, baseScale) {
+    const scale = baseScale * zoomScale;
+    const axes = [
+        { v: [1, 0, 0], color: '#FF0000', label: 'X' },
+        { v: [0, 1, 0], color: '#00FF00', label: 'Y' },
+        { v: [0, 0, 1], color: '#0000FF', label: 'Z' }
+    ];
+    axes.forEach(ax => {
+        const [rx, ry, rz] = rotateY(ax.v, rotationAngle);
+        const px = rx * scale, py = (ry + rz * 0.3) * scale;
+        drawVector(ctx, centerX, centerY, baseScale, [px, py, 0], ax.color, ax.label, 3);
+    });
+}
+
+function calculateEigenvaluesAndVectors() {
+    const A = JSON.parse(JSON.stringify(matrix));
+    const n = 3;
+    let V = Array.from({length: n}, (_, i) => {
+        const row = new Array(n).fill(0);
+        row[i] = 1;
+        return row;
+    });
+
+    function jacobiSweep() {
+        let changed = false;
+        for (let p = 0; p < n; p++) {
+            for (let q = p + 1; q < n; q++) {
+                const app = A[p][p], aqq = A[q][q], apq = A[p][q];
+                if (Math.abs(apq) < 1e-12) continue;
+                changed = true;
+                const τ = (aqq - app) / (2 * apq);
+                const t = τ >= 0 ? 1 / (τ + Math.sqrt(1 + τ * τ))
+                                 : -1 / (-τ + Math.sqrt(1 + τ * τ));
+                const c = 1 / Math.sqrt(1 + t * t), s = t * c;
+
+                A[p][p] = app - t * apq;
+                A[q][q] = aqq + t * apq;
+                A[p][q] = A[q][p] = 0;
+                for (let i = 0; i < n; i++) {
+                    if (i !== p && i !== q) {
+                        const aip = A[i][p], aiq = A[i][q];
+                        A[i][p] = A[p][i] = c * aip - s * aiq;
+                        A[i][q] = A[q][i] = s * aip + c * aiq;
+                    }
+                }
+                for (let i = 0; i < n; i++) {
+                    const vip = V[i][p], viq = V[i][q];
+                    V[i][p] = c * vip - s * viq;
+                    V[i][q] = s * vip + c * viq;
+                }
+            }
+        }
+        return changed;
+    }
+
+    let sweep = 0;
+    do { sweep++; } while (sweep < 50 && jacobiSweep());
+
+    eigenvalues  = [A[0][0], A[1][1], A[2][2]];
+    eigenvectors = [ [V[0][0], V[1][0], V[2][0]],
+                     [V[0][1], V[1][1], V[2][1]],
+                     [V[0][2], V[1][2], V[2][2]] ];
+
+    const idx = [0,1,2].sort((a,b)=>Math.abs(eigenvalues[b])-Math.abs(eigenvalues[a]));
+    eigenvalues  = idx.map(i => eigenvalues[i]);
+    eigenvectors = idx.map(i => eigenvectors[i]);
+
+    updateEigenInfo();
+}
+
+function updateEigenInfo() {
+    const infoDiv = document.getElementById('eigenInfo');
+    infoDiv.innerHTML = '';
+    eigenvalues.forEach((lambda, index) => {
+        if (eigenvectors[index]) {
+            const card = document.createElement('div');
+            card.className = 'eigen-card';
+            card.innerHTML = `
+                <h4>特征值 ${index + 1}</h4>
+                <p><strong>λ = ${lambda.toFixed(3)}</strong></p>
+                <p>特征向量:</p>
+                <p style="font-family: monospace; font-size: 18px;">
+                    [${eigenvectors[index].map(x => x.toFixed(3)).join(', ')}]
+                </p>
+                <p>伸缩比例: ${Math.abs(lambda).toFixed(3)} ${lambda < 0 ? '(反向)' : '(同向)'}</p>
+            `;
+            infoDiv.appendChild(card);
+        }
+    });
+}
+
+function drawStaticScene() {
+    updateCanvasSize();
+    const centerX = canvasSize / 2, centerY = canvasSize / 2, baseScale = canvasSize / 10;
+    ctx1.clearRect(0, 0, canvas1.width, canvas1.height);
+    ctx2.clearRect(0, 0, canvas2.width, canvas2.height);
+    drawCoordinateSystem(ctx1, centerX, centerY, baseScale);
+    drawCoordinateSystem(ctx2, centerX, centerY, baseScale);
+    draw3DAxes(ctx1, centerX, centerY, baseScale);
+    draw3DAxes(ctx2, centerX, centerY, baseScale);
+    drawGridSphereOrEllipsoid(ctx1, centerX, centerY, baseScale, rotationAngle, matrix, false);
+    drawGridSphereOrEllipsoid(ctx2, centerX, centerY, baseScale, rotationAngle, matrix, true);
+    eigenvectors.forEach((v, i) => {
+        if (!v) return;
+        const color = ['#FF0000', '#00FF00', '#0000FF'][i % 3];
+        drawVector(ctx1, centerX, centerY, baseScale, v, color, `v${i + 1}`, 5);
+        const av = multiplyMatrixVector(matrix, v);
+        drawVector(ctx2, centerX, centerY, baseScale, av, color, `Av${i + 1}`, 5);
+    });
+}
+
+function animate() {
+    if (isPaused) return;
+    drawStaticScene();
+    if (animationStarted) {
+        const centerX = canvasSize / 2, centerY = canvasSize / 2, baseScale = canvasSize / 10;
+        for (let i = 0; i < 12; i++) {
+            const angle = (i / 12) * 2 * Math.PI;
+            const testVector = [Math.cos(angle), Math.sin(angle), 0];
+            const transformed = multiplyMatrixVector(matrix, testVector);
+            drawVector(ctx1, centerX, centerY, baseScale, testVector, 'rgba(0, 0, 255, 0.7)', null, 2, true);
+            drawVector(ctx2, centerX, centerY, baseScale, transformed, 'rgba(255, 136, 0, 0.8)', null, 2, true);
+        }
+    }
+    currentFrame++;
+    animationId = requestAnimationFrame(animate);
+}
+
+function startAnimation() {
+    if (animationId) return;
+    isPaused = false;
+    animationStarted = true;
+    animate();
+}
+function pauseAnimation() {
+    isPaused = true;
+    if (animationId) cancelAnimationFrame(animationId);
+    animationId = null;
+}
+function resetAnimation() {
+    pauseAnimation();
+    animationStarted = false;
+    drawStaticScene();
+}
+function showEigenInfo() {
+    calculateEigenvaluesAndVectors();
+    drawStaticScene();
+}
+function initializeMatrixInputs() {
+    const container = document.getElementById('matrixInputs');
+    container.innerHTML = '';
+    for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.id = `matrix_${i}_${j}`;
+            input.value = matrix[i][j];
+            input.step = '0.1';
+            container.appendChild(input);
+        }
+        container.appendChild(document.createElement('br'));
+    }
+}
+function updateMatrix() {
+    for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+            const value = parseFloat(document.getElementById(`matrix_${i}_${j}`).value);
+            if (!isNaN(value)) matrix[i][j] = value;
+        }
+    }
+    for (let i = 0; i < 3; i++) {
+        for (let j = i + 1; j < 3; j++) {
+            matrix[j][i] = matrix[i][j];
+            document.getElementById(`matrix_${j}_${i}`).value = matrix[j][i];
+        }
+    }
+    calculateEigenvaluesAndVectors();
+    drawStaticScene();
+}
+function resetToIdentity() {
+    matrix = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
+    initializeMatrixInputs();
+    updateMatrix();
+}
+function generateRandomMatrix() {
+    for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+            matrix[i][j] = (Math.random() - 0.5) * 4;
+        }
+    }
+    for (let i = 0; i < 3; i++) {
+        for (let j = i + 1; j < 3; j++) {
+            matrix[j][i] = matrix[i][j];
+        }
+    }
+    initializeMatrixInputs();
+    updateMatrix();
+}
+
+function updateCanvasSize() {
+    const container = document.querySelector('.canvas-container');
+    const containerWidth = container.clientWidth;
+    const maxSize = 800;
+    const size = Math.min(Math.floor((containerWidth - 40) / 2), maxSize);
+    canvasSize = Math.max(size, 400);
+    
+    canvas1.width = canvasSize;
+    canvas1.height = canvasSize;
+    canvas2.width = canvasSize;
+    canvas2.height = canvasSize;
+}
+
+document.getElementById('rotationSlider').addEventListener('input', e => {
+    rotationAngle = parseFloat(e.target.value);
+    document.getElementById('rotationValue').textContent = rotationAngle.toFixed(2);
+    drawStaticScene();
+});
+document.getElementById('speedSlider').addEventListener('input', e => {
+    speed = parseFloat(e.target.value);
+    document.getElementById('speedValue').textContent = speed.toFixed(1);
+});
+document.getElementById('zoomSlider').addEventListener('input', e => {
+    zoomScale = parseFloat(e.target.value);
+    document.getElementById('zoomValue').textContent = Math.round(zoomScale * 100) + '%';
+    drawStaticScene();
+});
+
+window.onload = () => {
+    initializeMatrixInputs();
+    calculateEigenvaluesAndVectors();
+    updateCanvasSize();
+    drawStaticScene();
+};
+window.addEventListener('resize', () => {
+    updateCanvasSize();
+    drawStaticScene();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>三维空间施密特正交化 · 第三步</title>
+<style>
+*{box-sizing:border-box;}
+body{margin:0;background:#f4f7fc;font-family:"PingFang SC","Microsoft YaHei","Helvetica Neue",sans-serif;color:#1a1a2e;}
+.container{max-width:1100px;margin:0 auto;padding:22px;}
+h1{font-size:40px;text-align:center;margin:0 0 8px;}
+.sub{text-align:center;font-size:19px;color:#666;margin-bottom:16px;}
+.card{background:white;border-radius:14px;padding:20px 24px;margin-bottom:18px;box-shadow:0 4px 20px rgba(0,0,0,0.05);}
+.formula{font-size:30px;text-align:center;line-height:1.9;min-height:64px;}
+/* 向量：粗体+下划线表示带箭头 */
+.vec{font-weight:bold;text-decoration:underline;text-decoration-color:#94a3b8;}
+/* 公式推导中的数学符号 */
+.math{font-family:"Cambria Math","Times New Roman",serif;font-style:italic;}
+.stage{position:relative;}
+canvas{display:block;margin:0 auto;background:#fafcff;border-radius:10px;cursor:grab;}
+canvas:active{cursor:grabbing;}
+.legend{position:absolute;top:12px;left:12px;background:rgba(255,255,255,0.94);border-radius:8px;padding:10px 12px;font-size:16px;line-height:1.8;box-shadow:0 2px 8px rgba(0,0,0,0.08);}
+.info{position:absolute;top:12px;right:12px;background:rgba(255,255,255,0.94);border-radius:8px;padding:7px 12px;font-size:15px;color:#475569;box-shadow:0 2px 8px rgba(0,0,0,0.08);}
+.explain{font-size:21px;line-height:1.9;}
+.explain .item{background:#fffbe8;border-left:5px solid #f59e0b;border-radius:8px;padding:12px 16px;margin-bottom:12px;}
+.explain .item .step-tag{display:inline-block;background:#ea580c;color:white;border-radius:6px;padding:2px 10px;font-size:16px;margin-right:8px;font-weight:bold;}
+.explain .item .proof{display:block;margin-top:8px;color:#333;font-size:19px;line-height:1.85;font-family:"Cambria Math","Times New Roman","PingFang SC",serif;}
+.btns{display:flex;gap:10px;margin-top:8px;}
+.btns button{flex:1;font-size:20px;padding:14px;border:none;border-radius:10px;background:#3b82f6;color:white;cursor:pointer;}
+.btns button:hover{background:#1d4ed8;}
+.btns button.ghost{background:#e2e8f0;color:#334155;}
+.btns button.ghost:hover{background:#cbd5e1;}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>三维空间施密特正交化 · 第三步</h1>
+<div class="sub">将 <span class="vec">a₃</span> 向已正交的 <span class="vec">b₁</span>、<span class="vec">b₂</span> 分别投影，得到残量 <span class="vec">r₃</span> 与两者均正交</div>
+
+<div class="card">
+<div class="formula" id="formula">点击「下一步」开始</div>
+</div>
+
+<div class="card stage">
+<canvas id="c" width="760" height="520"></canvas>
+<div class="legend" id="legend"></div>
+<div class="info" id="info">第 0 / 6 步</div>
+</div>
+
+<div class="card">
+<div class="btns">
+<button onclick="prev()">上一步</button>
+<button onclick="next()">下一步</button>
+<button onclick="play()">自动播放</button>
+<button class="ghost" onclick="resetView()">复位视角</button>
+</div>
+<div class="explain" id="explain"></div>
+</div>
+</div>
+
+<script>
+/* ============ 数学设定（全整数，好数） ============ */
+var b1=[1,0,0], b2=[0,1,0];
+var a3=[1,1,1];
+var c31=[1,0,0], c32=[0,1,0], c3=[1,1,0], r3=[0,0,1];
+
+/*
+  文档原文公式（保留正确数学形式）：
+  <a3-c3, b1> = 0, <a3-c3, b2> = 0
+  c3 = c31 + c32 = k1*b1 + k2*b2
+  <a3-k1*b1-k2*b2, b1> = <a3-k1*b1, b1> - <k2*b2, b1> = <a3-k1*b1, b1> = 0
+  => k1*b1 即 a3 向 b1 的正交投影
+  <a3-k1*b1-k2*b2, b2> = <a3-k2*b2, b2> - <k1*b1, b2> = <a3-k2*b2, b2> = 0
+  => k2*b2 即 a3 向 b2 的正交投影
+*/
+
+/* 辅助：生成带箭头向量标签（图形中用） */
+function vlabel(s){ return s; } // 图形标签用纯文本，箭头由绘制函数加
+
+/* ============ 六步设定 ============
+   每一步：t=解说正文(向量用 .vec 粗体下划线)，
+           f=顶部公式栏(用 Unicode 数学字符，向量带箭头 a\u20D7 形式不可靠，改用粗体 a 加下标)，
+           p=公式推导(尽量还原文档原文数学形式，用半角 <> 内积、下标 _ 表示)
+   说明：为规避 U+20D7 组合字符的方块渲染问题，图形/公式中的"向量箭头"
+         统一用【粗体+下划线】的 .vec 样式呈现；纯数学推导文本中用
+         a3/b1 等记号并配合内积符号 <> 表示，等价于文档的向量记法。
+*/
+var V=function(s){return '<span class="vec">'+s+'</span>';};
+var steps=[
+ null,
+ {t:"① 已有正交基 "+V("b₁")+"、"+V("b₂")+"（蓝、绿），且 "+V("b₁")+" ⊥ "+V("b₂")+"。构造 "+V("b₃")+" 需从 "+V("a₃")+" 中去掉沿 "+V("b₁")+"、"+V("b₂")+" 的分量。",
+  f:"⟨"+V("a₃")+"−"+V("c₃")+","+V("b₁")+"⟩ = 0，⟨"+V("a₃")+"−"+V("c₃")+","+V("b₂")+"⟩ = 0",
+  p:"设 "+V("r₃")+" = "+V("a₃")+" − "+V("c₃")+"，要求 ⟨"+V("a₃")+"−"+V("c₃")+","+V("b₁")+"⟩ = 0 且 ⟨"+V("a₃")+"−"+V("c₃")+","+V("b₂")+"⟩ = 0。"},
+ {t:"② 将 "+V("c₃")+" 向 "+V("b₁")+"、"+V("b₂")+" 作正交分解："+V("c₃₁")+" ∥ "+V("b₁")+"，"+V("c₃₂")+" ∥ "+V("b₂")+"，则 "+V("c₃")+" = "+V("c₃₁")+" + "+V("c₃₂")+"。",
+  f:"c₃ = c₃₁ + c₃₂ = k₁·b₁ + k₂·b₂",
+  p:"因 "+V("b₁")+" ⊥ "+V("b₂")+"，故 "+V("c₃₁")+" 与 "+V("b₂")+" 平行、"+V("c₃₂")+" 与 "+V("b₁")+" 平行，可分别独立投影。"},
+ {t:"③ 计算 "+V("c₃₁")+"："+V("a₃")+" 直接向 "+V("b₁")+" 作正交投影（红）。",
+  f:"c₃₁ = proj_{b₁}(a₃) = ⟨a₃,b₁⟩/⟨b₁,b₁⟩ · b₁ = (1,0,0)",
+  p:"⟨"+V("a₃")+"−k₁"+V("b₁")+"−k₂"+V("b₂")+","+V("b₁")+"⟩ = ⟨"+V("a₃")+"−k₁"+V("b₁")+","+V("b₁")+"⟩ − ⟨k₂"+V("b₂")+","+V("b₁")+"⟩ = ⟨"+V("a₃")+"−k₁"+V("b₁")+","+V("b₁")+"⟩ = 0，故 k₁"+V("b₁")+" 即 "+V("a₃")+" 在 "+V("b₁")+" 上的正交投影向量。"},
+ {t:"④ 计算 "+V("c₃₂")+"："+V("a₃")+" 直接向 "+V("b₂")+" 作正交投影（橙）。",
+  f:"c₃₂ = proj_{b₂}(a₃) = ⟨a₃,b₂⟩/⟨b₂,b₂⟩ · b₂ = (0,1,0)",
+  p:"⟨"+V("a₃")+"−k₁"+V("b₁")+"−k₂"+V("b₂")+","+V("b₂")+"⟩ = ⟨"+V("a₃")+"−k₂"+V("b₂")+","+V("b₂")+"⟩ − ⟨k₁"+V("b₁")+","+V("b₂")+"⟩ = ⟨"+V("a₃")+"−k₂"+V("b₂")+","+V("b₂")+"⟩ = 0，故 k₂"+V("b₂")+" 即 "+V("a₃")+" 在 "+V("b₂")+" 上的正交投影向量。"},
+ {t:"⑤ 合成 "+V("c₃")+" = "+V("c₃₁")+" + "+V("c₃₂")+"（紫），即 "+V("a₃")+" 在 span{"+V("b₁")+","+V("b₂")+"} 上的正交投影。",
+  f:"c₃ = (1,1,0) = 1·b₁ + 1·b₂（k₁ = k₂ = 1）",
+  p:"由③④得 k₁ = 1、k₂ = 1，故 "+V("c₃")+" = "+V("b₁")+" + "+V("b₂")+" = (1,1,0)。"},
+ {t:"⑥ 残量 "+V("r₃")+" = "+V("a₃")+" − "+V("c₃")+"（青，竖直向上），验证与 "+V("b₁")+"、"+V("b₂")+" 均正交。",
+  f:"r₃ = (0,0,1)，⟨r₃,b₁⟩ = 0，⟨r₃,b₂⟩ = 0  ✔",
+  p:""+V("r₃")+" = "+V("a₃")+" − "+V("c₃")+" = (1,1,1)−(1,1,0) = (0,0,1)。因 "+V("r₃")+" 仅含 z 分量而 "+V("b₁")+"、"+V("b₂")+" 在 xy 平面，内积均为 0，故 "+V("r₃")+" ⊥ "+V("b₁")+"，"+V("r₃")+" ⊥ "+V("b₂")+"。"}
+];
+
+/* ============ 3D 透视投影（自实现，零依赖） ============ */
+var cv=document.getElementById('c'), ctx=cv.getContext('2d');
+var W=cv.width, H=cv.height, CX=W/2, CY=H/2, S=150;
+var az=25, el=46, zoom=1;
+var drag=false, lx=0, ly=0;
+cv.onmousedown=function(e){drag=true;lx=e.clientX;ly=e.clientY;};
+cv.onmouseup=function(){drag=false;};
+cv.onmouseleave=function(){drag=false;};
+cv.onmousemove=function(e){if(!drag)return;az+=(e.clientX-lx)*0.5;el+=(e.clientY-ly)*0.5;el=Math.max(-89,Math.min(89,el));lx=e.clientX;ly=e.clientY;draw();};
+cv.onwheel=function(e){e.preventDefault();zoom*=e.deltaY>0?0.9:1.1;zoom=Math.max(0.5,Math.min(3,zoom));draw();};
+
+function proj(p){
+ var x=p[0],y=p[1],z=p[2];
+ var a=az*Math.PI/180, b=el*Math.PI/180;
+ var cx=Math.cos(a),sx=Math.sin(a),cy=Math.cos(b),sy=Math.sin(b);
+ var X=cx*x+sx*z, Z=-sx*x+cx*z;
+ var Y=cy*y+sy*Z; Z=-sy*y+cy*Z;
+ var d=4.2, f=1/(d-Z);
+ return [CX+S*zoom*X*f, CY-S*zoom*Y*f, Z];
+}
+
+/* 绘制带箭头的向量（从 p 到 q） */
+function drawVec(p,q,col,lw,dash){
+ var a=proj(p), b=proj(q);
+ ctx.strokeStyle=col;ctx.lineWidth=lw;ctx.setLineDash(dash||[]);
+ ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();ctx.setLineDash([]);
+ /* 在终点画箭头：沿向量方向一个小箭头 */
+ var dx=b[0]-a[0], dy=b[1]-a[1];
+ var len=Math.sqrt(dx*dx+dy*dy);
+ if(len<2)return;
+ var ux=dx/len, uy=dy/len;
+ var alen=9, ang=Math.PI*0.85; /* 箭头张角 */
+ var ax1=ux*Math.cos(ang)+uy*Math.sin(ang);
+ var ay1=-ux*Math.sin(ang)+uy*Math.cos(ang);
+ var ax2=ux*Math.cos(-ang)+uy*Math.sin(-ang);
+ var ay2=-ux*Math.sin(-ang)+uy*Math.cos(-ang);
+ ctx.beginPath();
+ ctx.moveTo(b[0],b[1]);
+ ctx.lineTo(b[0]-alen*ax1,b[1]-alen*ay1);
+ ctx.lineTo(b[0]-alen*ax2,b[1]-alen*ay2);
+ ctx.closePath();
+ ctx.fillStyle=col;ctx.fill();
+}
+
+function drawDashed(p,q,col,lw){
+ var a=proj(p), b=proj(q);
+ ctx.strokeStyle=col;ctx.lineWidth=lw;ctx.setLineDash([6,5]);
+ ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();ctx.setLineDash([]);
+}
+
+function drawGround(){
+ ctx.fillStyle='#eef4fb';
+ var c00=proj([0,0,0]),c40=proj([4,0,0]),c44=proj([4,4,0]),c04=proj([0,4,0]);
+ ctx.beginPath();ctx.moveTo(c00[0],c00[1]);ctx.lineTo(c40[0],c40[1]);ctx.lineTo(c44[0],c44[1]);ctx.lineTo(c04[0],c04[1]);ctx.closePath();
+ ctx.fill();ctx.strokeStyle='#b8cce0';ctx.lineWidth=1;ctx.stroke();
+ ctx.strokeStyle='#dbe6f2';ctx.lineWidth=1;
+ for(var i=0;i<=4;i++){
+  var a=proj([i,0,0]),b=proj([i,4,0]);ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();
+  var c=proj([0,i,0]),d=proj([4,i,0]);ctx.beginPath();ctx.moveTo(c[0],c[1]);ctx.lineTo(d[0],d[1]);ctx.stroke();
+ }
+}
+
+function drawAxis(){
+ drawVec([0,0,0],[4.5,0,0],'#94a3b8',1);ctx.fillStyle='#475569';ctx.font='bold 16px sans-serif';ctx.fillText('x',proj([4.6,0,0])[0],proj([4.6,0,0])[1]+5);
+ drawVec([0,0,0],[0,4.5,0],'#94a3b8',1);ctx.fillText('y',proj([0,4.6,0])[0]+3,proj([0,4.6,0])[1]+5);
+ drawVec([0,0,0],[0,0,3.2],'#94a3b8',1);ctx.fillText('z',proj([0,0,3.3])[0]-5,proj([0,0,3.3])[1]+5);
+}
+
+function labelAt(p,t,col){
+ var a=proj(p);ctx.fillStyle=col;ctx.font='bold 19px sans-serif';ctx.fillText(t,a[0]+6,a[1]-6);
+}
+
+var step=0;
+function draw(){
+ ctx.clearRect(0,0,W,H);
+ drawGround();drawAxis();
+ /* 基向量 b1/b2（带箭头） */
+ drawVec([0,0,0],b1,'#2563eb',3);labelAt(b1,'b₁','#1d4ed8');
+ drawVec([0,0,0],b2,'#059669',3);labelAt(b2,'b₂','#047857');
+ if(step>=2){drawVec([0,0,0],a3,'#7c3aed',3);labelAt(a3,'a₃','#6d28d9');}
+ if(step>=3){drawVec([0,0,0],c31,'#dc2626',3);labelAt(c31,'c₃₁','#b91c1c');drawDashed(c31,[1,1,0],'#fca5a5',1);}
+ if(step>=4){drawVec([0,0,0],c32,'#ea580c',3);labelAt(c32,'c₃₂','#c2410c');drawDashed(c32,[1,1,0],'#fdba74',1);}
+ if(step>=5){drawVec([0,0,0],c3,'#7c3aed',3);labelAt(c3,'c₃','#5b21b6');}
+ if(step>=6){drawVec(c3,a3,'#0891b2',4);labelAt(a3,'r₃','#0e7490');}
+ document.getElementById('legend').innerHTML=
+  '<b style="font-size:14px;">图例</b><br>'+
+  '<span style="color:#2563eb;">━▶</span> b₁　<span style="color:#059669;">━▶</span> b₂<br>'+
+  (step>=2?'<span style="color:#7c3aed;">━▶</span> a₃<br>':'')+
+  (step>=3?'<span style="color:#dc2626;">━▶</span> c₃₁（红）<br>':'')+
+  (step>=4?'<span style="color:#ea580c;">━▶</span> c₃₂（橙）<br>':'')+
+  (step>=5?'<span style="color:#7c3aed;">━▶</span> c₃ = c₃₁+c₃₂<br>':'')+
+  (step>=6?'<span style="color:#0891b2;">━▶</span> r₃ = a₃−c₃<br>':'');
+}
+
+function render(){
+ var f=document.getElementById('formula');
+ var ex=document.getElementById('explain');
+ document.getElementById('info').innerText='第 '+step+' / 6 步';
+ if(step===0){f.innerHTML='点击「下一步」开始（a₁=(1,0,0)，a₂=(1,1,0)，a₃=(1,1,1)）';ex.innerHTML='';draw();return;}
+ var html='';
+ for(var i=1;i<=step;i++){
+  html+='<div class="item"><span class="step-tag">第 '+i+' 步</span>'+steps[i].t+
+         '<span class="proof"><b>公式推导：</b>'+steps[i].p+'</span></div>';
+ }
+ ex.innerHTML=html;
+ document.querySelector('.explain').scrollIntoView({behavior:'smooth'});
+ draw();
+}
+function next(){if(step<6)step++;render();}
+function prev(){if(step>0)step--;render();}
+function play(){step=0;render();var go=function(){if(step<6){step++;render();setTimeout(go,2100);}};setTimeout(go,600);}
+function resetView(){az=25;el=46;zoom=1;draw();}
+render();
+</script>
+</body>
+</html>

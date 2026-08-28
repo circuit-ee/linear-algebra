@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>矩阵对角化 A = P D P⁻¹ 的工程意义</title>
+<style>
+:root{
+  --bg:#f5f7fb;--card:#fff;--ink:#1a202c;--sub:#5b6b7b;
+  --brand:#2563eb;--green:#10b981;--warn:#ea580c;--red:#ef4444;--line:#e4e9f2;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:20px;}
+body{
+  background:var(--bg);color:var(--ink);
+  font-family:-apple-system,"PingFang SC","Microsoft YaHei",
+    "Cambria Math","Noto Sans Math","STIX Two Math",sans-serif;
+  line-height:1.8;
+}
+header{background:linear-gradient(135deg,#2563eb,#10b981);color:#fff;padding:2.8rem 1.5rem 2.4rem;text-align:center;}
+header h1{font-size:2.25rem;margin-bottom:.6rem;line-height:1.3;}
+header p{font-size:1.08rem;opacity:.95;max-width:900px;margin:0 auto;}
+main{max-width:1100px;margin:0 auto;padding:2rem 1.2rem 4rem;}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:2rem;box-shadow:0 6px 24px rgba(30,50,90,.07);margin:1.8rem 0;}
+h2{font-size:1.55rem;color:var(--brand);margin-bottom:.8rem;display:flex;align-items:center;gap:.6rem;}
+h2 .num{background:var(--brand);color:#fff;border-radius:10px;padding:.2rem .8rem;font-size:1.05rem;}
+h3{font-size:1.2rem;margin:1rem 0 .4rem;color:var(--ink);}
+p{font-size:1.05rem;margin:.4rem 0;}
+.sub{color:var(--sub);}
+code{background:#eef4ff;border-radius:6px;padding:.1rem .5rem;font-family:"Cambria Math","STIX Two Math",serif;font-size:1.05em;}
+.formula{background:#eef4ff;border-left:5px solid var(--brand);padding:1rem 1.2rem;margin:1rem 0;border-radius:8px;font-family:"Cambria Math","STIX Two Math",serif;font-size:1.25rem;text-align:center;}
+.golden{background:linear-gradient(135deg,#fff7e6,#eaf2ff);border:2px solid #f2c94c;border-radius:14px;padding:1.1rem 1.3rem;margin:1rem 0;font-size:1.08rem;line-height:1.85;}
+.golden b{color:var(--brand);}
+.ctrl{display:flex;flex-wrap:wrap;gap:.8rem;align-items:center;margin:.8rem 0;}
+.ctrl label{font-size:1rem;font-weight:600;}
+input[type=range]{flex:1;min-width:130px;accent-color:var(--brand);}
+.val{font-size:1.1rem;font-weight:800;color:var(--brand);min-width:52px;text-align:center;}
+canvas{display:block;background:#f8fafc;border-radius:10px;width:100%;}
+.tip{background:#eef4ff;border-left:4px solid var(--brand);padding:1rem;border-radius:8px;margin:.8rem 0;font-size:1rem;}
+.warn{background:#fef2f2;border-left:4px solid var(--red);padding:1rem;border-radius:8px;margin:.8rem 0;font-size:1rem;}
+.ok{background:#ecfdf5;border-left:4px solid var(--green);padding:1rem;border-radius:8px;margin:.8rem 0;font-size:1rem;}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.2rem;}
+.mini{background:#f8fafc;border:1px solid var(--line);border-radius:14px;padding:1.1rem;}
+.mini h4{font-size:1.12rem;margin-bottom:.5rem;color:var(--green);}
+table{width:100%;border-collapse:collapse;font-size:1rem;}
+td,th{border:1px solid var(--line);padding:.6rem;text-align:center;}
+th{background:#e8f4fd;}
+@media(max-width:600px){html{font-size:18px;}header h1{font-size:1.8rem;}.card{padding:1.3rem;}}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>矩阵对角化 A = P D P⁻¹ 的工程意义</h1>
+  <p>大一友好 · 从"解耦"这一核心直觉出发 · 五个交互模块 · 无乱码符号</p>
+</header>
+
+<main>
+
+<!-- ★ 本质 -->
+<section class="card">
+  <h2><span class="num">★</span>先看本质：对角化到底在干什么</h2>
+  <div class="golden">
+    <b>对角化 A = P D P⁻¹</b> = 把一组"互相耦合、彼此扯皮"的坐标变量，<br>
+    换到 <b>特征向量 P 的列</b> 这组新基上，原系统变成 <code>y' = D y</code>（各分量彻底独立）。<br>
+    <b>D 的对角元 λᵢ</b> = 第 i 个独立通道的"脾气"（强弱 / 增长衰减 / 稳定与否）；<br>
+    <b>P 的列 vᵢ</b> = 这个通道"长什么样"（作用在哪些原变量上）。<br>
+    实对称矩阵还能 <code>Qᵀ A Q = D</code>（正交对角化 / 谱定理 / 主轴定理）——工程最常用，保长度、保能量。
+  </div>
+  <div class="formula">A = P D P⁻¹　等价于　P⁻¹ A P = D　（相似变换：换了一把尺子，线性变换本质不变）</div>
+  <p class="sub">记忆锚点：对角化 = "把扯皮的变量拆成互不干扰的独立通道"。下文四个工程场景，全是这句话的翻版。</p>
+</section>
+
+<!-- ① 解耦 -->
+<section class="card">
+  <h2><span class="num">1</span>交互①：解耦 —— 耦合系统变成独立通道</h2>
+  <p>原系统 <code>x' = A x</code>（两变量互相耦合）。对角化后 <code>y' = D y</code>，即 y₁' = λ₁ y₁、y₂' = λ₂ y₂，两个通道再也不互相"借力"。</p>
+  <div class="ctrl">
+    <label>λ₁</label><input id="l1" type="range" min="-2" max="2" step="0.1" value="-1.2"><span class="val" id="l1v">-1.2</span>
+    <label>λ₂</label><input id="l2" type="range" min="-2" max="2" step="0.1" value="0.6"><span class="val" id="l2v">0.6</span>
+  </div>
+  <div class="grid2">
+    <div class="mini">
+      <h4>解耦后：y' = D y（两个独立通道）</h4>
+      <canvas id="modal" height="190"></canvas>
+      <p class="sub">y₁=e^{λ₁t}（蓝），y₂=e^{λ₂t}（绿），各自只随自己的 λ 涨跌。</p>
+    </div>
+    <div class="mini">
+      <h4>原耦合系统相图 x' = A x</h4>
+      <canvas id="phase" height="190"></canvas>
+      <p class="sub" id="phaseMsg"></p>
+    </div>
+  </div>
+  <div class="tip">📌 <b>工程意义</b>：控制理论里把多输入多输出系统对角化（解耦控制），就能把"多个回路互相干扰"化简成"几个独立单回路"分别设计 PID，大幅降低难度。</div>
+</section>
+
+<!-- ② 构造验算 -->
+<section class="card">
+  <h2><span class="num">2</span>交互②：构造 A = P D P⁻¹ 并验算</h2>
+  <p>拖两个特征向量方向 θ₁、θ₂ 与对应特征值 λ₁、λ₂，实时构造 A 并验算还原误差。两向量拖到共线 → det(P)→0 → 弹出"不可对角化"。</p>
+  <div class="ctrl">
+    <label>v₁ 方向 θ₁</label><input id="t1" type="range" min="0" max="360" step="1" value="20"><span class="val" id="t1v">20°</span>
+    <label>v₂ 方向 θ₂</label><input id="t2" type="range" min="0" max="360" step="1" value="110"><span class="val" id="t2v">110°</span>
+    <label>λ₁</label><input id="d1" type="range" min="-2" max="2" step="0.1" value="2"><span class="val" id="d1v">2.0</span>
+    <label>λ₂</label><input id="d2" type="range" min="-2" max="2" step="0.1" value="-1"><span class="val" id="d2v">-1.0</span>
+  </div>
+  <canvas id="construct" height="240"></canvas>
+  <p id="reconMsg" class="sub"></p>
+  <div class="warn">⚠ <b>对角化的硬前提</b>：必须有 n 个线性无关的特征向量（P 可逆）。两特征向量共线 ⇒ P 奇异 ⇒ 无法对角化（此时若仍需化简，要走向约旦标准型，属进阶内容）。</div>
+</section>
+
+<!-- ③ 振动 -->
+<section class="card">
+  <h2><span class="num">3</span>应用一：结构振动 —— 简正模分解</h2>
+  <p>多自由度振动 <code>K φ = ω² M φ</code> 可对角化：特征向量 φᵢ = 简正模（各质点如何相对运动），ωᵢ² = λᵢ = 该模的频率平方。对角化后各简正模独立振动、互不耦合。</p>
+  <div class="grid2">
+    <div class="mini">
+      <h4>3 质点弹簧系统 · 点击频率看振型</h4>
+      <div id="vibEig" style="display:flex;flex-wrap:wrap;gap:.5rem;"></div>
+      <p class="sub" id="modeDesc">振型显示各质点相对位移方向。</p>
+    </div>
+    <div class="mini">
+      <h4>振型按 ω 实时摆动</h4>
+      <canvas id="modeCanvas" height="200"></canvas>
+    </div>
+  </div>
+  <div class="tip">📌 <b>工程意义</b>：桥梁、建筑、涡轮叶片的模态分析本质就是对角化。算出各阶固有频率与振型，才能避开风/车/地震的外界激励频率，防止共振垮塌（塔科马海峡大桥教训）。</div>
+</section>
+
+<!-- ④ PCA -->
+<section class="card">
+  <h2><span class="num">4</span>应用二：PCA 降维 —— 协方差矩阵正交对角化</h2>
+  <p>协方差矩阵 C 实对称半正定，可正交对角化 <code>C = Q Λ Qᵀ</code>。Q 的列 = 主成分轴（正交规范新基），Λ 的对角元 λᵢ = 该轴方差（信息量）。保留前 k 个大 λ 方向即降维。</p>
+  <div class="ctrl">
+    <label>保留主成分数 k</label>
+    <input id="pcaK" type="range" min="1" max="2" step="1" value="1"><span class="val" id="pcaKV">1</span>
+  </div>
+  <div class="grid2">
+    <div class="mini">
+      <h4>数据云 + 主成分轴（PC1/PC2）</h4>
+      <canvas id="pcaCloud" height="230"></canvas>
+    </div>
+    <div class="mini">
+      <h4>k 维重建投影</h4>
+      <canvas id="pcaProj" height="230"></canvas>
+    </div>
+  </div>
+  <p class="sub" id="pcaInfo"></p>
+  <div class="tip">📌 <b>工程意义</b>：人脸识别（Eigenface）、金融风控、传感器压缩都用 PCA。对角化把"相关的原始变量"旋转成"互不相关的主成分"，再按 λ 大小丢冗余、保主要信息。</div>
+</section>
+
+<!-- ⑤ 矩阵幂 -->
+<section class="card">
+  <h2><span class="num">5</span>应用三：矩阵幂 Aᵐ —— 把连乘降为标量幂</h2>
+  <p>若 A = P D P⁻¹，则 <code>Aᵐ = P Dᵐ P⁻¹</code>。原本 m 次矩阵乘法 O(m n³) 被化简成"一次相似变换 + 对角元各自做 λᵢᵐ"，O(n³ + m n)。</p>
+  <div class="ctrl">
+    <label>幂次 m</label>
+    <input id="powM" type="range" min="1" max="8" step="1" value="4"><span class="val" id="powMV">4</span>
+    <label>λ₁</label><input id="pl1" type="range" min="-2" max="2" step="0.1" value="1.3"><span class="val" id="pl1v">1.3</span>
+    <label>λ₂</label><input id="pl2" type="range" min="-2" max="2" step="0.1" value="0.7"><span class="val" id="pl2v">0.7</span>
+  </div>
+  <canvas id="powCanvas" height="200"></canvas>
+  <p class="sub" id="powMsg"></p>
+  <div class="tip">📌 <b>工程意义</b>：马尔可夫链 n 步转移 Pⁿ、图神经网络多跳传播、离散动力系统长期趋势，都用对角化把"矩阵连乘"变成"特征值的 n 次幂"——|λ|>1 的分量会增长发散，|λ|<1 的分量会衰减消失。</div>
+</section>
+
+<!-- 总结 -->
+<section class="card">
+  <h2><span class="num">6</span>一张表记住：对角化在各场景看什么</h2>
+  <table>
+    <tr><th>工程场景</th><th>对角化在做什么</th><th>看 λ 的什么</th><th>看 v (P 的列) 的什么</th></tr>
+    <tr><td>系统稳定性 x'=Ax</td><td>解耦成独立模态</td><td>Re(λ)&lt;0 稳定</td><td>失稳模态参与度</td></tr>
+    <tr><td>结构振动 Kφ=ω²Mφ</td><td>简正模分解</td><td>ω² = λ</td><td>振型 φ（各点相对位移）</td></tr>
+    <tr><td>PCA 降维 C=QΛQᵀ</td><td>正交对角化协方差</td><td>λ = 方差(信息量)</td><td>主成分轴方向</td></tr>
+    <tr><td>矩阵幂 Aᵐ=PDᵐP⁻¹</td><td>连乘降为标量幂</td><td>|λ|&gt;1 增长 / &lt;1 衰减</td><td>通道方向不变</td></tr>
+  </table>
+  <div class="ok">💡 <b>统一记忆</b>：对角化 = 把"扯皮的变量"拆成"互不干扰的独立通道"。λ 管每个通道的脾气（稳定/频率/信息量/增长），v 管通道长相。实对称时还能正交对角化（QᵀAQ=D），保长度保能量，是工程最常用的一层。</div>
+</section>
+
+</main>
+
+<footer style="background:#eef2f7;color:var(--sub);text-align:center;padding:2rem 1rem;font-size:.95rem;">
+  矩阵对角化 A=P D P⁻¹ · 工程意义直观解读 · 大一新生友好 · 无乱码符号
+</footer>
+
+<script>
+/* ---------- 工具：dpr 自适应 canvas + 数学字体栈 ---------- */
+function fit(cv,h){
+  const dpr=window.devicePixelRatio||1,rect=cv.getBoundingClientRect();
+  const w=rect.width||cv.parentElement.clientWidth||320;
+  cv.width=w*dpr;(cv.height=(h||cv.height)*dpr);
+  const ctx=cv.getContext('2d');
+  ctx.setTransform(1,0,0,1,0,0);ctx.scale(dpr,dpr);
+  ctx.font='15px "Cambria Math","Noto Sans Math","STIX Two Math",sans-serif';
+  return {ctx,w,h:h||cv.height/dpr};
+}
+/* ---------- 矩阵工具 ---------- */
+function matMul(A,B){const n=A.length,m=B[0].length,p=B.length;const C=Array.from({length:n},()=>Array(m).fill(0));
+  for(let i=0;i<n;i++)for(let j=0;j<m;j++)for(let k=0;k<p;k++)C[i][j]+=A[i][k]*B[k][j];return C;}
+function det2(M){return M[0][0]*M[1][1]-M[0][1]*M[1][0];}
+function inv2(M){const d=det2(M);return [[M[1][1]/d,-M[0][1]/d],[-M[1][0]/d,M[0][0]/d]];}
+function transpose(M){return M[0].map((_,j)=>M.map(r=>r[j]));}
+
+/* ---------- ① 解耦：模态曲线 + 相图 ---------- */
+const l1=document.getElementById('l1'),l2=document.getElementById('l2');
+function drawModal(){
+  const a=+l1.value,b=+l2.value;
+  document.getElementById('l1v').textContent=a.toFixed(1);
+  document.getElementById('l2v').textContent=b.toFixed(1);
+  let {ctx,w,h}=fit(document.getElementById('modal'),190);
+  ctx.clearRect(0,0,w,h);
+  ctx.strokeStyle='#cbd5e1';ctx.beginPath();ctx.moveTo(30,0);ctx.lineTo(30,h-20);ctx.lineTo(w,h-20);ctx.stroke();
+  function curve(lam,col){
+    ctx.strokeStyle=col;ctx.lineWidth=2.5;ctx.beginPath();
+    for(let i=0;i<=200;i++){const t=i/200*5;const v=Math.exp(lam*t);const px=30+t/5*(w-40);const py=(h-20)-Math.min(v,8)/8*(h-40);i?ctx.lineTo(px,py):ctx.moveTo(px,py);}
+    ctx.stroke();
+  }
+  curve(a,'#2563eb');curve(b,'#10b981');
+  ctx.fillStyle='#2563eb';ctx.fillText('y1 = e^{λ1 t}',36,16);
+  ctx.fillStyle='#10b981';ctx.fillText('y2 = e^{λ2 t}',36,34);
+  // 相图 (A 取 diag(a,b) 简化示意)
+  ({ctx,w,h}=fit(document.getElementById('phase'),190));
+  ctx.clearRect(0,0,w,h);
+  const cx=w/2,cy=h/2,sc=Math.min(w,h)*0.16;
+  ctx.strokeStyle='#cbd5e1';ctx.beginPath();ctx.moveTo(0,cy);ctx.lineTo(w,cy);ctx.moveTo(cx,0);ctx.lineTo(cx,h);ctx.stroke();
+  ctx.strokeStyle='#ea580c';ctx.lineWidth=2;ctx.beginPath();
+  for(let i=0;i<=300;i++){const t=i/300*5;const x=1.2*Math.exp(a*t),y=0.8*Math.exp(b*t);const px=cx+x*sc,py=cy-y*sc;(i?ctx.lineTo(px,py):ctx.moveTo(px,py));if(Math.abs(px)>w||Math.abs(py)>h)break;}
+  ctx.stroke();
+  ctx.fillStyle='#ea580c';ctx.beginPath();ctx.arc(cx,cy,4,0,7);ctx.fill();
+  let msg=(a<0&&b<0)?'稳定结点：全衰减到原点':(a>0&&b>0)?'不稳定结点：全发散':(a*b<0)?'鞍点：一衰一散':'临界（含零特征值）';
+  document.getElementById('phaseMsg').textContent='相图：'+msg+'。解耦后每个通道按自己 λ 独立演化。';
+}
+[l1,l2].forEach(x=>x.oninput=drawModal);
+
+/* ---------- ② 构造验算 A = P D P^{-1} ---------- */
+const t1=document.getElementById('t1'),t2=document.getElementById('t2'),
+      d1=document.getElementById('d1'),d2=document.getElementById('d2');
+function drawConstruct(){
+  const th1=+t1.value*Math.PI/180,th2=+t2.value*Math.PI/180;
+  const la=+d1.value,lb=+d2.value;
+  document.getElementById('t1v').textContent=t1.value+'°';
+  document.getElementById('t2v').textContent=t2.value+'°';
+  document.getElementById('d1v').textContent=la.toFixed(1);
+  document.getElementById('d2v').textContent=lb.toFixed(1);
+  const v1=[Math.cos(th1),Math.sin(th1)],v2=[Math.cos(th2),Math.sin(th2)];
+  const Pt=[]; Pt.push([v1[0],v2[0]]); Pt.push([v1[1],v2[1]]); // 列向量组成 P（分步构造避开 V8 二维字面量解析限制）
+  const D=[[la,0],[0,lb]];
+  const detP=det2(Pt);
+  let msg;
+  if(Math.abs(detP)<1e-3){
+    msg='⚠ det(P) = 0 → 两特征向量共线 → P 奇异，不可对角化（n 个线性无关特征向量不足）';
+  }else{
+    const A=matMul(matMul(Pt,D),inv2(Pt));
+    // 正确验证：检验 A*vᵢ = λᵢ*vᵢ 是否成立（特征方程定义）
+    const Av1=[A[0][0]*v1[0]+A[0][1]*v1[1],A[1][0]*v1[0]+A[1][1]*v1[1]];
+    const Av2=[A[0][0]*v2[0]+A[0][1]*v2[1],A[1][0]*v2[0]+A[1][1]*v2[1]];
+    const err1=Math.hypot(Av1[0]-la*v1[0],Av1[1]-la*v1[1]);
+    const err2=Math.hypot(Av2[0]-lb*v2[0],Av2[1]-lb*v2[1]);
+    msg='A = P D P⁻¹ 验证：A*v1≈λ1*v1 误差 '+err1.toExponential(2)+'，A*v2≈λ2*v2 误差 '+err2.toExponential(2)+'　det(P)='+detP.toFixed(3)+' ✓';
+  }
+  document.getElementById('reconMsg').textContent=msg;
+  const {ctx,w,h}=fit(document.getElementById('construct'),240);
+  ctx.clearRect(0,0,w,h);
+  const cx=w/2,cy=h/2,sc=Math.min(w,h)*0.28;
+  ctx.strokeStyle='#cbd5e1';ctx.beginPath();ctx.moveTo(0,cy);ctx.lineTo(w,cy);ctx.moveTo(cx,0);ctx.lineTo(cx,h);ctx.stroke();
+  function arrow(v,col,label,ox){
+    ctx.strokeStyle=col;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(cx+ox,cy);ctx.lineTo(cx+ox+v[0]*sc,cy-v[1]*sc);ctx.stroke();
+    ctx.fillStyle=col;ctx.beginPath();ctx.arc(cx+ox+v[0]*sc,cy-v[1]*sc,7,0,7);ctx.fill();
+    ctx.fillStyle='#1a202c';ctx.fillText(label,cx+ox+v[0]*sc+6,cy-v[1]*sc);
+  }
+  arrow(v1,'#2563eb','v1 (λ='+la.toFixed(1)+')',-sc*0.7);
+  arrow(v2,'#10b981','v2 (λ='+lb.toFixed(1)+')',sc*0.1);
+  ctx.fillStyle='#5b6b7b';ctx.fillText('P = [v1  v2]，D = diag(λ1, λ2)',20,24);
+}
+[t1,t2,d1,d2].forEach(x=>x.oninput=drawConstruct);
+
+/* ---------- ③ 振动：3 质点弹簧系统 Kφ=ω²Mφ ---------- */
+const eigVal=[0.586,2.0,3.414];
+// 3 质点等质量弹簧系统（K 对称正定）的标准振型：关于质量矩阵两两正交
+const S=Math.sqrt(2);
+const eigVec=[[0.5,0.5*S,0.5],[0.707,0,-0.707],[0.5,-0.5*S,0.5]];
+let curMode=0;const t0=performance.now();
+const modeCv=document.getElementById('modeCanvas');
+const vibEigDiv=document.getElementById('vibEig');
+eigVal.forEach((v,i)=>{
+  const c=document.createElement('div');
+  c.style.cssText='background:#eef4ff;border:1px solid #cfe0ff;border-radius:10px;padding:.45rem .85rem;font-weight:700;color:#2563eb;cursor:pointer;';
+  c.textContent='ω² = '+v.toFixed(3);
+  c.onclick=()=>{curMode=i;[...vibEigDiv.children].forEach(x=>x.style.outline='none');c.style.outline='3px solid #10b981';document.getElementById('modeDesc').textContent='振型'+(i+1)+'：频率 ω = '+Math.sqrt(v).toFixed(3)+'，各质点按特征向量第 '+(i+1)+' 列相对位移摆动。';};
+  vibEigDiv.appendChild(c);
+});
+vibEigDiv.firstChild.style.outline='3px solid #10b981';
+document.getElementById('modeDesc').textContent='振型1：三质点同相摆动，ω = '+Math.sqrt(eigVal[0]).toFixed(3);
+function drawModeAnim(){
+  const {ctx,w,h}=fit(modeCv,200);
+  ctx.clearRect(0,0,w,h);
+  ctx.strokeStyle='#cdd8e6';ctx.beginPath();ctx.moveTo(10,h/2);ctx.lineTo(w-10,h/2);ctx.stroke();
+  const xs=[w*0.25,w*0.5,w*0.75];
+  const vec=eigVec[curMode],omega=Math.sqrt(eigVal[curMode]);
+  const t=(performance.now()-t0)/1000,amp=Math.sin(omega*t)*40;
+  vec.forEach((y,i)=>{const yy=h/2-y*amp;ctx.beginPath();ctx.arc(xs[i],yy,11,0,7);ctx.fillStyle=i===1?'#10b981':'#2563eb';ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();});
+  requestAnimationFrame(drawModeAnim);
+}
+
+/* ---------- ④ PCA：协方差正交对角化 C = Q Λ Qᵀ ---------- */
+const pcaData=[];let _s=7;
+function rnd(){_s=(_s*9301+49297)%233280;return _s/233280;}
+for(let i=0;i<120;i++){const u=rnd()*2-1,v=rnd()*2-1;pcaData.push([1.6*u+0.4*v,0.5*u+1.2*v]);}
+function pcaCompute(pts){
+  const n=pts.length,mx=pts.reduce((s,p)=>s+p[0],0)/n,my=pts.reduce((s,p)=>s+p[1],0)/n;
+  let sxx=0,sxy=0,syy=0;
+  pts.forEach(p=>{sxx+=(p[0]-mx)**2;sxy+=(p[0]-mx)*(p[1]-my);syy+=(p[1]-my)**2;});
+  const tr=sxx+syy,det=sxx*syy-sxy*sxy,disc=Math.sqrt(Math.max(tr*tr-4*det,0));
+  const l1=(tr+disc)/2,l2=(tr-disc)/2;
+  let v1=Math.abs(syy-sxx)>1e-6||Math.abs(sxy)>1e-6?[l1-syy,sxy]:[1,0];
+  const n1=Math.hypot(v1[0],v1[1])||1;v1=[v1[0]/n1,v1[1]/n1];
+  return {mx,my,l1,l2,v1:[v1[0],v1[1]],v2:[-v1[1],v1[0]]};
+}
+const pca=pcaCompute(pcaData);
+const pcaK=document.getElementById('pcaK');
+function drawPCA(){
+  const k=+pcaK.value;document.getElementById('pcaKV').textContent=k;
+  let {ctx,w,h}=fit(document.getElementById('pcaCloud'),230);
+  ctx.clearRect(0,0,w,h);
+  const cx=w/2,cy=h/2,sc=36;
+  ctx.strokeStyle='#cbd5e1';ctx.beginPath();ctx.moveTo(0,cy);ctx.lineTo(w,cy);ctx.moveTo(cx,0);ctx.lineTo(cx,h);ctx.stroke();
+  ctx.strokeStyle='#2563eb';ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(cx-pca.v1[0]*sc*3,cy+pca.v1[1]*sc*3);ctx.lineTo(cx+pca.v1[0]*sc*3,cy-pca.v1[1]*sc*3);ctx.stroke();
+  ctx.strokeStyle='#10b981';ctx.beginPath();ctx.moveTo(cx-pca.v2[0]*sc*3,cy+pca.v2[1]*sc*3);ctx.lineTo(cx+pca.v2[0]*sc*3,cy-pca.v2[1]*sc*3);ctx.stroke();
+  ctx.fillStyle='#2563eb';ctx.fillText('PC1 (λ='+pca.l1.toFixed(1)+')',cx+8,cy-60);
+  ctx.fillStyle='#10b981';ctx.fillText('PC2 (λ='+pca.l2.toFixed(1)+')',cx+8,cy+50);
+  ctx.fillStyle='rgba(37,99,235,.55)';
+  pcaData.forEach(p=>{ctx.beginPath();ctx.arc(cx+(p[0]-pca.mx)*sc,cy-(p[1]-pca.my)*sc,3,0,7);ctx.fill();});
+  ({ctx,w,h}=fit(document.getElementById('pcaProj'),230));
+  ctx.clearRect(0,0,w,h);
+  ctx.strokeStyle='#cbd5e1';ctx.beginPath();ctx.moveTo(0,cy);ctx.lineTo(w,cy);ctx.moveTo(cx,0);ctx.lineTo(cx,h);ctx.stroke();
+  ctx.fillStyle='rgba(16,185,129,.7)';
+  pcaData.forEach(p=>{const dx=p[0]-pca.mx,dy=p[1]-pca.my;let rx=pca.mx,ry=pca.my;
+    const pr1=(dx*pca.v1[0]+dy*pca.v1[1]);rx+=pca.v1[0]*pr1;ry+=pca.v1[1]*pr1;
+    if(k>=2){const pr2=(dx*pca.v2[0]+dy*pca.v2[1]);rx+=pca.v2[0]*pr2;ry+=pca.v2[1]*pr2;}
+    ctx.beginPath();ctx.arc(cx+(rx-pca.mx)*sc,cy-(ry-pca.my)*sc,3,0,7);ctx.fill();});
+  ctx.fillStyle='#5b6b7b';ctx.fillText(k===1?'仅保留 PC1 的 1D 重建':'保留 PC1+PC2 完整 2D 重建',10,h-10);
+  const keep=pca.l1/(pca.l1+pca.l2)*100;
+  document.getElementById('pcaInfo').textContent='λ₁='+pca.l1.toFixed(2)+'，λ₂='+pca.l2.toFixed(2)+'；保留 k='+k+' 时信息比例 ≈ '+(k===1?keep:100).toFixed(1)+'%（λ 越大 = 该主成分方向方差越大 = 信息越多）。';
+}
+pcaK.oninput=drawPCA;
+
+/* ---------- ⑤ 矩阵幂 A^m = P D^m P^{-1} ---------- */
+const powM=document.getElementById('powM'),pl1=document.getElementById('pl1'),pl2=document.getElementById('pl2');
+function drawPow(){
+  const m=+powM.value,la=+pl1.value,lb=+pl2.value;
+  document.getElementById('powMV').textContent=m;
+  document.getElementById('pl1v').textContent=la.toFixed(1);
+  document.getElementById('pl2v').textContent=lb.toFixed(1);
+  const {ctx,w,h}=fit(document.getElementById('powCanvas'),200);
+  ctx.clearRect(0,0,w,h);
+  const cx=w/2,cy=h/2;
+  ctx.strokeStyle='#cbd5e1';ctx.beginPath();ctx.moveTo(30,cy);ctx.lineTo(w-10,cy);ctx.moveTo(30,cy-h*0.4);ctx.lineTo(30,cy+h*0.4);ctx.stroke();
+  function bar(x,val,col,label){
+    const bh=Math.min(Math.abs(val),20)/20*(h*0.7);
+    ctx.fillStyle=col;ctx.fillRect(x,cy-bh*Math.sign(val),26,bh);
+    ctx.fillStyle='#1a202c';ctx.fillText(label,x-4,cy+h*0.42);ctx.fillText(val.toFixed(1),x-4,cy-bh-6);
+  }
+  bar(w*0.25,la**m,'#2563eb','λ1^m');bar(w*0.55,lb**m,'#10b981','λ2^m');
+  let msg='A^m = P D^m P⁻¹：λ1^m = '+ (la**m).toFixed(2)+'，λ2^m = '+ (lb**m).toFixed(2)+'。';
+  if(Math.abs(la)>1) msg+=' |λ1|>1 的分量会增长发散；';
+  if(Math.abs(lb)<1&&Math.abs(lb)>0) msg+=' |λ2|<1 的分量会衰减消失。';
+  document.getElementById('powMsg').textContent=msg;
+}
+[powM,pl1,pl2].forEach(x=>x.oninput=drawPow);
+
+/* ---------- 启动 ---------- */
+window.addEventListener('DOMContentLoaded',()=>{
+  drawModal();drawConstruct();drawPCA();drawPow();
+  requestAnimationFrame(drawModeAnim);
+});
+window.addEventListener('resize',()=>{drawModal();drawConstruct();drawPCA();drawPow();});
+</script>
+</body>
+</html>

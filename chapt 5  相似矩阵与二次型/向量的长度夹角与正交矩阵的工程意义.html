@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>向量的长度·夹角·正交矩阵 —— 工程意义直观解读</title>
+<style>
+:root{--bg:#f4f7fb;--card:#fff;--ink:#1a202c;--sub:#5b6b7b;--brand:#2563eb;--green:#10b981;--warn:#ea580c;--pink:#db2777;--line:#e4e9f2;}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:20px;}
+body{background:var(--bg);color:var(--ink);font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;line-height:1.8;}
+header{background:linear-gradient(135deg,#2563eb,#10b981);color:#fff;padding:2.8rem 1.5rem 2.4rem;text-align:center;}
+header h1{font-size:2.3rem;line-height:1.3;margin-bottom:.7rem;}
+header p{font-size:1.1rem;opacity:.95;max-width:900px;margin:0 auto;}
+main{max-width:1080px;margin:0 auto;padding:2rem 1.2rem 4rem;}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:2rem;box-shadow:0 6px 24px rgba(30,50,90,.07);margin:1.8rem 0;}
+h2{font-size:1.6rem;color:var(--brand);margin-bottom:.8rem;display:flex;align-items:center;gap:.6rem;}
+h2 .num{background:var(--brand);color:#fff;border-radius:10px;padding:.2rem .8rem;font-size:1.1rem;}
+h3{font-size:1.2rem;margin:1rem 0 .4rem;color:var(--ink);}
+p{font-size:1.05rem;margin:.4rem 0;}
+.sub{color:var(--sub);}
+.ctrl{display:flex;flex-wrap:wrap;gap:.8rem;align-items:center;margin:.8rem 0;}
+.ctrl label{font-size:1rem;font-weight:600;}
+input[type=range]{flex:1;min-width:140px;accent-color:var(--brand);}
+.val{font-size:1.15rem;font-weight:800;color:var(--brand);min-width:54px;text-align:center;}
+button{background:var(--brand);color:#fff;border:none;border-radius:10px;padding:.65rem 1.2rem;font-size:1rem;cursor:pointer;}
+button.ghost{background:transparent;color:var(--brand);border:2px solid var(--brand);}
+canvas{display:block;background:#f8fafc;border-radius:10px;width:100%;touch-action:none;}
+.golden{background:linear-gradient(135deg,#e0f7fa,#e8f5e9);border:2px solid #34d399;border-radius:14px;padding:1.2rem 1.4rem;margin:1rem 0;font-size:1.1rem;line-height:1.8;}
+.golden b{color:var(--brand);}
+.tip{background:#fff7e6;border-left:4px solid var(--warn);padding:.9rem 1rem;border-radius:8px;margin:.8rem 0;font-size:1rem;}
+.note{color:var(--sub);font-size:.98rem;background:#eef4ff;border:1px solid #cfe0ff;border-radius:10px;padding:.7rem 1rem;margin:.6rem 0;}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.4rem;}
+.mini{background:#f8fafc;border:1px solid var(--line);border-radius:14px;padding:1.2rem;}
+.mini h4{font-size:1.1rem;margin-bottom:.4rem;color:var(--green);}
+.formula{background:#eef4ff;border-left:5px solid var(--brand);padding:1rem 1.2rem;margin:.8rem 0;border-radius:8px;font-family:"Times New Roman",serif;font-size:1.2rem;text-align:center;}
+table{width:100%;border-collapse:collapse;font-size:1rem;}
+td,th{border:1px solid var(--line);padding:.6rem;text-align:center;}
+th{background:#e8f4fd;}
+.badge{display:inline-block;background:#eef4ff;color:var(--brand);border:1px solid #cfe0ff;border-radius:8px;padding:.2rem .7rem;font-weight:700;}
+footer{background:#eef2f7;color:var(--sub);text-align:center;padding:2rem 1rem;font-size:.95rem;}
+@media(max-width:600px){html{font-size:18px;}header h1{font-size:1.8rem;}.card{padding:1.3rem;}}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>向量的长度 · 夹角 · 正交矩阵</h1>
+  <p>从"多长 / 多歪 / 怎么转"到工程里的信号、图像、机器人 —— 大一新生一打开就能看懂</p>
+</header>
+
+<main>
+
+<!-- 0. 一句话统摄 -->
+<section class="card">
+  <h2><span class="num">★</span>先记住一句话</h2>
+  <div class="golden">
+    <b>长度 ‖v‖</b> 衡量向量的"大小/能量"；<b>夹角 θ</b> 衡量两个向量的"方向相似度"，由内积 <code>vᵀw = ‖v‖·‖w‖·cosθ</code> 决定；<br>
+    当 <b>θ=90°（正交）</b>时两向量互不影响 —— 这是工程里"去耦合 / 去相关"的核心。<br>
+    <b>正交矩阵 Q</b>（QᵀQ=I）就是"只旋转/镜像、不拉伸"的变换：保长度、保夹角、保能量。
+  </div>
+</section>
+
+<!-- 1. 长度 = 能量 -->
+<section class="card">
+  <h2><span class="num">1</span>长度 ‖v‖ —— "有多大 / 有多少能量"</h2>
+  <p>二维向量 v=(x,y)，长度 ‖v‖ = √(x²+y²)。拖动端点，看长度实时变化。</p>
+  <div class="ctrl">
+    <label>端点 x</label><input id="lx" type="range" min="-3" max="3" step="0.1" value="2.2"><span class="val" id="lxv">2.2</span>
+    <label>端点 y</label><input id="ly" type="range" min="-3" max="3" step="0.1" value="1.5"><span class="val" id="lyv">1.5</span>
+  </div>
+  <canvas id="lenCanvas" height="300"></canvas>
+  <p>当前 v=(<span id="vx">2.2</span>, <span id="vy">1.5</span>)，‖v‖ = <span class="badge" id="vlen">2.66</span></p>
+  <div class="tip">📌 <b>工程意义</b>：信号处理中 ‖x‖² = Σxᵢ² 就是信号的<b>总能量</b>（Parseval 定理）；机器学习里 ‖w‖ 是权重向量的"规模"，正则化 ‖w‖² 越小模型越简单、越不易过拟合。</div>
+</section>
+
+<!-- 2. 夹角 / 内积 / 正交 -->
+<section class="card">
+  <h2><span class="num">2</span>夹角 θ 与内积 —— "两个方向有多像"</h2>
+  <p>内积公式：<code>vᵀw = ‖v‖·‖w‖·cosθ</code>。拖动两向量，看夹角、cosθ、内积如何联动。</p>
+  <div class="ctrl">
+    <label>v 角度</label><input id="va" type="range" min="0" max="360" step="1" value="30"><span class="val" id="vav">30°</span>
+    <label>w 角度</label><input id="wa" type="range" min="0" max="360" step="1" value="120"><span class="val" id="wav">120°</span>
+  </div>
+  <canvas id="angCanvas" height="300"></canvas>
+  <p>θ = <span class="badge" id="theta">90°</span>，cosθ = <span id="cosv">0.00</span>，vᵀw = <span id="dotv">0.00</span></p>
+  <div class="tip">📌 <b>正交 ⇔ 内积=0</b>：把两滑块拖到相差约 <b>90°</b>（如 30° 与 120°），内积趋近 0。工程上这意味着"两个信号/两个特征互不影响、不相关"。</div>
+</section>
+
+<!-- 3. 正交矩阵 = 只旋转不拉伸 -->
+<section class="card">
+  <h2><span class="num">3</span>正交矩阵 Q —— "只旋转 / 镜像，不拉伸"</h2>
+  <p>正交矩阵满足 <code>QᵀQ = I</code>，等价于"列向量两两正交且长度为 1"。它作用在任何向量上：<b>长度不变、夹角不变</b>。</p>
+  <div class="ctrl">
+    <label>旋转角 φ</label><input id="phi" type="range" min="0" max="360" step="1" value="40"><span class="val" id="phiv">40°</span>
+    <button onclick="setQ('rot')">旋转矩阵</button>
+    <button class="ghost" onclick="setQ('mirror')">镜像矩阵</button>
+  </div>
+  <div class="grid2">
+    <div class="mini">
+      <h4>Q 作用在向量上（蓝色=原向量，绿色=Qv）</h4>
+      <canvas id="qCanvas" height="240"></canvas>
+      <p class="sub">‖v‖ = <span id="vlen2">—</span>，‖Qv‖ = <span id="qvlen">—</span>（应相等）</p>
+    </div>
+    <div class="mini">
+      <h4>Q 的列向量（应两两正交、长度均为 1）</h4>
+      <canvas id="qCols" height="240"></canvas>
+      <p class="sub">QᵀQ = I 验证：对角线=<span id="diag">—</span>，非对角线=<span id="off">—</span>（应分别为 1 和 0）</p>
+    </div>
+  </div>
+  <div class="tip">📌 <b>工程意义</b>：正交变换"保能量、保结构"。FFT/小波把信号转到正交基上分析（频域能量=时域能量）；QR 分解用正交矩阵做数值稳定的求解；机器人用旋转矩阵（正交）描述刚体姿态，长度/角度在旋转下不变。</div>
+</section>
+
+<!-- 4. 三个工程场景 -->
+<section class="card">
+  <h2><span class="num">4</span>三个工程场景 · 一眼看懂</h2>
+  <div class="grid2">
+    <div class="mini">
+      <h4>场景 A · 信号正交 = 互不干扰</h4>
+      <canvas id="sigCanvas" height="180"></canvas>
+      <p class="sub">CDMA（如 IS-95/cdma2000 下行）：基站给不同用户分配<b>互相正交</b>的 Walsh 码字（内积=0）。在<b>理想同步</b>下，接收端用本地码解扩时，其他用户信号的互相关严格为 0，从而<b>无串扰地分离各路信号</b>。多径/异步会破坏正交性并产生多址干扰（MAI），故实际系统还需靠同步精度与多用户检测逼近这一理想。</p>
+    </div>
+    <div class="mini">
+      <h4>场景 B · PCA 找正交主方向</h4>
+      <canvas id="pcaCanvas" height="180"></canvas>
+      <p class="sub">数据协方差矩阵 Σ 是<b>实对称半正定矩阵</b>，由主轴定理（谱定理）可正交对角化 Σ=VΛVᵀ，其<b>特征向量构成一组正交基</b>（不同特征值对应的特征向量正交），沿这些方向（主成分）方差依次最大，实现"去相关"与降维。</p>
+    </div>
+    <div class="mini">
+      <h4>场景 C · 旋转矩阵(正交)保姿态</h4>
+      <canvas id="robCanvas" height="180"></canvas>
+      <p class="sub">机器人/无人机用 3×3 旋转矩阵 R（RᵀR=I, det=1）描述刚体旋转，物体边长、夹角在旋转后不变。</p>
+    </div>
+  </div>
+</section>
+
+<!-- 5. 总结 -->
+<section class="card">
+  <h2><span class="num">5</span>一张表串起来</h2>
+  <div style="background:#f0f7ff;border-radius:12px;padding:1rem;">
+    <table>
+      <tr><th>概念</th><th>数学</th><th>工程翻译</th></tr>
+      <tr><td>长度 ‖v‖</td><td>√(vᵀv)</td><td>信号能量 / 权重规模</td></tr>
+      <tr><td>夹角 θ</td><td>cosθ = vᵀw/(‖v‖·‖w‖)</td><td>两信号/特征相似度</td></tr>
+      <tr><td>正交 v⊥w</td><td>vᵀw = 0</td><td>互不干扰 / 不相关</td></tr>
+      <tr><td>正交矩阵 Q</td><td>QᵀQ = I</td><td>旋转/镜像：保长度、保能量</td></tr>
+    </table>
+  </div>
+  <div class="note">记忆锚点：<b>长度=能量，夹角=相似度，正交=互不干扰，正交矩阵=只转不拉</b>。四句话覆盖信号、机器学习、机器人三大场景。</div>
+  <div class="tip" style="margin-top:1rem;">
+    <b>为什么工程里这么"爱"正交？</b><br>
+    ① <b>去耦合 / 去相关</b>：正交基下各分量互不影响（信号串扰=0、PCA 主成分不相关），系统可"分而治之"地分析与设计。<br>
+    ② <b>保能量 / 保结构</b>：正交变换（旋转/镜像）不改长度与夹角——Parseval 定理（时域能量=频域能量）、旋转不改变物体形状，都源于此。<br>
+    ③ <b>计算省心</b>：正交矩阵的逆=转置（Q⁻¹=Qᵀ），机器人求逆姿态、最小二乘正交投影都因此极简稳定。<br>
+    👉 一句话：<b>正交 = 把复杂问题"掰"到一组互不相干、且不失真的方向上分别处理</b>——这正是信号分离、数据降维、刚体姿态三大工程场景的共同数学内核。
+  </div>
+</section>
+
+</main>
+<footer>向量的长度·夹角·正交矩阵 · 工程意义直观解读 · 面向大一新生 · 单文件无依赖</footer>
+
+<script>
+/* ===== 工具：dpr 自适应 canvas（每次重置变换，避免累积）===== */
+function fit(cv, h){
+  const dpr = window.devicePixelRatio || 1;
+  const rect = cv.getBoundingClientRect();
+  const w = rect.width || (cv.parentElement ? cv.parentElement.clientWidth : 0) || 320;
+  if (w < 10) return null; // 布局未完成，跳过
+  cv.width = Math.round(w * dpr);
+  cv.height = Math.round((h || cv.height) * dpr);
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.scale(dpr, dpr);
+  return { ctx: ctx, w: w, h: (h || cv.height) / dpr };
+}
+
+/* ===== 1. 长度 ===== */
+const lx = document.getElementById('lx'), ly = document.getElementById('ly');
+function drawLen(){
+  const x = +lx.value, y = +ly.value;
+  document.getElementById('lxv').textContent = x.toFixed(1);
+  document.getElementById('lyv').textContent = y.toFixed(1);
+  document.getElementById('vx').textContent = x.toFixed(1);
+  document.getElementById('vy').textContent = y.toFixed(1);
+  const len = Math.hypot(x, y);
+  document.getElementById('vlen').textContent = len.toFixed(2);
+  const r = fit(document.getElementById('lenCanvas'), 300);
+  if (!r) return;
+  const { ctx, w, h } = r;
+  ctx.clearRect(0, 0, w, h);
+  const cx = w/2, cy = h/2, sc = Math.min(w, h) * 0.28;
+  ctx.strokeStyle = '#cdd8e6'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(w, cy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, h); ctx.stroke();
+  ctx.strokeStyle = '#2563eb'; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + x*sc, cy - y*sc); ctx.stroke();
+  ctx.fillStyle = '#2563eb';
+  ctx.beginPath(); ctx.arc(cx + x*sc, cy - y*sc, 7, 0, 7); ctx.fill();
+  ctx.setLineDash([5,5]); ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(cx + x*sc, cy - y*sc); ctx.lineTo(cx + x*sc, cy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx + x*sc, cy - y*sc); ctx.lineTo(cx, cy - y*sc); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#1a202c'; ctx.font = '15px sans-serif';
+  ctx.fillText('v=('+x.toFixed(1)+','+y.toFixed(1)+')', cx + x*sc*0.5 - 20, cy - y*sc*0.5 - 10);
+  ctx.fillStyle = '#10b981'; ctx.fillText('‖v‖='+len.toFixed(2), cx + x*sc*0.5 - 20, cy - y*sc*0.5 + 12);
+  ctx.fillStyle = '#5b6b7b'; ctx.fillText('O', cx - 18, cy + 16);
+}
+[lx, ly].forEach(s => s.oninput = drawLen);
+
+/* ===== 2. 夹角 / 内积 ===== */
+const va = document.getElementById('va'), wa = document.getElementById('wa');
+function drawAng(){
+  const a = +va.value * Math.PI/180, b = +wa.value * Math.PI/180;
+  document.getElementById('vav').textContent = va.value + '°';
+  document.getElementById('wav').textContent = wa.value + '°';
+  const v = [Math.cos(a), Math.sin(a)];
+  const wv = [Math.cos(b), Math.sin(b)];
+  const dot = v[0]*wv[0] + v[1]*wv[1];
+  let theta = Math.acos(Math.max(-1, Math.min(1, dot))) * 180/Math.PI;
+  if (theta > 180) theta = 360 - theta;
+  document.getElementById('theta').textContent = theta.toFixed(0) + '°';
+  document.getElementById('cosv').textContent = dot.toFixed(2);
+  document.getElementById('dotv').textContent = dot.toFixed(2);
+  const r = fit(document.getElementById('angCanvas'), 300);
+  if (!r) return;
+  const { ctx, w, h } = r;
+  ctx.clearRect(0, 0, w, h);
+  const cx = w/2, cy = h/2, sc = Math.min(w, h) * 0.32;
+  ctx.strokeStyle = '#cdd8e6'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(w, cy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, h); ctx.stroke();
+  function arrow(dir, color, label){
+    ctx.strokeStyle = color; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + dir[0]*sc, cy - dir[1]*sc); ctx.stroke();
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.arc(cx + dir[0]*sc, cy - dir[1]*sc, 7, 0, 7); ctx.fill();
+    ctx.fillStyle = '#1a202c'; ctx.font = '14px sans-serif';
+    ctx.fillText(label, cx + dir[0]*sc + 8, cy - dir[1]*sc);
+  }
+  arrow(v, '#2563eb', 'v'); arrow(w, '#ea580c', 'w');
+  const start = Math.atan2(-v[1], v[0]), end = Math.atan2(-wv[1], wv[0]);
+  ctx.strokeStyle = '#10b981'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.arc(cx, cy, 40, start, end, end < start); ctx.stroke();
+  ctx.fillStyle = '#10b981'; ctx.font = '14px sans-serif';
+  ctx.fillText('θ', cx + 46*Math.cos((start+end)/2) - 4, cy - 46*Math.sin((start+end)/2) + 4);
+  if (Math.abs(dot) < 0.08){ ctx.fillStyle='#10b981'; ctx.font='bold 16px sans-serif'; ctx.fillText('✓ 正交 vᵀw≈0', cx-70, cy+30); }
+  arrow(wv, '#ea580c', 'w');
+}
+[va, wa].forEach(s => s.oninput = drawAng);
+
+/* ===== 3. 正交矩阵 Q ===== */
+const phi = document.getElementById('phi');
+function Qrot(deg){ const a = deg * Math.PI/180; return [[Math.cos(a), -Math.sin(a)], [Math.sin(a), Math.cos(a)]]; }
+function Qmirror(){ return [[1, 0], [0, -1]]; }
+let Q = Qrot(40);
+function setQ(t){ Q = (t === 'mirror') ? Qmirror() : Qrot(+phi.value); drawQ(); drawQCols(); }
+function drawQ(){
+  const a = +phi.value;
+  if (Q[0][0] !== 1 || Q[1][1] !== -1) Q = Qrot(a);
+  document.getElementById('phiv').textContent = a + '°';
+  const v = [2.2, 1.2];
+  const qv = [Q[0][0]*v[0] + Q[0][1]*v[1], Q[1][0]*v[0] + Q[1][1]*v[1]];
+  const lv = Math.hypot(v[0], v[1]), lqv = Math.hypot(qv[0], qv[1]);
+  document.getElementById('vlen2').textContent = lv.toFixed(2);
+  document.getElementById('qvlen').textContent = lqv.toFixed(2);
+  const r = fit(document.getElementById('qCanvas'), 240);
+  if (!r) return;
+  const { ctx, w, h } = r;
+  ctx.clearRect(0, 0, w, h);
+  const cx = w/2, cy = h/2, sc = Math.min(w, h) * 0.18;
+  ctx.strokeStyle = '#cdd8e6'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(w, cy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, h); ctx.stroke();
+  function arr(vec, color, label){
+    ctx.strokeStyle = color; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + vec[0]*sc, cy - vec[1]*sc); ctx.stroke();
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.arc(cx + vec[0]*sc, cy - vec[1]*sc, 6, 0, 7); ctx.fill();
+    ctx.fillStyle = '#1a202c'; ctx.font = '13px sans-serif';
+    ctx.fillText(label, cx + vec[0]*sc + 6, cy - vec[1]*sc);
+  }
+  arr(v, '#2563eb', 'v'); arr(qv, '#10b981', 'Qv');
+}
+function drawQCols(){
+  const QtQ = [[0,0],[0,0]];
+  for (let i=0;i<2;i++) for (let j=0;j<2;j++) QtQ[i][j] = Q[0][i]*Q[0][j] + Q[1][i]*Q[1][j];
+  document.getElementById('diag').textContent = QtQ[0][0].toFixed(2) + ', ' + QtQ[1][1].toFixed(2);
+  document.getElementById('off').textContent = QtQ[0][1].toFixed(2);
+  const r = fit(document.getElementById('qCols'), 240);
+  if (!r) return;
+  const { ctx, w, h } = r;
+  ctx.clearRect(0, 0, w, h);
+  const cx = w/2, cy = h/2, sc = Math.min(w, h) * 0.32;
+  ctx.strokeStyle = '#cdd8e6'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(w, cy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, h); ctx.stroke();
+  const c0 = [Q[0][0], Q[1][0]], c1 = [Q[0][1], Q[1][1]];
+  function arr(vec, color, label){
+    ctx.strokeStyle = color; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + vec[0]*sc, cy - vec[1]*sc); ctx.stroke();
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.arc(cx + vec[0]*sc, cy - vec[1]*sc, 6, 0, 7); ctx.fill();
+    ctx.fillStyle = '#1a202c'; ctx.font = '13px sans-serif';
+    ctx.fillText(label, cx + vec[0]*sc + 6, cy - vec[1]*sc);
+  }
+  arr(c0, '#2563eb', 'q₁'); arr(c1, '#ea580c', 'q₂');
+  const dot = c0[0]*c1[0] + c0[1]*c1[1];
+  ctx.fillStyle = (Math.abs(dot) < 0.1) ? '#10b981' : '#ef4444'; ctx.font = 'bold 14px sans-serif';
+  ctx.fillText('q₁ᵀq₂=' + dot.toFixed(2) + ((Math.abs(dot) < 0.1) ? ' (正交✓)' : ' (不正交)'), cx - 90, cy + 30);
+  ctx.fillStyle = '#5b6b7b'; ctx.font = '12px sans-serif';
+  ctx.fillText('‖q₁‖=' + Math.hypot(c0[0], c0[1]).toFixed(2), cx + c0[0]*sc - 20, cy - c0[1]*sc - 12);
+  ctx.fillText('‖q₂‖=' + Math.hypot(c1[0], c1[1]).toFixed(2), cx + c1[0]*sc - 20, cy - c1[1]*sc - 12);
+}
+phi.oninput = () => { Q = Qrot(+phi.value); drawQ(); drawQCols(); };
+
+/* ===== 4. 三个工程场景 ===== */
+function drawSig(){
+  const cv = document.getElementById('sigCanvas');
+  const r = fit(cv, 180); if (!r) return;
+  const { ctx, w, h } = r;
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = '#f0f7ff'; ctx.fillRect(0, 0, w, h);
+  ctx.strokeStyle = '#2563eb'; ctx.lineWidth = 2; ctx.beginPath();
+  for (let i=0;i<w;i++){ const t = i/w * 4*Math.PI; ctx.lineTo(i, h/2 - Math.sin(t)*30); } ctx.stroke();
+  ctx.strokeStyle = '#ea580c'; ctx.beginPath();
+  for (let i=0;i<w;i++){ const t = i/w * 4*Math.PI; ctx.lineTo(i, h/2 - Math.sin(t + Math.PI/2)*30); } ctx.stroke();
+  ctx.fillStyle = '#1a202c'; ctx.font = '12px sans-serif';
+  ctx.fillText('用户1码字', 8, 14); ctx.fillText('用户2码字(正交)', w-110, 14);
+}
+function drawPCA(){
+  const cv = document.getElementById('pcaCanvas');
+  const r = fit(cv, 180); if (!r) return;
+  const { ctx, w, h } = r;
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = '#f0fdf4'; ctx.fillRect(0, 0, w, h);
+  const cx = w/2, cy = h/2;
+  // 可复现的随机数据云（用确定性伪随机，避免 Math.seedrandom 报错）
+  let seed = 12345;
+  function rnd(){ seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
+  ctx.fillStyle = 'rgba(37,99,235,.5)';
+  for (let i=0;i<90;i++){ const u = rnd()*2-1, v = rnd()*2-1; ctx.beginPath(); ctx.arc(cx + (1.6*u + 0.5*v)*22, cy - (0.6*u + 1.3*v)*22, 2.5, 0, 7); ctx.fill(); }
+  ctx.strokeStyle = '#2563eb'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(cx-50, cy-20); ctx.lineTo(cx+50, cy+20); ctx.stroke();
+  ctx.strokeStyle = '#10b981'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(cx-30, cy+45); ctx.lineTo(cx+30, cy-45); ctx.stroke();
+  ctx.fillStyle = '#1a202c'; ctx.font = '12px sans-serif';
+  ctx.fillText('PC1', cx+52, cy+24); ctx.fillText('PC2', cx+32, cy-42);
+}
+let robT0 = performance.now();
+function drawRob(){
+  const cv = document.getElementById('robCanvas');
+  const r = fit(cv, 180); if (!r) return;
+  const { ctx, w, h } = r;
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = '#fff7ed'; ctx.fillRect(0, 0, w, h);
+  const cx = w/2, cy = h/2;
+  const a = (performance.now() - robT0) / 1000 * 0.6;
+  ctx.save(); ctx.translate(cx, cy); ctx.rotate(a);
+  ctx.strokeStyle = '#2563eb'; ctx.lineWidth = 3; ctx.strokeRect(-30, -18, 60, 36);
+  ctx.fillStyle = '#2563eb'; ctx.fillRect(-6, -6, 12, 12);
+  ctx.restore();
+  ctx.fillStyle = '#1a202c'; ctx.font = '12px sans-serif';
+  ctx.fillText('R(θ) 旋转中…', cx-40, cy+45);
+}
+function drawAllStatic(){ drawSig(); drawPCA(); }
+
+/* ===== 启动：统一在 DOMContentLoaded 后初始化，并用 ResizeObserver 驱动重绘 ===== */
+function initAll(){
+  drawLen(); drawAng(); Q = Qrot(+phi.value); drawQ(); drawQCols(); drawAllStatic();
+}
+if (document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', initAll);
+} else {
+  initAll();
+}
+// 机器人动画独立用 rAF 循环（仅重绘自身，不影响其他画布尺寸）
+function robLoop(){ drawRob(); requestAnimationFrame(robLoop); }
+requestAnimationFrame(robLoop);
+// 窗口尺寸变化时重绘所有画布
+window.addEventListener('resize', () => {
+  drawLen(); drawAng(); drawQ(); drawQCols(); drawAllStatic();
+});
+</script>
+</body>
+</html>

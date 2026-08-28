@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>基与基变换的工程意义 · 交互解读</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--ink:#1a202c;--sub:#5b6b7b;--brand:#2563eb;--green:#10b981;--warn:#ea580c;--purple:#7c3aed;--line:#e4e9f2;}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:20px;}
+body{background:var(--bg);color:var(--ink);font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;line-height:1.8;}
+header{background:linear-gradient(135deg,#2563eb,#7c3aed);color:#fff;padding:2.8rem 1.5rem 2.2rem;text-align:center;}
+header h1{font-size:2.3rem;margin-bottom:.6rem;}
+header p{font-size:1.1rem;opacity:.95;max-width:880px;margin:0 auto;}
+main{max-width:1080px;margin:0 auto;padding:2rem 1.2rem 4rem;}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:2rem;box-shadow:0 6px 24px rgba(30,50,90,.07);margin:1.8rem 0;}
+h2{font-size:1.6rem;color:var(--brand);margin-bottom:.8rem;display:flex;align-items:center;gap:.6rem;}
+h2 .num{background:var(--brand);color:#fff;border-radius:10px;padding:.2rem .8rem;font-size:1.05rem;}
+h3{font-size:1.2rem;margin:1rem 0 .4rem;}
+p{font-size:1.05rem;margin:.4rem 0;}
+.sub{color:var(--sub);}
+.ctrl{display:flex;flex-wrap:wrap;gap:.8rem;align-items:center;margin:.8rem 0;}
+.ctrl label{font-size:1rem;font-weight:600;}
+input[type=range]{flex:1;min-width:140px;accent-color:var(--brand);}
+.val{font-size:1.15rem;font-weight:800;color:var(--brand);min-width:60px;text-align:center;}
+canvas{display:block;background:#f8fafc;border-radius:10px;width:100%;touch-action:none;}
+.golden{background:linear-gradient(135deg,#fff7e6,#eef2ff);border:2px solid #f2c94c;border-radius:14px;padding:1.1rem 1.3rem;margin:1rem 0;font-size:1.08rem;line-height:1.8;}
+.golden b{color:var(--brand);}
+.tip{background:#eef4ff;border-left:4px solid var(--brand);padding:1rem;border-radius:8px;margin:.8rem 0;font-size:1rem;}
+.meme{font-size:1.02rem;margin-top:.3rem;padding:.5rem .8rem;border-radius:8px;background:#f0fdf4;color:#166534;border-left:4px solid var(--green);}
+.meme b{color:var(--warn);}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.2rem;}
+.mini{background:#f8fafc;border:1px solid var(--line);border-radius:14px;padding:1.1rem;}
+.mini h4{font-size:1.12rem;margin-bottom:.5rem;color:var(--green);}
+.badge{display:inline-block;background:#eef4ff;color:var(--brand);border:1px solid #cfe0ff;border-radius:8px;padding:.2rem .7rem;font-size:.95rem;font-weight:700;margin:0 .2rem;}
+table{width:100%;border-collapse:collapse;font-size:1rem;}
+td,th{border:1px solid var(--line);padding:.65rem;text-align:left;}
+th{background:#e8f4fd;}
+.math{font-family:"Times New Roman",serif;font-size:1.12rem;}
+.coord{font-family:"Times New Roman",serif;font-weight:700;color:var(--brand);}
+@media(max-width:600px){html{font-size:18px;}header h1{font-size:1.8rem;}.card{padding:1.3rem;}}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>基 · 正交规范基 · 基变换 —— 工程意义解读</h1>
+  <p>面向大一新生 · 同一向量，换一组"尺子方向"看它，坐标就变了 · 为什么工程里拼命要用"正交规范基"？</p>
+</header>
+
+<main>
+
+<!-- 统摄 -->
+<section class="card">
+  <h2><span class="num">★</span>先记住一件事</h2>
+  <div class="golden">
+    <b>基（basis）</b> = 一组线性无关的向量，空间中<b>任意向量都能唯一表示成它们的线性组合</b>。组合系数就是该向量在这组基下的<b>坐标</b>。<br>
+    <b>正交规范基</b> = 基向量两两垂直（正交）+ 长度都为 1（规范）。<br>
+    <b>基变换</b> = 同一向量从"旧基坐标"换算到"新基坐标"。向量本身没动，只是<b>尺子方向换了</b>。<br>
+    <span class="badge">记忆锚点</span> 基 = 坐标系的尺子方向；坐标 = 在这套尺子下量出来的"份数"。
+  </div>
+</section>
+
+<!-- 1. 基是什么：拖向量看坐标 -->
+<section class="card">
+  <h2><span class="num">1</span>基是什么：拖一个向量，看它在不同基下的坐标</h2>
+  <p>固定标准基 e₁=(1,0)、e₂=(0,1) 下，向量 v 的坐标就是它的 (x,y)。拖动点，看坐标实时变化。</p>
+  <div class="ctrl">
+    <label>v 的 x</label><input id="vx" type="range" min="-3" max="3" step="0.1" value="2"><span class="val" id="vxv">2.0</span>
+    <label>v 的 y</label><input id="vy" type="range" min="-3" max="3" step="0.1" value="1.5"><span class="val" id="vyv">1.5</span>
+  </div>
+  <canvas id="basisCanvas" height="320"></canvas>
+  <p>v = <span class="coord" id="stdCoord">(2.0, 1.5)</span> 　 长度 ‖v‖ = <span class="coord" id="vlen">2.50</span></p>
+  <div class="tip">💡 v = 2.0·e₁ + 1.5·e₂。这里的"2.0、1.5"就是 v 在<b>标准基</b>下的坐标——它就是"沿 e₁ 走 2 份、沿 e₂ 走 1.5 份"。</div>
+</section>
+
+<!-- 2. 普通基 vs 正交规范基 -->
+<section class="card">
+  <h2><span class="num">2</span>普通基 vs 正交规范基：求坐标差多远？</h2>
+  <p>同一向量 v，分别用两组基表示：<b>普通基</b> B={b₁,b₂}（线性无关但未必正交/单位）；<b>正交规范基</b> Q={q₁,q₂}（正交+单位）。</p>
+  <div class="ctrl">
+    <label>b₁ 角</label><input id="b1a" type="range" min="0" max="360" step="1" value="20"><span class="val" id="b1av">20°</span>
+    <label>b₂ 角</label><input id="b2a" type="range" min="0" max="360" step="1" value="100"><span class="val" id="b2av">100°</span>
+  </div>
+  <div class="grid2">
+    <div class="mini">
+      <h4>普通基 B 下坐标（解线性方程组）</h4>
+      <canvas id="coordB" height="200"></canvas>
+      <p>v = c₁·b₁ + c₂·b₂ ⇒ 解 A·c = v</p>
+      <p>坐标 c = <span class="coord" id="coordOrd">?</span></p>
+      <p class="sub">求坐标要解线性方程组（计算复杂），且 c₁、c₂ 互相"串扰"。</p>
+    </div>
+    <div class="mini">
+      <h4>正交规范基 Q 下坐标（投影=内积）</h4>
+      <canvas id="coordQ" height="200"></canvas>
+      <p>v = (v·q₁)·q₁ + (v·q₂)·q₂</p>
+      <p>坐标 c' = <span class="coord" id="coordON">?</span></p>
+      <p class="sub">坐标 = 内积（投影），<b>各方向独立、不串扰</b>，计算极简。</p>
+    </div>
+  </div>
+  <div class="meme"><b>🎯 工程意义核心：</b>正交规范基让"求坐标"退化成<b>逐个投影（内积）</b>——这正是 Fourier 变换、小波变换、PCA、信号分解能高效计算的数学根源。</div>
+</section>
+
+<!-- 3. 基变换 -->
+<section class="card">
+  <h2><span class="num">3</span>基变换：向量没动，尺子方向换了</h2>
+  <p>设旧基为标准基，新基 Q={q₁,q₂}（正交规范）。过渡矩阵 P 的列 = 新基向量在旧基下的坐标。</p>
+  <div class="math">向量本身不变：v = P·[v]_Q 　 ⇒ 　 [v]_Q = P⁻¹·[v]_std</div>
+  <p>当 Q 正交规范时，P⁻¹ = Pᵀ（求逆=转置，极省事）。</p>
+  <div class="ctrl">
+    <label>q₁ 角</label><input id="q1a" type="range" min="0" max="360" step="1" value="35"><span class="val" id="q1av">35°</span>
+    <label>v 角</label><input id="va" type="range" min="0" max="360" step="1" value="60"><span class="val" id="vav">60°</span>
+  </div>
+  <canvas id="changeCanvas" height="340"></canvas>
+  <p>[v]_std = <span class="coord" id="vStd">?</span> 　 经 P 变换到新基 Q 下 [v]_Q = <span class="coord" id="vNew">?</span></p>
+  <p>Pᵀ·P = <span class="coord" id="ptp">?</span> 　（正交规范基应≈单位阵 I）</p>
+  <div class="tip">📌 拖动 q₁ 改变"尺子方向"，可见同一 v 在新基下坐标实时变化，但 v 这个箭头本身不动——<b>变的只是描述它的语言</b>。</div>
+</section>
+
+<!-- 4. 工程场景 -->
+<section class="card">
+  <h2><span class="num">4</span>工程应用：为什么拼命要用正交规范基？</h2>
+  <div class="grid2">
+    <div class="mini">
+      <h4>① 信号处理：Fourier / 小波分解</h4>
+      <canvas id="sigCanvas" height="170"></canvas>
+      <p class="sub">信号 f(t) 在正交基 {sin,cos,小波} 下分解：系数=内积⟨f,φₖ⟩。正交 ⇒ 各频率分量<b>互不串扰</b>，可独立滤波/压缩（MP3/JPEG 原理）。</p>
+    </div>
+    <div class="mini">
+      <h4>② PCA / 数据压缩：数据主方向作新基</h4>
+      <canvas id="pcaCanvas" height="170"></canvas>
+      <p class="sub">把数据协方差矩阵特征向量作为<b>正交规范新基</b>（主成分轴），坐标=投影。沿大方差方向保留信息最多，实现降维压缩。</p>
+    </div>
+    <div class="mini">
+      <h4>③ 机器人：不同坐标系变换</h4>
+      <canvas id="robotCanvas" height="170"></canvas>
+      <p class="sub">机械臂末端位姿要在<b>基坐标系↔连杆坐标系</b>间转换。旋转矩阵 R 是正交规范基的过渡矩阵（RᵀR=I），描述同一向量在不同坐标系下的坐标。</p>
+    </div>
+    <div class="mini">
+      <h4>④ 有限元：形函数基</h4>
+      <canvas id="femCanvas" height="170"></canvas>
+      <p class="sub">把解 u(x) 表示为 u=Σuᵢ·Nᵢ(x)，{Nᵢ} 是分片多项式<b>基函数</b>。正交/局部支撑的基让刚度矩阵稀疏、求解高效。</p>
+    </div>
+  </div>
+</section>
+
+<!-- 总结 -->
+<section class="card">
+  <h2><span class="num">5</span>一张表记住：基变换在工程里在看什么</h2>
+  <table>
+    <tr><th>工程场景</th><th>基/基变换在干嘛</th><th>为什么要用正交规范基</th></tr>
+    <tr><td>信号 Fourier/小波</td><td>信号在频率基下分解</td><td>正交⇒频率分量互不串扰，可独立滤波/压缩</td></tr>
+    <tr><td>PCA 降维</td><td>数据主方向作新正交基</td><td>坐标=投影，沿主方向保留信息最多</td></tr>
+    <tr><td>机器人坐标变换</td><td>基坐标↔连杆坐标的过渡</td><td>旋转矩阵 RᵀR=I，求逆=转置，计算极简</td></tr>
+    <tr><td>有限元形函数</td><td>解在分片多项式基上展开</td><td>局部/正交基使刚度矩阵稀疏高效</td></tr>
+  </table>
+  <div class="golden">
+    <b>一句话总结：</b>基变换 = 给同一向量换一套"尺子方向"重新读数；<b>正交规范基</b>让读数方式退化成"逐个投影（内积）"，各方向互不串扰、求逆=转置——这正是信号处理、数据压缩、机器人、有限元普遍依赖它的根本原因。
+  </div>
+</section>
+
+</main>
+<footer style="background:#eef2f7;color:var(--sub);text-align:center;padding:2rem 1rem;font-size:.95rem;">
+  基 · 正交规范基 · 基变换的工程意义 · 面向大一新生 · 浅色大字号交互版
+</footer>
+
+<script>
+/* ---- dpr 自适应 canvas ---- */
+function fit(cv,h){
+  const dpr=window.devicePixelRatio||1,rect=cv.getBoundingClientRect();
+  const w=rect.width||cv.parentElement.clientWidth||320;
+  cv.width=w*dpr;cv.height=(h||cv.height)*dpr;
+  const ctx=cv.getContext('2d');ctx.setTransform(1,0,0,1,0,0);ctx.scale(dpr,dpr);
+  return {ctx,w,h:h||cv.height/dpr};
+}
+function drawAxes(ctx,w,h){const cx=w/2,cy=h/2;ctx.strokeStyle='#cdd8e6';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,cy);ctx.lineTo(w,cy);ctx.moveTo(cx,0);ctx.lineTo(cx,h);ctx.stroke();return{cx,cy};}
+function arrow(ctx,x1,y1,x2,y2,color,width){ctx.strokeStyle=color;ctx.lineWidth=width||3;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();}
+function vecFromAngle(a,len){return[Math.cos(a*Math.PI/180)*len,Math.sin(a*Math.PI/180)*len];}
+function dot(v,w){return v[0]*w[0]+v[1]*w[1];}
+function solve2(A,b){const det=A[0][0]*A[1][1]-A[0][1]*A[1][0];if(Math.abs(det)<1e-9)return null;return[(b[0]*A[1][1]-A[0][1]*b[1])/det,(A[0][0]*b[1]-b[0]*A[1][0])/det];}
+
+/* ---- 1. 标准基坐标 ---- */
+const vx=document.getElementById('vx'),vy=document.getElementById('vy');
+function drawBasis(){
+  const x=+vx.value,y=+vy.value;
+  document.getElementById('vxv').textContent=x.toFixed(1);
+  document.getElementById('vyv').textContent=y.toFixed(1);
+  const {ctx,w,h}=fit(document.getElementById('basisCanvas'),320);
+  ctx.clearRect(0,0,w,h);const {cx,cy}=drawAxes(ctx,w,h);const sc=Math.min(w,h)*0.28;
+  // 基向量
+  arrow(ctx,cx,cy,cx+sc,cy,'#94a3b8',2);arrow(ctx,cx,cy,cx,cy-sc,'#94a3b8',2);
+  ctx.fillStyle='#94a3b8';ctx.font='13px sans-serif';ctx.fillText('e₁',cx+sc-10,cy+16);ctx.fillText('e₂',cx+8,cy-sc+4);
+  // v
+  arrow(ctx,cx,cy,cx+x*sc/3,cy-y*sc/3,'#2563eb',4);
+  ctx.fillStyle='#2563eb';ctx.beginPath();ctx.arc(cx+x*sc/3,cy-y*sc/3,6,0,7);ctx.fill();
+  ctx.fillStyle='#1f2a37';ctx.font='14px sans-serif';ctx.fillText('v',cx+x*sc/3+8,cy-y*sc/3);
+  // 投影虚线
+  ctx.setLineDash([4,4]);ctx.strokeStyle='#cbd5e1';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(cx+x*sc/3,cy-y*sc/3);ctx.lineTo(cx+x*sc/3,cy);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(cx+x*sc/3,cy-y*sc/3);ctx.lineTo(cx,cy-y*sc/3);ctx.stroke();ctx.setLineDash([]);
+  document.getElementById('stdCoord').textContent='('+x.toFixed(1)+', '+y.toFixed(1)+')';
+  document.getElementById('vlen').textContent=Math.hypot(x,y).toFixed(2);
+}
+[vx,vy].forEach(s=>s.oninput=drawBasis);
+
+/* ---- 2. 普通基 vs 正交规范基坐标 ---- */
+const b1a=document.getElementById('b1a'),b2a=document.getElementById('b2a');
+function drawCoordCompare(){
+  const a1=+b1a.value,a2=+b2a.value;
+  document.getElementById('b1av').textContent=a1+'°';
+  document.getElementById('b2av').textContent=a2+'°';
+  const v=[2,1.5];
+  const b1=vecFromAngle(a1,1),b2=vecFromAngle(a2,1);
+  const c=solve2([b1,b2],v); // A columns = b1,b2
+  // 普通基画布
+  let {ctx,w,h}=fit(document.getElementById('coordB'),200);ctx.clearRect(0,0,w,h);let {cx,cy}=drawAxes(ctx,w,h);const sc=Math.min(w,h)*0.3;
+  arrow(ctx,cx,cy,cx+b1[0]*sc,cy-b1[1]*sc,'#2563eb',3);arrow(ctx,cx,cy,cx+b2[0]*sc,cy-b2[1]*sc,'#14b8a6',3);
+  ctx.fillStyle='#2563eb';ctx.font='12px sans-serif';ctx.fillText('b₁',cx+b1[0]*sc-10,cy-b1[1]*sc+16);
+  ctx.fillStyle='#14b8a6';ctx.fillText('b₂',cx+b2[0]*sc-10,cy-b2[1]*sc+16);
+  if(c){arrow(ctx,cx,cy,cx+(c[0]*b1[0]+c[1]*b2[0])*sc,cy-(c[0]*b1[1]+c[1]*b2[1])*sc,'#ea580c',4);}
+  document.getElementById('coordOrd').textContent=c?('('+c[0].toFixed(2)+', '+c[1].toFixed(2)+')'):'(基近似相关，无解)';
+  // 正交规范基画布：q1,q2 取正交单位
+  const q1=vecFromAngle(a1,1),q2=[-Math.sin(a1*Math.PI/180),Math.cos(a1*Math.PI/180)];
+  ({ctx,w,h}=fit(document.getElementById('coordQ'),200));ctx.clearRect(0,0,w,h);({cx,cy}=drawAxes(ctx,w,h));
+  arrow(ctx,cx,cy,cx+q1[0]*sc,cy-q1[1]*sc,'#2563eb',3);arrow(ctx,cx,cy,cx+q2[0]*sc,cy-q2[1]*sc,'#14b8a6',3);
+  ctx.fillStyle='#2563eb';ctx.fillText('q₁',cx+q1[0]*sc-10,cy-q1[1]*sc+16);
+  ctx.fillStyle='#14b8a6';ctx.fillText('q₂',cx+q2[0]*sc-10,cy-q2[1]*sc+16);
+  const c1=dot(v,q1),c2=dot(v,q2);
+  arrow(ctx,cx,cy,cx+(c1*q1[0]+c2*q2[0])*sc,cy-(c1*q1[1]+c2*q2[1])*sc,'#ea580c',4);
+  document.getElementById('coordON').textContent='('+c1.toFixed(2)+', '+c2.toFixed(2)+')';
+}
+[b1a,b2a].forEach(s=>s.oninput=drawCoordCompare);
+
+/* ---- 3. 基变换 ---- */
+const q1a=document.getElementById('q1a'),va=document.getElementById('va');
+function drawChange(){
+  const aQ=+q1a.value,aV=+va.value;
+  document.getElementById('q1av').textContent=aQ+'°';
+  document.getElementById('vav').textContent=aV+'°';
+  const q1=vecFromAngle(aQ,1),q2=[-Math.sin(aQ*Math.PI/180),Math.cos(aQ*Math.PI/180)];
+  const v=vecFromAngle(aV,2);
+  // 先取出分量到临时变量，避免数组字面量内含属性访问在 V8 中解析异常
+  const q1x=q1[0],q1y=q1[1],q2x=q2[0],q2y=q2[1];
+  const P=[[q1x,q2x],[q1y,q2y]]; // columns = new basis in std
+  const inv=1/(P[0][0]*P[1][1]-P[0][1]*P[1][0]);
+  const Pinv=[[P[1][1]*inv,-P[0][1]*inv],[-P[1][0]*inv,P[0][0]*inv]];
+  const vNew=[Pinv[0][0]*v[0]+Pinv[0][1]*v[1],Pinv[1][0]*v[0]+Pinv[1][1]*v[1]];
+  const {ctx,w,h}=fit(document.getElementById('changeCanvas'),340);ctx.clearRect(0,0,w,h);const {cx,cy}=drawAxes(ctx,w,h);const sc=Math.min(w,h)*0.28;
+  // 新基
+  arrow(ctx,cx,cy,cx+q1[0]*sc,cy-q1[1]*sc,'#10b981',3);arrow(ctx,cx,cy,cx+q2[0]*sc,cy-q2[1]*sc,'#10b981',3);
+  ctx.fillStyle='#10b981';ctx.font='13px sans-serif';ctx.fillText('q₁',cx+q1[0]*sc-12,cy-q1[1]*sc+16);ctx.fillText('q₂',cx+q2[0]*sc-12,cy-q2[1]*sc+16);
+  // v
+  arrow(ctx,cx,cy,cx+v[0]*sc/2,cy-v[1]*sc/2,'#2563eb',4);ctx.fillStyle='#2563eb';ctx.beginPath();ctx.arc(cx+v[0]*sc/2,cy-v[1]*sc/2,6,0,7);ctx.fill();
+  ctx.fillStyle='#1f2a37';ctx.fillText('v',cx+v[0]*sc/2+8,cy-v[1]*sc/2);
+  document.getElementById('vStd').textContent='('+v[0].toFixed(2)+', '+v[1].toFixed(2)+')';
+  document.getElementById('vNew').textContent='('+vNew[0].toFixed(2)+', '+vNew[1].toFixed(2)+')';
+  // PᵀP
+  const ptp00=P[0][0]*P[0][0]+P[1][0]*P[1][0],ptp01=P[0][0]*P[0][1]+P[1][0]*P[1][1],ptp11=P[0][1]*P[0][1]+P[1][1]*P[1][1];
+  document.getElementById('ptp').textContent='[ '+ptp00.toFixed(2)+', '+ptp01.toFixed(2)+' ; '+ptp01.toFixed(2)+', '+ptp11.toFixed(2)+' ]';
+}
+[q1a,va].forEach(s=>s.oninput=drawChange);
+
+/* ---- 4. 工程场景静态图 ---- */
+function drawSig(){const {ctx,w,h}=fit(document.getElementById('sigCanvas'),170);ctx.clearRect(0,0,w,h);ctx.strokeStyle='#2563eb';ctx.lineWidth=2;ctx.beginPath();for(let i=0;i<w;i++){const x=i/w*4*Math.PI;ctx.lineTo(i,h/2-Math.sin(x)*h*0.3);}ctx.stroke();ctx.fillStyle='#5b6b7b';ctx.font='12px sans-serif';ctx.fillText('f(t)=sin(t) 在 {sin,cos} 正交基下分解',10,h-8);}
+function drawPCA(){const {ctx,w,h}=fit(document.getElementById('pcaCanvas'),170);ctx.clearRect(0,0,w,h);const cx=w/2,cy=h/2,sc=38;ctx.strokeStyle='#cdd8e6';ctx.beginPath();ctx.moveTo(0,cy);ctx.lineTo(w,cy);ctx.moveTo(cx,0);ctx.lineTo(cx,h);ctx.stroke();const data=[[1,2],[2,3],[1.5,1],[2.5,2.5],[1,1.2]];data.forEach(p=>{ctx.fillStyle='rgba(37,99,235,.6)';ctx.beginPath();ctx.arc(cx+p[0]*sc,cy-p[1]*sc,4,0,7);ctx.fill();});ctx.strokeStyle='#ea580c';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(cx-sc*2,cy+sc*0.5);ctx.lineTo(cx+sc*2,cy-sc*0.5);ctx.stroke();ctx.fillStyle='#ea580c';ctx.fillText('PC1 主方向(新基轴)',cx+6,cy-sc*0.5-4);}
+function drawRobot(){const {ctx,w,h}=fit(document.getElementById('robotCanvas'),170);ctx.clearRect(0,0,w,h);const cx=w/2,cy=h/2;ctx.strokeStyle='#10b981';ctx.lineWidth=2;ctx.beginPath();ctx.arc(cx,cy,40,0,7);ctx.stroke();ctx.fillStyle='#2563eb';ctx.fillRect(cx-6,cy-50,12,40);ctx.beginPath();ctx.arc(cx,cy-50,8,0,7);ctx.fill();ctx.fillStyle='#5b6b7b';ctx.font='12px sans-serif';ctx.fillText('末端位姿: 基坐标↔连杆坐标 (RᵀR=I)',10,h-8);}
+function drawFEM(){const {ctx,w,h}=fit(document.getElementById('femCanvas'),170);ctx.clearRect(0,0,w,h);ctx.strokeStyle='#7c3aed';ctx.lineWidth=2;for(let i=0;i<3;i++){const x0=i*w/3;ctx.beginPath();ctx.moveTo(x0,0);ctx.lineTo(x0+w/6,h);ctx.lineTo(x0+w/3,0);ctx.closePath();ctx.stroke();}ctx.fillStyle='#5b6b7b';ctx.font='12px sans-serif';ctx.fillText('u=Σuᵢ·Nᵢ(x) 形函数基展开',10,h-8);}
+
+/* ---- 启动 ---- */
+function init(){drawBasis();drawCoordCompare();drawChange();drawSig();drawPCA();drawRobot();drawFEM();}
+window.addEventListener('DOMContentLoaded',init);
+window.addEventListener('resize',init);
+</script>
+</body>
+</html>

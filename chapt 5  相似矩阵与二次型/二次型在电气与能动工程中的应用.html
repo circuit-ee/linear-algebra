@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>二次型在电气与能动工程中的应用</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --accent: #4895ef;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --success: #4cc9f0;
+            --warning: #f72585;
+            --gray: #6c757d;
+            --light-gray: #e9ecef;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+            color: var(--dark);
+            line-height: 1.6;
+            padding-bottom: 40px;
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        header {
+            text-align: center;
+            padding: 60px 0;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            color: white;
+            margin-bottom: 40px;
+            border-radius: 0 0 20px 20px;
+            box-shadow: 0 4px 20px rgba(67, 97, 238, 0.2);
+        }
+        
+        h1 {
+            font-size: 3.8rem;
+            margin-bottom: 25px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            font-weight: 800;
+        }
+        
+        .subtitle {
+            font-size: 1.7rem;
+            max-width: 800px;
+            margin: 0 auto;
+            opacity: 0.9;
+            font-weight: 700;
+        }
+        
+        .ethics-banner {
+            background: linear-gradient(135deg, #e63946, #f72585);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin: 30px 0;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(230, 57, 70, 0.3);
+        }
+        
+        .ethics-banner h2 {
+            font-size: 2rem;
+            margin-bottom: 15px;
+            font-weight: 800;
+        }
+        
+        .ethics-banner p {
+            font-size: 1.4rem;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        .intro {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            margin-bottom: 40px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            border-left: 5px solid var(--accent);
+        }
+        
+        .intro p {
+            margin-bottom: 25px;
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+        
+        .highlight {
+            background: linear-gradient(120deg, rgba(72, 149, 239, 0.2) 0%, transparent 100%);
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-weight: 800;
+            color: var(--secondary);
+            font-size: 1.4rem;
+        }
+        
+        .ethics-point {
+            background: rgba(230, 57, 70, 0.1);
+            border-left: 4px solid #e63946;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 0 10px 10px 0;
+        }
+        
+        .ethics-point h3 {
+            color: #e63946;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            font-size: 1.6rem;
+            font-weight: 800;
+        }
+        
+        .ethics-point h3 i {
+            margin-right: 12px;
+            font-size: 1.8rem;
+        }
+        
+        .ethics-point p {
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+        
+        .cases-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .case-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .case-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+        }
+        
+        .card-header {
+            padding: 25px 30px;
+            color: white;
+            font-size: 1.9rem;
+            display: flex;
+            align-items: center;
+            font-weight: 800;
+        }
+        
+        .electrical {
+            background: linear-gradient(to right, var(--primary), var(--accent));
+        }
+        
+        .energy {
+            background: linear-gradient(to right, #f72585, #b5179e);
+        }
+        
+        .card-header i {
+            margin-right: 15px;
+            font-size: 2.3rem;
+        }
+        
+        .card-content {
+            padding: 30px;
+        }
+        
+        .card-content p {
+            margin-bottom: 25px;
+            color: var(--gray);
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+        
+        .animation-container {
+            height: 300px;
+            position: relative;
+            margin: 25px 0;
+            background: var(--light-gray);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .chart-container {
+            height: 250px;
+            margin: 25px 0;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 25px;
+        }
+        
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            font-size: 1.3rem;
+        }
+        
+        button:hover {
+            background: var(--secondary);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.4);
+        }
+        
+        button i {
+            margin-right: 10px;
+            font-size: 1.4rem;
+        }
+        
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+        
+        .legend-color {
+            width: 25px;
+            height: 25px;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+        
+        .summary {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            margin-top: 40px;
+        }
+        
+        .summary h2 {
+            font-size: 2.3rem;
+            font-weight: 800;
+            margin-bottom: 20px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 25px;
+            font-size: 1.3rem;
+        }
+        
+        th, td {
+            padding: 18px;
+            text-align: left;
+            border-bottom: 1px solid var(--light-gray);
+            font-weight: 600;
+        }
+        
+        th {
+            background-color: var(--light-gray);
+            font-weight: 800;
+            font-size: 1.4rem;
+        }
+        
+        tr:hover {
+            background-color: rgba(72, 149, 239, 0.05);
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            color: var(--gray);
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+        
+        .formula {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--secondary);
+            margin: 15px 0;
+            text-align: center;
+        }
+        
+        .ethics-highlight {
+            background: linear-gradient(120deg, rgba(230, 57, 70, 0.2) 0%, transparent 100%);
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-weight: 700;
+            color: #e63946;
+            display: inline-block;
+            margin: 5px 0;
+            font-size: 1.3rem;
+        }
+        
+        .quadratic-surface {
+            width: 100%;
+            height: 100%;
+        }
+        
+        @media (max-width: 768px) {
+            .cases-container {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2.8rem;
+            }
+            
+            .card-header {
+                font-size: 1.7rem;
+            }
+            
+            .card-content p, .intro p {
+                font-size: 1.3rem;
+            }
+            
+            table {
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>二次型在电气与能动工程中的应用</h1>
+            <p class="subtitle">探索二次型在电力系统优化、能源调度与热力学分析中的关键作用</p>
+        </div>
+    </header>
+    
+    <div class="container">
+        <section class="ethics-banner">
+            <h2><i class="fas fa-heart"></i> 工程报国 · 科技强国</h2>
+            <p>将数学工具应用于工程实践，服务国家能源战略与安全发展</p>
+            <p>安全第一、质量为本、创新驱动、协调发展</p>
+        </section>
+        
+        <section class="intro">
+            <p>二次型 <span class="highlight">f(x) = x<sup>T</sup>Ax</span> 是工程优化问题的核心数学工具。在电气与能动工程中，二次型广泛应用于<span class="highlight">最优潮流计算、经济调度、热力学优化</span>等领域。</p>
+            
+            <div class="ethics-point">
+                <h3><i class="fas fa-shield-alt"></i> 安全发展理念</h3>
+                <p>电力系统优化中的二次规划模型直接关系到电网安全稳定运行。通过二次型优化确保<span class="ethics-highlight">"安全第一、预防为主"</span>的工程伦理。</p>
+            </div>
+            
+            <p>本展示通过可视化动画演示二次型如何应用于<span class="highlight">电力系统经济调度、锅炉热效率优化、综合能源协同优化</span>等实际工程问题。</p>
+            
+            <div class="ethics-point">
+                <h3><i class="fas fa-users"></i> 协同创新精神</h3>
+                <p>现代能源系统优化需要<span class="ethics-highlight">多学科交叉、多团队协作</span>。二次型优化中的协同算法体现了系统工程思维。</p>
+            </div>
+            
+            <div class="formula">二次型标准形式：f(x) = x<sup>T</sup>Ax + b<sup>T</sup>x + c</div>
+            <div class="formula">其中 A 是实对称矩阵，决定二次型的性质</div>
+        </section>
+        
+        <div class="cases-container">
+            <!-- 案例1: 电力系统经济调度 -->
+            <div class="case-card">
+                <div class="card-header electrical">
+                    <i class="fas fa-bolt"></i>
+                    <h2>电力系统经济调度与最优潮流</h2>
+                </div>
+                <div class="card-content">
+                    <p>电力系统经济调度问题可表述为二次规划：<span class="highlight">min C(P) = Σ(aᵢPᵢ² + bᵢPᵢ + cᵢ)</span>，满足功率平衡与线路约束。</p>
+                    
+                    <div class="ethics-point">
+                        <h3><i class="fas fa-lightbulb"></i> 优化价值</h3>
+                        <p>经济调度模型优化发电成本，体现<span class="ethics-highlight">"资源节约、效益优先"</span>的发展理念，保障电力供应<span class="ethics-highlight">"安全可靠、经济高效"</span>。</p>
+                    </div>
+                    
+                    <p class="formula">目标函数：min Σ(cᵢPᵢ²) s.t. ΣPᵢ = P<sub>load</sub>, P<sub>i,min</sub> ≤ Pᵢ ≤ P<sub>i,max</sub></p>
+                    
+                    <div class="animation-container">
+                        <canvas id="economicDispatchCanvas" class="quadratic-surface"></canvas>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <canvas id="economicDispatchChart"></canvas>
+                    </div>
+                    
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #4361ee;"></div>
+                            <span>发电成本曲线</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #f72585;"></div>
+                            <span>最优解轨迹</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #4cc9f0;"></div>
+                            <span>约束边界</span>
+                        </div>
+                    </div>
+                    
+                    <div class="controls">
+                        <button onclick="startEconomicDispatch()">
+                            <i class="fas fa-play"></i> 开始优化
+                        </button>
+                        <button onclick="addLoadConstraint()">
+                            <i class="fas fa-bolt"></i> 增加负荷
+                        </button>
+                        <button onclick="resetOptimization()">
+                            <i class="fas fa-redo"></i> 重置优化
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 案例2: 锅炉热效率优化 -->
+            <div class="case-card">
+                <div class="card-header energy">
+                    <i class="fas fa-fire"></i>
+                    <h2>锅炉热效率二次型优化模型</h2>
+                </div>
+                <div class="card-content">
+                    <p>锅炉热效率优化可建模为二次规划问题，<span class="highlight">max η = f(T<sub>in</sub>, T<sub>out</sub>, m)</span>，满足热力学约束。</p>
+                    
+                    <div class="ethics-point">
+                        <h3><i class="fas fa-leaf"></i> 绿色发展</h3>
+                        <p>热效率优化直接提升能源利用效率，减少排放，体现<span class="ethics-highlight">"绿色发展、生态文明"</span>理念，助力<span class="ethics-highlight">"碳达峰、碳中和"</span>目标。</p>
+                    </div>
+                    
+                    <p class="formula">η = 1 - (T<sub>out</sub>/T<sub>in</sub>) 受二次型约束优化</p>
+                    
+                    <div class="animation-container">
+                        <canvas id="boilerEfficiencyCanvas" class="quadratic-surface"></canvas>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <canvas id="boilerEfficiencyChart"></canvas>
+                    </div>
+                    
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #4361ee;"></div>
+                            <span>热效率曲面</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #f72585;"></div>
+                            <span>优化路径</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #4cc9f0;"></div>
+                            <span>约束边界</span>
+                        </div>
+                    </div>
+                    
+                    <div class="controls">
+                        <button onclick="startBoilerOptimization()">
+                            <i class="fas fa-cogs"></i> 开始优化
+                        </button>
+                        <button onclick="changeOperatingPoint()">
+                            <i class="fas fa-sliders-h"></i> 改变工况
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 案例3: 综合能源系统优化 -->
+            <div class="case-card">
+                <div class="card-header energy">
+                    <i class="fas fa-network-wired"></i>
+                    <h2>综合能源系统协同优化</h2>
+                </div>
+                <div class="card-content">
+                    <p>电-热-气综合能源系统协同优化可表述为<span class="highlight">min C<sub>total</sub> = C<sub>e</sub> + C<sub>h</sub> + C<sub>g</sub></span>，满足多能流平衡约束。</p>
+                    
+                    <div class="ethics-point">
+                        <h3><i class="fas fa-handshake"></i> 系统思维</h3>
+                        <p>多能流协同优化需要<span class="ethics-highlight">"统筹兼顾、协调发展"</span>的系统思维，体现<span class="ethics-highlight">"创新、协调、绿色、开放、共享"</span>的发展理念。</p>
+                    </div>
+                    
+                    <p class="formula">目标函数：min [α<sup>T</sup>Qα + β<sup>T</sup>α] s.t. Aα = b</p>
+                    
+                    <div class="animation-container">
+                        <canvas id="energySystemCanvas" class="quadratic-surface"></canvas>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <canvas id="energySystemChart"></canvas>
+                    </div>
+                    
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #4361ee;"></div>
+                            <span>电力成本</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #f72585;"></div>
+                            <span>热力成本</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #4cc9f0;"></div>
+                            <span>燃气成本</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #7209b7;"></div>
+                            <span>总成本</span>
+                        </div>
+                    </div>
+                    
+                    <div class="controls">
+                        <button onclick="startEnergyOptimization()">
+                            <i class="fas fa-play-circle"></i> 开始协同优化
+                        </button>
+                        <button onclick="adjustEnergyMix()">
+                            <i class="fas fa-adjust"></i> 调整能源结构
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <section class="summary">
+            <h2><i class="fas fa-table"></i> 二次型在电气与能动工程中的核心应用</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>应用领域</th>
+                        <th>二次型形式</th>
+                        <th>优化目标</th>
+                        <th>约束条件</th>
+                        <th>工程价值</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>电力系统经济调度</td>
+                        <td>min Σ(aᵢPᵢ²)</td>
+                        <td>总发电成本最小</td>
+                        <td>功率平衡、线路容量</td>
+                        <td>提升经济性、保障供电安全<br><span class="ethics-highlight">安全可靠、经济高效</span></td>
+                    </tr>
+                    <tr>
+                        <td>锅炉热效率优化</td>
+                        <td>max η(T<sub>in</sub>,T<sub>out</sub>)</td>
+                        <td>热效率最大化</td>
+                        <td>热力学约束、设备限值</td>
+                        <td>提高能源利用率、减少排放<br><span class="ethics-highlight">绿色发展、节能减排</span></td>
+                    </tr>
+                    <tr>
+                        <td>综合能源系统</td>
+                        <td>min C<sub>total</sub>(x)</td>
+                        <td>总供能成本最小</td>
+                        <td>多能流平衡、耦合约束</td>
+                        <td>多能互补、提升系统效率<br><span class="ethics-highlight">系统优化、协同创新</span></td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="ethics-point" style="margin-top: 30px;">
+                <h3><i class="fas fa-graduation-cap"></i> 工程启示</h3>
+                <p>二次型优化教会我们在复杂约束下寻找最优解，体现了<span class="ethics-highlight">"问题导向、精准施策"</span>的工程方法论。正定二次型的凸优化特性保证了全局最优解，启示我们<span class="ethics-highlight">"把握规律、科学决策"</span>的重要性。</p>
+            </div>
+        </section>
+    </div>
+    
+    <footer class="container">
+        <p>© 2023 二次型在电气与能动工程中应用展示 | 数学工具与工程实践结合</p>
+        <p>注：本演示为简化模型，实际工程应用需考虑更复杂的非线性因素和约束条件</p>
+    </footer>
+
+    <script>
+        // 初始化图表
+        document.addEventListener('DOMContentLoaded', function() {
+            initCharts();
+            drawEconomicDispatch();
+            drawBoilerEfficiency();
+            drawEnergySystem();
+        });
+        
+        // 初始化所有图表
+        function initCharts() {
+            const chartFontConfig = {
+                family: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+                size: 18,
+                weight: 'bold'
+            };
+            
+            // 经济调度图表
+            const economicCtx = document.getElementById('economicDispatchChart').getContext('2d');
+            window.economicChart = new Chart(economicCtx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({length: 50}, (_, i) => i),
+                    datasets: [
+                        {label: '总成本', data: [], borderColor: '#4361ee', borderWidth: 4},
+                        {label: '煤电成本', data: [], borderColor: '#f72585', borderWidth: 4},
+                        {label: '气电成本', data: [], borderColor: '#4cc9f0', borderWidth: 4}
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            min: 0, 
+                            max: 1000,
+                            ticks: {
+                                font: chartFontConfig,
+                                callback: function(value) {
+                                    return '￥' + value;
+                                }
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                font: chartFontConfig
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                font: chartFontConfig
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return '成本: ￥' + context.parsed.y;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // 锅炉效率图表
+            const boilerCtx = document.getElementById('boilerEfficiencyChart').getContext('2d');
+            window.boilerChart = new Chart(boilerCtx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({length: 50}, (_, i) => i),
+                    datasets: [
+                        {label: '热效率', data: [], borderColor: '#4361ee', borderWidth: 4, yAxisID: 'y'},
+                        {label: '排烟温度', data: [], borderColor: '#f72585', borderWidth: 4, yAxisID: 'y1'}
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            min: 0,
+                            max: 100,
+                            ticks: {
+                                font: chartFontConfig,
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            min: 100,
+                            max: 300,
+                            ticks: {
+                                font: chartFontConfig,
+                                callback: function(value) {
+                                    return value + '°C';
+                                }
+                            },
+                            grid: {
+                                drawOnChartArea: false
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                font: chartFontConfig
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                font: chartFontConfig
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // 综合能源图表
+            const energyCtx = document.getElementById('energySystemChart').getContext('2d');
+            window.energyChart = new Chart(energyCtx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({length: 50}, (_, i) => i),
+                    datasets: [
+                        {label: '总成本', data: [], borderColor: '#7209b7', borderWidth: 4},
+                        {label: '电力成本', data: [], borderColor: '#4361ee', borderWidth: 4},
+                        {label: '热力成本', data: [], borderColor: '#f72585', borderWidth: 4},
+                        {label: '燃气成本', data: [], borderColor: '#4cc9f0', borderWidth: 4}
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            min: 0, 
+                            max: 2000,
+                            ticks: {
+                                font: chartFontConfig,
+                                callback: function(value) {
+                                    return '￥' + value;
+                                }
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                font: chartFontConfig
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                font: chartFontConfig
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 绘制经济调度二次型曲面
+        function drawEconomicDispatch() {
+            const canvas = document.getElementById('economicDispatchCanvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+            
+            // 绘制二次型优化曲面
+            function drawQuadraticSurface() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // 绘制坐标轴
+                ctx.strokeStyle = '#6c757d';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(50, canvas.height - 50);
+                ctx.lineTo(canvas.width - 50, canvas.height - 50);
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.moveTo(50, 50);
+                ctx.lineTo(50, canvas.height - 50);
+                ctx.stroke();
+                
+                // 绘制二次型曲面
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+                
+                for (let x = 0; x < canvas.width; x += 5) {
+                    for (let y = 0; y < canvas.height; y += 5) {
+                        const dx = (x - centerX) / 50;
+                        const dy = (y - centerY) / 50;
+                        const value = dx * dx + dy * dy; // 简单二次型
+                        
+                        const intensity = Math.min(255, Math.max(0, value * 50));
+                        ctx.fillStyle = `rgb(${intensity}, ${100}, ${255 - intensity})`;
+                        ctx.fillRect(x, y, 5, 5);
+                    }
+                }
+                
+                // 绘制优化路径
+                ctx.strokeStyle = '#f72585';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(centerX - 100, centerY - 100);
+                for (let i = 0; i < 10; i++) {
+                    ctx.lineTo(centerX - 100 + i * 20, centerY - 100 + i * 15);
+                }
+                ctx.stroke();
+                
+                // 绘制最优解
+                ctx.fillStyle = '#4361ee';
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, 8, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 添加标签
+                ctx.fillStyle = '#212529';
+                ctx.font = 'bold 16px Arial';
+                ctx.fillText('P₁ (MW)', canvas.width - 80, canvas.height - 30);
+                ctx.fillText('P₂ (MW)', 30, 30);
+                ctx.fillText('最优解', centerX + 10, centerY - 10);
+            }
+            
+            drawQuadraticSurface();
+        }
+        
+        // 绘制锅炉效率优化曲面
+        function drawBoilerEfficiency() {
+            const canvas = document.getElementById('boilerEfficiencyCanvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+            
+            function drawEfficiencySurface() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // 绘制坐标轴
+                ctx.strokeStyle = '#6c757d';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(50, canvas.height - 50);
+                ctx.lineTo(canvas.width - 50, canvas.height - 50);
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.moveTo(50, 50);
+                ctx.lineTo(50, canvas.height - 50);
+                ctx.stroke();
+                
+                // 绘制热效率曲面（简化模型）
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+                
+                for (let x = 0; x < canvas.width; x += 5) {
+                    for (let y = 0; y < canvas.height; y += 5) {
+                        const dx = (x - centerX) / 50;
+                        const dy = (y - centerY) / 50;
+                        // 热效率随温度升高而增加，但存在最优区间
+                        const efficiency = 80 - (dx * dx + dy * dy) * 20;
+                        
+                        const intensity = Math.min(255, Math.max(0, efficiency * 2.5));
+                        ctx.fillStyle = `rgb(${255 - intensity}, ${intensity}, 100)`;
+                        ctx.fillRect(x, y, 5, 5);
+                    }
+                }
+                
+                // 绘制优化路径
+                ctx.strokeStyle = '#f72585';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(centerX - 150, centerY + 100);
+                for (let i = 0; i < 8; i++) {
+                    ctx.lineTo(centerX - 150 + i * 30, centerY + 100 - i * 25);
+                }
+                ctx.stroke();
+                
+                // 绘制最优工况点
+                ctx.fillStyle = '#4361ee';
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, 8, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 添加标签
+                ctx.fillStyle = '#212529';
+                ctx.font = 'bold 16px Arial';
+                ctx.fillText('入口温度 (°C)', canvas.width - 100, canvas.height - 30);
+                ctx.fillText('流量 (kg/s)', 30, 30);
+                ctx.fillText('最优工况', centerX + 10, centerY - 10);
+            }
+            
+            drawEfficiencySurface();
+        }
+        
+        // 绘制综合能源系统优化曲面
+        function drawEnergySystem() {
+            const canvas = document.getElementById('energySystemCanvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+            
+            function drawEnergySurface() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // 绘制三维效果的二次型曲面
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+                
+                // 绘制成本曲面
+                for (let x = 0; x < canvas.width; x += 4) {
+                    for (let y = 0; y < canvas.height; y += 4) {
+                        const dx = (x - centerX) / 40;
+                        const dy = (y - centerY) / 40;
+                        // 多能源成本曲面
+                        const cost = dx * dx + 0.5 * dy * dy + dx * dy * 0.3;
+                        
+                        const intensity = Math.min(255, Math.max(0, cost * 100));
+                        ctx.fillStyle = `rgb(${intensity}, ${150}, ${255 - intensity})`;
+                        ctx.fillRect(x, y, 4, 4);
+                    }
+                }
+                
+                // 绘制协同优化路径
+                ctx.strokeStyle = '#f72585';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(centerX - 120, centerY + 80);
+                for (let i = 0; i < 6; i++) {
+                    ctx.lineTo(centerX - 120 + i * 40, centerY + 80 - i * 30);
+                }
+                ctx.stroke();
+                
+                // 绘制帕累托最优前沿
+                ctx.strokeStyle = '#7209b7';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 3]);
+                ctx.beginPath();
+                ctx.moveTo(centerX - 80, centerY - 60);
+                for (let i = 0; i < 5; i++) {
+                    ctx.lineTo(centerX - 80 + i * 30, centerY - 60 + i * 15);
+                }
+                ctx.stroke();
+                ctx.setLineDash([]);
+                
+                // 绘制最优解
+                ctx.fillStyle = '#4361ee';
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, 10, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 添加标签
+                ctx.fillStyle = '#212529';
+                ctx.font = 'bold 16px Arial';
+                ctx.fillText('电力比例', canvas.width - 80, canvas.height - 30);
+                ctx.fillText('热力比例', 30, 30);
+                ctx.fillText('协同最优', centerX + 15, centerY - 15);
+            }
+            
+            drawEnergySurface();
+        }
+        
+        // 经济调度动画
+        function startEconomicDispatch() {
+            const chart = window.economicChart;
+            chart.data.datasets[0].data = [];
+            chart.data.datasets[1].data = [];
+            chart.data.datasets[2].data = [];
+            chart.update();
+            
+            let time = 0;
+            const interval = setInterval(() => {
+                time++;
+                
+                // 模拟优化过程
+                const totalCost = 800 - time * 5 + Math.random() * 20;
+                const coalCost = 400 - time * 2 + Math.random() * 10;
+                const gasCost = 400 - time * 3 + Math.random() * 10;
+                
+                chart.data.datasets[0].data.push(totalCost);
+                chart.data.datasets[1].data.push(coalCost);
+                chart.data.datasets[2].data.push(gasCost);
+                
+                if (chart.data.datasets[0].data.length > 50) {
+                    chart.data.datasets[0].data.shift();
+                    chart.data.datasets[1].data.shift();
+                    chart.data.datasets[2].data.shift();
+                }
+                
+                chart.update();
+                
+                if (time > 100) clearInterval(interval);
+            }, 100);
+        }
+        
+        function addLoadConstraint() {
+            const chart = window.economicChart;
+            // 模拟增加负荷后的重新优化
+            chart.data.datasets[0].data = [];
+            chart.data.datasets[1].data = [];
+            chart.data.datasets[2].data = [];
+            chart.update();
+            
+            let time = 0;
+            const interval = setInterval(() => {
+                time++;
+                
+                const totalCost = 900 - time * 4 + Math.random() * 25;
+                const coalCost = 500 - time * 1.5 + Math.random() * 12;
+                const gasCost = 400 - time * 2.5 + Math.random() * 13;
+                
+                chart.data.datasets[0].data.push(totalCost);
+                chart.data.datasets[1].data.push(coalCost);
+                chart.data.datasets[2].data.push(gasCost);
+                
+                if (chart.data.datasets[0].data.length > 50) {
+                    chart.data.datasets[0].data.shift();
+                    chart.data.datasets[1].data.shift();
+                    chart.data.datasets[2].data.shift();
+                }
+                
+                chart.update();
+                
+                if (time > 100) clearInterval(interval);
+            }, 100);
+        }
+        
+        function resetOptimization() {
+            const chart = window.economicChart;
+            chart.data.datasets[0].data = [];
+            chart.data.datasets[1].data = [];
+            chart.data.datasets[2].data = [];
+            chart.update();
+        }
+        
+        // 锅炉效率优化动画
+        function startBoilerOptimization() {
+            const chart = window.boilerChart;
+            chart.data.datasets[0].data = [];
+            chart.data.datasets[1].data = [];
+            chart.update();
+            
+            let time = 0;
+            const interval = setInterval(() => {
+                time++;
+                
+                // 模拟热效率优化过程
+                const efficiency = 70 + time * 0.2 + Math.random() * 2;
+                const temperature = 200 - time * 0.5 + Math.random() * 5;
+                
+                chart.data.datasets[0].data.push(efficiency);
+                chart.data.datasets[1].data.push(temperature);
+                
+                if (chart.data.datasets[0].data.length > 50) {
+                    chart.data.datasets[0].data.shift();
+                    chart.data.datasets[1].data.shift();
+                }
+                
+                chart.update();
+                
+                if (time > 100) clearInterval(interval);
+            }, 100);
+        }
+        
+        function changeOperatingPoint() {
+            const chart = window.boilerChart;
+            chart.data.datasets[0].data = [];
+            chart.data.datasets[1].data = [];
+            chart.update();
+            
+            let time = 0;
+            const interval = setInterval(() => {
+                time++;
+                
+                const efficiency = 65 + time * 0.3 + Math.random() * 3;
+                const temperature = 180 - time * 0.3 + Math.random() * 4;
+                
+                chart.data.datasets[0].data.push(efficiency);
+                chart.data.datasets[1].data.push(temperature);
+                
+                if (chart.data.datasets[0].data.length > 50) {
+                    chart.data.datasets[0].data.shift();
+                    chart.data.datasets[1].data.shift();
+                }
+                
+                chart.update();
+                
+                if (time > 100) clearInterval(interval);
+            }, 100);
+        }
+        
+        // 综合能源系统优化动画
+        function startEnergyOptimization() {
+            const chart = window.energyChart;
+            chart.data.datasets[0].data = [];
+            chart.data.datasets[1].data = [];
+            chart.data.datasets[2].data = [];
+            chart.data.datasets[3].data = [];
+            chart.update();
+            
+            let time = 0;
+            const interval = setInterval(() => {
+                time++;
+                
+                // 模拟多能源协同优化
+                const totalCost = 1500 - time * 8 + Math.random() * 30;
+                const powerCost = 600 - time * 3 + Math.random() * 15;
+                const heatCost = 500 - time * 2.5 + Math.random() * 12;
+                const gasCost = 400 - time * 2.5 + Math.random() * 10;
+                
+                chart.data.datasets[0].data.push(totalCost);
+                chart.data.datasets[1].data.push(powerCost);
+                chart.data.datasets[2].data.push(heatCost);
+                chart.data.datasets[3].data.push(gasCost);
+                
+                if (chart.data.datasets[0].data.length > 50) {
+                    chart.data.datasets[0].data.shift();
+                    chart.data.datasets[1].data.shift();
+                    chart.data.datasets[2].data.shift();
+                    chart.data.datasets[3].data.shift();
+                }
+                
+                chart.update();
+                
+                if (time > 100) clearInterval(interval);
+            }, 100);
+        }
+        
+        function adjustEnergyMix() {
+            const chart = window.energyChart;
+            chart.data.datasets[0].data = [];
+            chart.data.datasets[1].data = [];
+            chart.data.datasets[2].data = [];
+            chart.data.datasets[3].data = [];
+            chart.update();
+            
+            let time = 0;
+            const interval = setInterval(() => {
+                time++;
+                
+                const totalCost = 1600 - time * 7 + Math.random() * 35;
+                const powerCost = 700 - time * 2 + Math.random() * 18;
+                const heatCost = 550 - time * 3 + Math.random() * 14;
+                const gasCost = 350 - time * 2 + Math.random() * 12;
+                
+                chart.data.datasets[0].data.push(totalCost);
+                chart.data.datasets[1].data.push(powerCost);
+                chart.data.datasets[2].data.push(heatCost);
+                chart.data.datasets[3].data.push(gasCost);
+                
+                if (chart.data.datasets[0].data.length > 50) {
+                    chart.data.datasets[0].data.shift();
+                    chart.data.datasets[1].data.shift();
+                    chart.data.datasets[2].data.shift();
+                    chart.data.datasets[3].data.shift();
+                }
+                
+                chart.update();
+                
+                if (time > 100) clearInterval(interval);
+            }, 100);
+        }
+    </script>
+</body>
+</html>

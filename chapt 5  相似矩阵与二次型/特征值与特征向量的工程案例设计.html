@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>特征值与特征向量 · 工程真矩阵</title>
+<style>
+    body { margin:0; font-family:"Microsoft YaHei",sans-serif; background:#f4f6f8; color:#1f2937; font-size:22px; line-height:1.8; }
+    header { background:linear-gradient(135deg,#7c3aed,#2563eb); color:#fff; padding:36px 24px; text-align:center; }
+    header h1 { font-size:40px; margin:0; }
+    header p { font-size:22px; opacity:.9; margin-top:10px; }
+    .tabs { display:flex; justify-content:center; gap:14px; background:#ede9fe; padding:16px; flex-wrap:wrap; }
+    .tabs button { font-size:20px; padding:14px 26px; border:none; border-radius:12px; cursor:pointer; background:#fff; color:#5b21b6; }
+    .tabs button.active { background:#5b21b6; color:#fff; }
+    .pane { max-width:1120px; margin:30px auto; background:#fff; border-radius:18px; padding:44px; box-shadow:0 12px 48px rgba(0,0,0,.08); display:none; }
+    .pane.active { display:block; }
+    h2 { font-size:34px; color:#5b21b6; margin-top:0; }
+    .eq { background:#f5f3ff; padding:22px; border-radius:14px; font-size:26px; text-align:center; border-left:6px solid #8b5cf6; margin:24px 0; }
+    .ctrl { display:flex; gap:28px; flex-wrap:wrap; margin:26px 0; align-items:center; }
+    .ctrl label { font-size:22px; }
+    .ctrl span { font-weight:bold; color:#7c2d12; }
+    input[type=range]{ width:200px; height:10px; }
+    canvas { display:block; margin:24px auto; background:#fff; border:2px solid #ddd6fe; border-radius:14px; }
+    .box { padding:20px; border-radius:12px; font-size:22px; margin:20px 0; }
+    .p { background:#faf5ff; border-left:6px solid #8b5cf6; }
+    .b { background:#eff6ff; border-left:6px solid #3b82f6; }
+    .g { background:#ecfdf5; border-left:6px solid #059669; }
+    table { width:100%; border-collapse:collapse; font-size:20px; margin:20px 0; }
+    th,td { border:1px solid #d1d5db; padding:14px; text-align:center; }
+    th { background:#f9fafb; }
+    .mat { display:inline-block; vertical-align:middle; text-align:right; margin:0 10px; }
+    .mat div{ border-top:2px solid #333; border-bottom:2px solid #333; padding:6px 10px; }
+</style>
+</head>
+<body>
+
+<header>
+    <h1>矩阵特征值 · 工程里的“天生模式”</h1>
+    <p>A·x = λ·x &nbsp; 真矩阵 · 真计算 · 大一能懂</p>
+</header>
+
+<div class="tabs">
+    <button class="tabBtn active" onclick="show('idea')">🎓 方程含义</button>
+    <button class="tabBtn" onclick="show('elec')">🔌 电气：配电网稳态</button>
+    <button class="tabBtn" onclick="show('thermo')">🔥 能动：三房间热网</button>
+    <button class="tabBtn" onclick="show('cmp')">📊 对比总结</button>
+</div>
+
+<!-- 含义 -->
+<div id="idea" class="pane active">
+    <h2>Ax = λx 在说什么？</h2>
+    <div class="eq">
+        A · x = λ · x
+    </div>
+    <p>矩阵 A 作用在向量 x 上，结果只是把 x <b>拉长/缩短 λ 倍</b>，方向不变。</p>
+    <p>这种“方向不动摇”的 x 叫 <b>特征向量</b>，拉缩倍数 λ 叫 <b>特征值</b>。</p>
+    <div class="g box">
+        工程里：系统有几种“天生姿势”x，每种按自己的速度 λ 生长或衰减。<br>
+        外界激励只要是这些姿势的叠加，系统就按对应 λ 演化。
+    </div>
+</div>
+
+<!-- 电气 -->
+<div id="elec" class="pane">
+    <h2>🔌 三节点配电网：稳态电压分布</h2>
+    <p>迭代规则：下一时刻电压 = 邻居加权平均</p>
+    <div class="eq">
+        V<sub>k+1</sub> = A · V<sub>k</sub>
+    </div>
+    <p>矩阵 A（线路越粗，权重越大）：</p>
+    <div class="mat"><div>
+        [ 1-a-b &nbsp; a &nbsp; b ]<br>
+        [ c &nbsp; 1-c-d &nbsp; d ]<br>
+        [ e &nbsp; f &nbsp; 1-e-f ]
+    </div></div>
+
+    <div class="ctrl">
+        <label>线路1-2权重 a=<span id="a12">0.3</span></label>
+        <input type="range" min="0" max="0.45" step="0.01" value="0.3" oninput="updE('a',this.value)">
+        <label>线路2-3权重 d=<span id="a23">0.3</span></label>
+        <input type="range" min="0" max="0.45" step="0.01" value="0.3" oninput="updE('d',this.value)">
+        <label>线路1-3权重 b=<span id="a13">0.2</span></label>
+        <input type="range" min="0" max="0.45" step="0.01" value="0.2" oninput="updE('b',this.value)">
+    </div>
+
+    <canvas id="cE" width="760" height="300"></canvas>
+    <div id="eInfo" class="p box"></div>
+</div>
+
+<!-- 能动 -->
+<div id="thermo" class="pane">
+    <h2>🔥 三房间热网络：温度模态</h2>
+    <p>对称热导矩阵 G（隔墙热导 g₁₂、g₂₃）：</p>
+    <div class="mat"><div>
+        [ g₁+g₁₂ &nbsp; -g₁₂ &nbsp; 0 ]<br>
+        [ -g₁₂ &nbsp; g₂+g₁₂+g₂₃ &nbsp; -g₂₃ ]<br>
+        [ 0 &nbsp; -g₂₃ &nbsp; g₃+g₂₃ ]
+    </div></div>
+    <p>解 G·φ = λ·φ，λ 是衰减率，φ 是温度分布形状。</p>
+
+    <div class="ctrl">
+        <label>隔墙1-2热导 g₁₂=<span id="g12">2</span></label>
+        <input type="range" min="0.5" max="6" step="0.1" value="2" oninput="updT('g12',this.value)">
+        <label>隔墙2-3热导 g₂₃=<span id="g23">2</span></label>
+        <input type="range" min="0.5" max="6" step="0.1" value="2" oninput="updT('g23',this.value)">
+    </div>
+
+    <canvas id="cT" width="760" height="320"></canvas>
+    <div id="tInfo" class="b box"></div>
+    <div id="ortho" class="g box"></div>
+</div>
+
+<!-- 对比 -->
+<div id="cmp" class="pane">
+    <h2>统一框架</h2>
+    <table>
+        <tr><th></th><th>电气（转移矩阵 A）</th><th>能动（热导矩阵 G）</th></tr>
+        <tr><td>矩阵性质</td><td>列和=1，非对称</td><td>对称、半正定</td></tr>
+        <tr><td>λ=1 的特征向量</td><td>稳态电压分布</td><td>—（λ=0 才是均匀温度）</td></tr>
+        <tr><td>其他 λ</td><td>扰动衰减速率</td><td>各阶温度模态衰减率</td></tr>
+        <tr><td>特征向量</td><td>自维持电压模式</td><td>温度振型，互相 G-正交</td></tr>
+        <tr><td>物理结论</td><td>电网收敛到固定比例</td><td>房间温差按模态衰减</td></tr>
+    </table>
+    <div class="p box">
+        大三《电力系统分析》《传热学》《振动理论》里：<br>
+        Y 矩阵、刚度矩阵 K、状态矩阵 A 的特征值 = 系统稳定性与模态的全部信息。
+    </div>
+</div>
+
+<script>
+function show(id){
+    document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    document.querySelectorAll('.tabBtn').forEach(b=>b.classList.remove('active'));
+    event.target.classList.add('active');
+    if(id==='elec') drawE();
+    if(id==='thermo') drawT();
+}
+
+/* ---------- 电气：3x3 特征分解（数值：幂迭代 +  deflation 简化版，仅演示主特征对） ---------- */
+let a=0.3, b=0.2, d=0.3;
+function buildA(){
+    const c=a, e=b, f=d;
+    return [
+        [1-a-b, a,     b],
+        [c,     1-c-d, d],
+        [e,     f,     1-e-f]
+    ];
+}
+function matMulVec(M,v){
+    return M.map(row=>row.reduce((s,x,i)=>s+x*v[i],0));
+}
+function powerIter(M,iter=200){
+    let v=[1,1,1];
+    for(let k=0;k<iter;k++){
+        v=matMulVec(M,v);
+        const n=Math.hypot(...v);
+        v=v.map(x=>x/n);
+    }
+    const Av=matMulVec(M,v);
+    const lam=v[0]!==0?Av[0]/v[0]:Av[1]/v[1];
+    return {lam, vec:v};
+}
+function updE(k,val){
+    if(k==='a'){a=+val; document.getElementById('a12').innerText=a.toFixed(2);}
+    if(k==='d'){d=+val; document.getElementById('a23').innerText=d.toFixed(2);}
+    if(k==='b'){b=+val; document.getElementById('a13').innerText=b.toFixed(2);}
+    drawE();
+}
+function drawE(){
+    const c=document.getElementById('cE'), ctx=c.getContext('2d');
+    ctx.fillStyle='#fff'; ctx.fillRect(0,0,760,300);
+    const A=buildA();
+    const {lam,vec}=powerIter(A);
+    // 画三个节点
+    const pos=[{x:200,y:150},{x:380,y:80},{x:560,y:150}];
+    ctx.strokeStyle='#94a3b8'; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.moveTo(pos[0].x,pos[0].y); ctx.lineTo(pos[1].x,pos[1].y);
+    ctx.lineTo(pos[2].x,pos[2].y); ctx.lineTo(pos[0].x,pos[0].y); ctx.stroke();
+    pos.forEach((p,i)=>{
+        ctx.fillStyle='#7c3aed'; ctx.beginPath(); ctx.arc(p.x,p.y,16,0,7); ctx.fill();
+        ctx.fillStyle='#fff'; ctx.font='18px sans'; ctx.fillText('V'+(i+1),p.x-8,p.y+6);
+    });
+    // 画主特征向量方向（节点大小∝分量）
+    pos.forEach((p,i)=>{
+        const r=10+Math.abs(vec[i])*40;
+        ctx.strokeStyle='rgba(124,58,237,'+(0.3+Math.abs(vec[i])*0.7)+')';
+        ctx.beginPath(); ctx.arc(p.x,p.y,r,0,7); ctx.stroke();
+    });
+    ctx.fillStyle='#1f2937'; ctx.font='20px sans';
+    ctx.fillText('主特征值 λ ≈ '+lam.toFixed(3)+'（迭代收敛速度）',40,40);
+    ctx.fillText('主特征向量（稳态电压比例）: ['+vec.map(x=>x.toFixed(2)).join(', ')+']',40,260);
+    document.getElementById('eInfo').innerHTML=
+        'λ 越接近 1 → 电网扰动衰减越慢；λ 远小于 1 → 很快收敛到稳态电压比例。';
+}
+
+/* ---------- 能动：3x3 对称矩阵解析特征值（数值求根） ---------- */
+let g12=2, g23=2;
+const g1=3, g2=4, g3=3;
+function buildG(){
+    return [
+        [g1+g12, -g12, 0],
+        [-g12, g2+g12+g23, -g23],
+        [0, -g23, g3+g23]
+    ];
+}
+function eigenSym3(G){
+    // 用解析特征方程 det(G-λI)=0，三次方程数值求根（简单二分）
+    function charPoly(lam){
+        return (
+            (G[0][0]-lam)*((G[1][1]-lam)*(G[2][2]-lam)-G[1][2]*G[2][1])
+          - G[0][1]*((G[1][0]-lam)*(G[2][2]-lam)-G[1][2]*G[2][0])
+          + G[0][2]*((G[1][0]-lam)*(G[2][1]-lam)-G[1][1]*G[2][0])
+        );
+    }
+    let roots=[];
+    for(let lam=0; lam<=20; lam+=0.001){
+        if(charPoly(lam-0.001)*charPoly(lam)<=0) roots.push(lam);
+        if(roots.length>=3) break;
+    }
+    return roots.slice(0,3);
+}
+function vecForLam(G,lam){
+    // 解 (G-λI)x=0，取第一列余子式
+    const m=[[G[0][0]-lam,G[0][1],G[0][2]],[G[1][0],G[1][1]-lam,G[1][2]],[G[2][0],G[2][1],G[2][2]-lam]];
+    let v=[
+        m[1][1]*m[2][2]-m[1][2]*m[2][1],
+        -(m[1][0]*m[2][2]-m[1][2]*m[2][0]),
+        m[1][0]*m[2][1]-m[1][1]*m[2][0]
+    ];
+    const n=Math.hypot(...v)||1;
+    return v.map(x=>x/n);
+}
+function updT(k,val){
+    if(k==='g12'){g12=+val; document.getElementById('g12').innerText=g12.toFixed(1);}
+    if(k==='g23'){g23=+val; document.getElementById('g23').innerText=g23.toFixed(1);}
+    drawT();
+}
+function drawT(){
+    const c=document.getElementById('cT'), ctx=c.getContext('2d');
+    ctx.fillStyle='#fff'; ctx.fillRect(0,0,760,320);
+    const G=buildG();
+    const lambdas=eigenSym3(G);
+    // 画三个房间
+    const pos=[{x:200,y:160},{x:380,y:160},{x:560,y:160}];
+    ctx.fillStyle='#0ea5e9';
+    pos.forEach((p,i)=>{ ctx.fillRect(p.x-40,p.y-30,80,60); ctx.fillStyle='#fff'; ctx.font='18px sans'; ctx.fillText('房'+(i+1),p.x-18,p.y+6); ctx.fillStyle='#0ea5e9'; });
+    ctx.strokeStyle='#94a3b8'; ctx.lineWidth=4;
+    ctx.beginPath(); ctx.moveTo(240,p.y); ctx.lineTo(340,p.y); ctx.moveTo(420,p.y); ctx.lineTo(520,p.y); ctx.stroke();
+    ctx.fillStyle='#1f2937'; ctx.font='18px sans';
+    ctx.fillText('g₁₂='+g12,270,140); ctx.fillText('g₂₃='+g23,450,140);
+
+    // 画前三阶振型
+    lambdas.forEach((lam,i)=>{
+        const phi=vecForLam(G,lam);
+        const y=40+i*0;
+        ctx.fillStyle=['#16a34a','#f59e0b','#dc2626'][i];
+        ctx.fillText('λ'+(i+1)+' = '+lam.toFixed(2)+'  φ = ['+phi.map(x=>x.toFixed(2)).join(', ')+']', 40, 40+i*24);
+        // 柱状图
+        phi.forEach((v,j)=>{
+            const h=v*60;
+            ctx.fillRect(pos[j].x-15, 240-h, 30, h);
+        });
+    });
+    document.getElementById('tInfo').innerHTML=
+        'λ 越大 → 对应温度模态凉得越快；λ=0 → 均匀温度（全房同温，不衰减）。';
+    // 正交性验证（G-正交）
+    if(lambdas.length>=2){
+        const p1=vecForLam(G,lambdas[0]), p2=vecForLam(G,lambdas[1]);
+        let dot=0; for(let i=0;i<3;i++) for(let j=0;j<3;j++) dot+=p1[i]*G[i][j]*p2[j];
+        document.getElementById('ortho').innerHTML=
+            'G-正交性验证：φ₁ᵀ·G·φ₂ ≈ '+dot.toFixed(4)+' （对称矩阵不同模态应≈0）';
+    }
+}
+drawE(); drawT();
+</script>
+</body>
+</html>

@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>向量内积的动画演示</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f0f4f8, #e2e8f0);
+            color: #1e293b;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #1e40af;
+            margin-bottom: 40px;
+            font-size: 2.8em;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+        
+        .section {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 16px;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            box-shadow: 0 8px 32px rgba(2, 8, 20, 0.1);
+            padding: 30px;
+            margin-bottom: 40px;
+            transition: all 0.3s ease;
+        }
+        
+        .section:hover {
+            box-shadow: 0 8px 32px rgba(99, 102, 241, 0.15);
+            transform: translateY(-3px);
+        }
+        
+        .section h2 {
+            color: #4f46e5;
+            margin-bottom: 25px;
+            font-size: 1.9em;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .content-wrapper {
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+        
+        .canvas-container {
+            flex: 1;
+            min-width: 400px;
+            background: rgba(241, 245, 249, 0.6);
+            border-radius: 12px;
+            padding: 15px;
+            border: 1px solid rgba(226, 232, 240, 0.5);
+        }
+        
+        .formula-container {
+            flex: 1;
+            min-width: 350px;
+            padding: 25px;
+            background: rgba(241, 245, 249, 0.6);
+            border-radius: 12px;
+            border: 1px solid rgba(226, 232, 240, 0.5);
+        }
+        
+        .formula {
+            background: rgba(226, 232, 240, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-family: 'Fira Code', 'Courier New', monospace;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #1e293b;
+            border-left: 3px solid #4f46e5;
+            transition: all 0.3s ease;
+        }
+        
+        .formula:hover {
+            background: rgba(199, 210, 254, 0.4);
+            transform: translateX(5px);
+        }
+        
+        .formula strong {
+            color: #4f46e5;
+        }
+        
+        .explanation {
+            color: #475569;
+            font-size: 1.2em;
+            line-height: 1.7;
+        }
+        
+        .explanation p {
+            margin-bottom: 15px;
+        }
+        
+        .controls {
+            margin-top: 25px;
+            padding: 15px;
+            background: rgba(241, 245, 249, 0.8);
+            border-radius: 8px;
+            border: 1px solid rgba(226, 232, 240, 0.5);
+        }
+        
+        button {
+            background: linear-gradient(135deg, #4f46e5, #6366f1);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 8px;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            font-weight: 500;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(99, 102, 241, 0.25);
+            background: linear-gradient(135deg, #6366f1, #818cf8);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button.secondary {
+            background: linear-gradient(135deg, #475569, #64748b);
+        }
+        
+        button.secondary:hover {
+            background: linear-gradient(135deg, #64748b, #94a3b8);
+        }
+        
+        .value-display {
+            background: rgba(199, 210, 254, 0.3);
+            padding: 12px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-family: 'Fira Code', 'Courier New', monospace;
+            font-size: 1.3em;
+            color: #1e293b;
+            border: 1px solid rgba(199, 210, 254, 0.5);
+        }
+        
+        .value-display strong {
+            color: #4f46e5;
+        }
+        
+        .highlight {
+            background: linear-gradient(90deg, transparent, rgba(199, 210, 254, 0.5), transparent);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #3730a3;
+            font-weight: 500;
+        }
+        
+        #sketch-container {
+            position: relative;
+        }
+        
+        .demo-info {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 12px 15px;
+            border-radius: 8px;
+            font-size: 1.1em;
+            color: #475569;
+            border: 1px solid rgba(226, 232, 240, 0.5);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+        
+        .slider-container {
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .slider-container label {
+            font-size: 1.1em;
+            font-weight: 500;
+        }
+        
+        .slider-container input[type="range"] {
+            width: 200px;
+            height: 6px;
+            background: rgba(199, 210, 254, 0.5);
+            border-radius: 3px;
+            outline: none;
+        }
+        
+        .slider-container span {
+            font-size: 1.1em;
+            font-weight: bold;
+            min-width: 50px;
+        }
+        
+        @media (max-width: 768px) {
+            .content-wrapper {
+                flex-direction: column;
+            }
+            
+            .canvas-container,
+            .formula-container {
+                min-width: 100%;
+            }
+            
+            h1 {
+                font-size: 2.2em;
+            }
+            
+            .section h2 {
+                font-size: 1.6em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>向量内积的动画演示</h1>
+        
+        <!-- 几何意义部分 -->
+        <div class="section">
+            <h2>🎯 几何意义</h2>
+            <div class="content-wrapper">
+                <div class="canvas-container">
+                    <div id="geometric-sketch"></div>
+                    <div class="demo-info">
+                        拖动向量端点改变向量 | 点击"切换投影方向"查看双向投影
+                    </div>
+                    <div class="slider-container">
+                        <label for="scale-geo">缩放：</label>
+                        <input type="range" id="scale-geo" min="0.5" max="2" step="0.1" value="1">
+                        <span id="scale-geo-value">1.0</span>
+                    </div>
+                </div>
+                <div class="formula-container">
+                    <div class="formula">
+                        <strong>定义：</strong><br>
+                        [a,b] = |a||b|cosθ<br>
+                        <strong>投影形式：</strong><br>
+                        [a,b] = |a|( |b|cosθ ) = |b|( |a|cosθ )
+                    </div>
+                    <div class="explanation">
+                        <p><span class="highlight">几何意义</span>：向量a与向量b的内积等于向量a的模乘以向量b在a方向上的投影，或者等于向量b的模乘以向量a在b方向上的投影。</p>
+                        <p>在动画中，蓝色箭头表示向量a，红色箭头表示向量b，紫色虚线表示投影关系。</p>
+                    </div>
+                    <div class="controls">
+                        <button onclick="toggleProjection()">切换投影方向</button>
+                        <button class="secondary" onclick="resetVectors('geometric')">重置向量</button>
+                    </div>
+                    <div class="value-display" id="geometric-values">
+                        <strong>当前值：</strong><br>
+                        |a| = <span id="mag-a">0</span><br>
+                        |b| = <span id="mag-b">0</span><br>
+                        θ = <span id="angle">0</span>°<br>
+                        [a,b] = <span id="dot-product">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 对称性部分 -->
+        <div class="section">
+            <h2>🔄 对称性</h2>
+            <div class="content-wrapper">
+                <div class="canvas-container">
+                    <div id="symmetry-sketch"></div>
+                    <div class="demo-info">
+                        观察双向投影构成的相似三角形
+                    </div>
+                    <div class="slider-container">
+                        <label for="scale-sym">缩放：</label>
+                        <input type="range" id="scale-sym" min="0.5" max="2" step="0.1" value="1">
+                        <span id="scale-sym-value">1.0</span>
+                    </div>
+                </div>
+                <div class="formula-container">
+                    <div class="formula">
+                        <strong>对称性：</strong><br>
+                        [a,b] = [b,a]<br>
+                        <strong>几何解释：</strong><br>
+                        △OAA' ∼ △OBB' ⇒ 投影比例相等
+                    </div>
+                    <div class="explanation">
+                        <p><span class="highlight">对称性</span>：向量的内积满足交换律，即向量a与向量b的内积等于向量b与向量a的内积。</p>
+                        <p>几何证明：a在b上的投影三角形与b在a上的投影三角形相似，相似比均为|a|/|b|，因此投影长度的乘积相等。</p>
+                    </div>
+                    <div class="value-display" id="symmetry-values">
+                        [a,b] = <span id="ab-product">0</span><br>
+                        [b,a] = <span id="ba-product">0</span><br>
+                        <strong>投影比验证：</strong><br>
+                        |AA'|/|a| = <span id="proj-ratio-a">0</span><br>
+                        |BB'|/|b| = <span id="proj-ratio-b">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 线性性质部分 -->
+        <div class="section">
+            <h2>📐 线性性质</h2>
+            <div class="content-wrapper">
+                <div class="canvas-container">
+                    <div id="linearity-sketch"></div>
+                    <div class="demo-info">
+                        左：分配律（观察a向b、c、b+c的投影） | 右：数乘性质 | 拖动滑块改变k值
+                    </div>
+                    <div class="slider-container">
+                        <label for="scale-lin">缩放：</label>
+                        <input type="range" id="scale-lin" min="0.5" max="2" step="0.1" value="1">
+                        <span id="scale-lin-value">1.0</span>
+                    </div>
+                </div>
+                <div class="formula-container">
+                    <div class="formula">
+                        <strong>分配律：</strong><br>
+                        [a, b + c] = [a,b] + [a,c]<br>
+                        <strong>数乘性质：</strong><br>
+                        [ka, b] = k[a,b] = [a, kb]
+                    </div>
+                    <div class="explanation">
+                        <p><span class="highlight">分配律</span>：向量a与向量b加向量c的内积等于向量a与向量b的内积加上向量a与向量c的内积。几何上表现为a在b、c和b+c上的投影关系。</p>
+                        <p><span class="highlight">数乘性质</span>：标量k与向量a的内积再与向量b做内积等于k倍的a与b的内积。几何上表现为投影长度的缩放。</p>
+                    </div>
+                    <div class="controls">
+                        <div class="slider-container">
+                            <label for="k-slider">k值：</label>
+                            <input type="range" id="k-slider" min="-2" max="2" step="0.1" value="1">
+                            <span id="k-value" style="color: #4f46e5;">1.0</span>
+                        </div>
+                        <button class="secondary" onclick="resetVectors('linearity')">重置向量</button>
+                    </div>
+                    <div class="value-display" id="linearity-values">
+                        <strong>分配律验证：</strong><br>
+                        [a, b + c] = <span id="a-bpc">0</span><br>
+                        [a,b] + [a,c] = <span id="ab-p-ac">0</span><br>
+                        投影验证：proj(a,b+c) = <span id="proj-bpc">0</span><br>
+                        proj(a,b) + proj(a,c) = <span id="proj-b-p-c">0</span><br>
+                        <strong>数乘验证：</strong><br>
+                        [ka, b] = <span id="ka-b">0</span><br>
+                        k[a,b] = <span id="k-ab">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 施瓦茨不等式部分 -->
+        <div class="section">
+            <h2>📊 施瓦茨不等式</h2>
+            <div class="content-wrapper">
+                <div class="canvas-container">
+                    <div id="cauchy-sketch"></div>
+                    <div class="demo-info">
+                        观察cosθ ∈ [-1,1] 是核心原因
+                    </div>
+                    <div class="slider-container">
+                        <label for="scale-cau">缩放：</label>
+                        <input type="range" id="scale-cau" min="0.5" max="2" step="0.1" value="1">
+                        <span id="scale-cau-value">1.0</span>
+                    </div>
+                </div>
+                <div class="formula-container">
+                    <div class="formula">
+                        <strong>施瓦茨不等式：</strong><br>
+                        |[a,b]| ≤ |a||b|<br>
+                        <strong>核心证明：</strong><br>
+                        cosθ = [a,b]/(|a||b|) ∈ [-1,1]
+                    </div>
+                    <div class="explanation">
+                        <p><span class="highlight">施瓦茨不等式</span>：两个向量的内积的绝对值不超过这两个向量模的乘积。</p>
+                        <p>根本原因在于余弦函数的值域：因为[a,b] = |a||b|cosθ，而cosθ始终满足-1 ≤ cosθ ≤ 1，因此不等式必然成立。</p>
+                        <p>动画中左侧显示cosθ在单位圆上的位置，右侧显示不等式柱状图。</p>
+                    </div>
+                    <div class="value-display" id="cauchy-values">
+                        |[a,b]| = <span id="abs-dot">0</span><br>
+                        |a||b| = <span id="product-mags">0</span><br>
+                        <strong>cosθ = </strong> <span id="cos-value">0</span> ∈ [-1, 1]<br>
+                        <strong>不等式强度：</strong> <span id="inequality-gap">0</span><br>
+                        <span id="equality-condition" style="color: #10b981; font-weight: bold;"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 全局变量
+        let vectors = {
+            geometric: { a: null, b: null },
+            symmetry: { a: null, b: null },
+            linearity: { a: null, b: null, c: null },
+            cauchy: { a: null, b: null }
+        };
+        
+        let scales = {
+            geometric: 1,
+            symmetry: 1,
+            linearity: 1,
+            cauchy: 1
+        };
+        
+        let projectionMode = 'a-on-b'; // 'a-on-b' 或 'b-on-a'
+        
+        // 可拖动向量类
+        class DraggableVector {
+            constructor(x, y, vx, vy, color, name) {
+                this.origin = { x, y };
+                this.end = { x: x + vx, y: y + vy };
+                this.color = color;
+                this.name = name;
+                this.isDragging = false;
+                this.offset = { x: 0, y: 0 };
+            }
+            
+            display(p, scale = 1) {
+                p.push();
+                // 绘制向量（应用缩放）
+                let scaledEnd = {
+                    x: this.origin.x + (this.end.x - this.origin.x) * scale,
+                    y: this.origin.y + (this.end.y - this.origin.y) * scale
+                };
+                p.stroke(this.color);
+                p.strokeWeight(3);
+                p.line(this.origin.x, this.origin.y, scaledEnd.x, scaledEnd.y);
+                
+                // 绘制箭头
+                let angle = p.atan2(scaledEnd.y - this.origin.y, scaledEnd.x - this.origin.x);
+                let arrowSize = 12;
+                p.push();
+                p.translate(scaledEnd.x, scaledEnd.y);
+                p.rotate(angle);
+                p.line(0, 0, -arrowSize, -arrowSize/2);
+                p.line(0, 0, -arrowSize, arrowSize/2);
+                p.pop();
+                
+                // 绘制端点（可拖动）
+                p.fill(255);
+                p.stroke(this.color);
+                p.strokeWeight(2);
+                p.circle(scaledEnd.x, scaledEnd.y, 12);
+                
+                // 绘制标签
+                p.fill(30, 41, 59);
+                p.noStroke();
+                p.textAlign(p.CENTER);
+                p.textSize(16);
+                p.text(this.name, scaledEnd.x + 15, scaledEnd.y - 10);
+                p.pop();
+                
+                // 返回缩放后的终点，用于投影线绘制
+                return scaledEnd;
+            }
+            
+            update(p) {
+                if (this.isDragging) {
+                    this.end.x = p.mouseX + this.offset.x;
+                    this.end.y = p.mouseY + this.offset.y;
+                }
+            }
+            
+            checkPress(p) {
+                let d = p.dist(p.mouseX, p.mouseY, this.end.x, this.end.y);
+                if (d < 15) {
+                    this.isDragging = true;
+                    this.offset.x = this.end.x - p.mouseX;
+                    this.offset.y = this.end.y - p.mouseY;
+                    return true;
+                }
+                return false;
+            }
+            
+            checkRelease() {
+                this.isDragging = false;
+            }
+            
+            getVector() {
+                return {
+                    x: this.end.x - this.origin.x,
+                    y: this.end.y - this.origin.y
+                };
+            }
+            
+            getMagnitude() {
+                let v = this.getVector();
+                return Math.sqrt(v.x * v.x + v.y * v.y);
+            }
+        }
+        
+        // 计算内积
+        function dotProduct(v1, v2) {
+            return v1.x * v2.x + v1.y * v2.y;
+        }
+        
+        // 计算模
+        function magnitude(v) {
+            return Math.sqrt(v.x * v.x + v.y * v.y);
+        }
+        
+        // 计算角度
+        function angleBetween(v1, v2) {
+            let dot = dotProduct(v1, v2);
+            let mag1 = magnitude(v1);
+            let mag2 = magnitude(v2);
+            if (mag1 === 0 || mag2 === 0) return 0;
+            return Math.acos(Math.max(-1, Math.min(1, dot / (mag1 * mag2))));
+        }
+        
+        // 投影向量
+        function project(v1, v2) {
+            let dot = dotProduct(v1, v2);
+            let mag2 = magnitude(v2);
+            if (mag2 === 0) return { x: 0, y: 0 };
+            let factor = dot / (mag2 * mag2);
+            return {
+                x: factor * v2.x,
+                y: factor * v2.y
+            };
+        }
+        
+        // 投影长度
+        function projectionLength(v1, v2) {
+            let dot = dotProduct(v1, v2);
+            let mag2 = magnitude(v2);
+            if (mag2 === 0) return 0;
+            return dot / mag2;
+        }
+        
+        // 几何意义动画
+        const geometricSketch = (p) => {
+            p.setup = () => {
+                let canvas = p.createCanvas(500, 400);
+                canvas.parent('geometric-sketch');
+                vectors.geometric.a = new DraggableVector(100, 200, 100, -50, p.color(66, 153, 225), 'a');
+                vectors.geometric.b = new DraggableVector(100, 200, 150, 100, p.color(245, 101, 101), 'b');
+                
+                // 缩放滑块事件
+                document.getElementById('scale-geo').addEventListener('input', (e) => {
+                    scales.geometric = parseFloat(e.target.value);
+                    document.getElementById('scale-geo-value').textContent = scales.geometric.toFixed(1);
+                });
+            };
+            
+            p.draw = () => {
+                p.background(241, 245, 249);
+                let scale = scales.geometric;
+                
+                // 绘制坐标轴
+                p.stroke(148, 163, 184);
+                p.strokeWeight(1);
+                p.line(0, 200, 500, 200);
+                p.line(100, 0, 100, 400);
+                
+                // 绘制网格
+                p.stroke(226, 232, 240);
+                for (let i = 0; i < 500; i += 50) p.line(i, 0, i, 400);
+                for (let i = 0; i < 400; i += 50) p.line(0, i, 500, i);
+                
+                // 更新和显示向量，获取缩放后的终点
+                vectors.geometric.a.update(p);
+                vectors.geometric.b.update(p);
+                let aScaledEnd = vectors.geometric.a.display(p, scale);
+                let bScaledEnd = vectors.geometric.b.display(p, scale);
+                
+                let v1 = vectors.geometric.a.getVector();
+                let v2 = vectors.geometric.b.getVector();
+                let dot = dotProduct(v1, v2);
+                let mag1 = magnitude(v1);
+                let mag2 = magnitude(v2);
+                let angle = angleBetween(v1, v2) * 180 / Math.PI;
+                
+                // 绘制投影线（从向量顶端引出）
+                p.push();
+                p.stroke(167, 139, 250);
+                p.strokeWeight(2);
+                p.drawingContext.setLineDash([5, 5]);
+                
+                if (projectionMode === 'a-on-b') {
+                    let proj = project(v1, v2);
+                    let projPoint = {
+                        x: vectors.geometric.a.origin.x + proj.x * scale,
+                        y: vectors.geometric.a.origin.y + proj.y * scale
+                    };
+                    // 从a的顶端（箭头位置）向投影点连线
+                    p.line(aScaledEnd.x, aScaledEnd.y, projPoint.x, projPoint.y);
+                } else {
+                    let proj = project(v2, v1);
+                    let projPoint = {
+                        x: vectors.geometric.b.origin.x + proj.x * scale,
+                        y: vectors.geometric.b.origin.y + proj.y * scale
+                    };
+                    // 从b的顶端向投影点连线
+                    p.line(bScaledEnd.x, bScaledEnd.y, projPoint.x, projPoint.y);
+                }
+                p.drawingContext.setLineDash([]);
+                p.pop();
+                
+                // 计算并显示当前值
+                document.getElementById('mag-a').textContent = (mag1 * scale).toFixed(2);
+                document.getElementById('mag-b').textContent = (mag2 * scale).toFixed(2);
+                document.getElementById('angle').textContent = angle.toFixed(1);
+                document.getElementById('dot-product').textContent = (dot * scale * scale).toFixed(2);
+            };
+            
+            p.mousePressed = () => {
+                if (p.mouseX < 0 || p.mouseX > 500 || p.mouseY < 0 || p.mouseY > 400) return;
+                vectors.geometric.a.checkPress(p) || vectors.geometric.b.checkPress(p);
+            };
+            
+            p.mouseReleased = () => {
+                vectors.geometric.a.checkRelease();
+                vectors.geometric.b.checkRelease();
+            };
+        };
+        
+        // 对称性动画
+        const symmetrySketch = (p) => {
+            p.setup = () => {
+                let canvas = p.createCanvas(500, 400);
+                canvas.parent('symmetry-sketch');
+                vectors.symmetry.a = new DraggableVector(150, 200, 120, -80, p.color(66, 153, 225), 'a');
+                vectors.symmetry.b = new DraggableVector(150, 200, 150, 100, p.color(245, 101, 101), 'b');
+                
+                // 缩放滑块事件
+                document.getElementById('scale-sym').addEventListener('input', (e) => {
+                    scales.symmetry = parseFloat(e.target.value);
+                    document.getElementById('scale-sym-value').textContent = scales.symmetry.toFixed(1);
+                });
+            };
+            
+            p.draw = () => {
+                p.background(241, 245, 249);
+                let scale = scales.symmetry;
+                
+                // 绘制坐标轴
+                p.stroke(148, 163, 184);
+                p.strokeWeight(1);
+                p.line(0, 200, 500, 200);
+                p.line(150, 0, 150, 400);
+                
+                // 更新和显示向量，获取缩放后的终点
+                vectors.symmetry.a.update(p);
+                vectors.symmetry.b.update(p);
+                let aScaledEnd = vectors.symmetry.a.display(p, scale);
+                let bScaledEnd = vectors.symmetry.b.display(p, scale);
+                
+                let v1 = vectors.symmetry.a.getVector();
+                let v2 = vectors.symmetry.b.getVector();
+                let dot = dotProduct(v1, v2);
+                let mag1 = magnitude(v1);
+                let mag2 = magnitude(v2);
+                
+                // 计算双向投影
+                let proj1 = project(v1, v2); // a在b上的投影
+                let proj2 = project(v2, v1); // b在a上的投影
+                
+                // 绘制双向投影线（从各自向量顶端引出）
+                p.push();
+                p.stroke(167, 139, 250);
+                p.strokeWeight(2);
+                p.drawingContext.setLineDash([5, 5]);
+                
+                // a在b上的投影线（从a顶端引出）
+                let projPoint1 = {
+                    x: vectors.symmetry.a.origin.x + proj1.x * scale,
+                    y: vectors.symmetry.a.origin.y + proj1.y * scale
+                };
+                p.line(aScaledEnd.x, aScaledEnd.y, projPoint1.x, projPoint1.y);
+                
+                // b在a上的投影线（从b顶端引出）
+                let projPoint2 = {
+                    x: vectors.symmetry.b.origin.x + proj2.x * scale,
+                    y: vectors.symmetry.b.origin.y + proj2.y * scale
+                };
+                p.line(bScaledEnd.x, bScaledEnd.y, projPoint2.x, projPoint2.y);
+                p.drawingContext.setLineDash([]);
+                
+                // 绘制投影点
+                p.fill(251, 191, 36);
+                p.noStroke();
+                p.circle(projPoint1.x, projPoint1.y, 8);
+                p.circle(projPoint2.x, projPoint2.y, 8);
+                p.pop();
+                
+                // 绘制相似三角形标记
+                p.push();
+                p.stroke(72, 187, 120);
+                p.strokeWeight(2);
+                p.noFill();
+                
+                // 三角形OAA' (A'是a在b上的投影点)
+                p.triangle(
+                    vectors.symmetry.a.origin.x,
+                    vectors.symmetry.a.origin.y,
+                    aScaledEnd.x,
+                    aScaledEnd.y,
+                    projPoint1.x,
+                    projPoint1.y
+                );
+                
+                // 三角形OBB' (B'是b在a上的投影点)
+                p.triangle(
+                    vectors.symmetry.b.origin.x,
+                    vectors.symmetry.b.origin.y,
+                    bScaledEnd.x,
+                    bScaledEnd.y,
+                    projPoint2.x,
+                    projPoint2.y
+                );
+                p.pop();
+                
+                // 绘制相似标记
+                p.push();
+                p.fill(72, 187, 120);
+                p.noStroke();
+                p.textAlign(p.CENTER);
+                p.textSize(14);
+                p.text('△1', (vectors.symmetry.a.origin.x + projPoint1.x + aScaledEnd.x)/3,
+                          (vectors.symmetry.a.origin.y + projPoint1.y + aScaledEnd.y)/3);
+                p.text('△2', (vectors.symmetry.b.origin.x + projPoint2.x + bScaledEnd.x)/3,
+                          (vectors.symmetry.b.origin.y + projPoint2.y + bScaledEnd.y)/3);
+                p.pop();
+                
+                // 计算投影比例
+                let projRatio1 = mag1 > 0 ? projectionLength(v1, v2) / mag1 : 0;
+                let projRatio2 = mag2 > 0 ? projectionLength(v2, v1) / mag2 : 0;
+                
+                // 计算并显示值
+                document.getElementById('ab-product').textContent = (dot * scale * scale).toFixed(2);
+                document.getElementById('ba-product').textContent = (dot * scale * scale).toFixed(2);
+                document.getElementById('proj-ratio-a').textContent = Math.abs(projRatio1).toFixed(3);
+                document.getElementById('proj-ratio-b').textContent = Math.abs(projRatio2).toFixed(3);
+            };
+            
+            p.mousePressed = () => {
+                if (p.mouseX < 0 || p.mouseX > 500 || p.mouseY < 0 || p.mouseY > 400) return;
+                vectors.symmetry.a.checkPress(p) || vectors.symmetry.b.checkPress(p);
+            };
+            
+            p.mouseReleased = () => {
+                vectors.symmetry.a.checkRelease();
+                vectors.symmetry.b.checkRelease();
+            };
+        };
+        
+        // 线性性质动画（分配律 + 数乘，左右分栏）
+        const linearitySketch = (p) => {
+            let k = 1;
+            
+            p.setup = () => {
+                let canvas = p.createCanvas(500, 400);
+                canvas.parent('linearity-sketch');
+                // 分配律部分：a水平，b和c不共线（c向下）
+                vectors.linearity.a = new DraggableVector(60, 200, 100, 0, p.color(66, 153, 225), 'a');
+                vectors.linearity.b = new DraggableVector(60, 200, 80, 80, p.color(245, 101, 101), 'b');
+                vectors.linearity.c = new DraggableVector(60, 200, 60, -40, p.color(72, 187, 120), 'c');
+                
+                // 事件监听
+                document.getElementById('k-slider').addEventListener('input', (e) => {
+                    k = parseFloat(e.target.value);
+                    document.getElementById('k-value').textContent = k.toFixed(1);
+                });
+                
+                document.getElementById('scale-lin').addEventListener('input', (e) => {
+                    scales.linearity = parseFloat(e.target.value);
+                    document.getElementById('scale-lin-value').textContent = scales.linearity.toFixed(1);
+                });
+            };
+            
+            p.draw = () => {
+                p.background(241, 245, 249);
+                let scale = scales.linearity;
+                
+                // 绘制坐标轴
+                p.stroke(148, 163, 184);
+                p.strokeWeight(1);
+                p.line(0, 200, 500, 200);
+                p.line(60, 0, 60, 400);
+                p.line(250, 0, 250, 400); // 分隔线
+                
+                // 更新向量
+                vectors.linearity.a.update(p);
+                vectors.linearity.b.update(p);
+                vectors.linearity.c.update(p);
+                
+                let v1 = vectors.linearity.a.getVector();
+                let v2 = vectors.linearity.b.getVector();
+                let v3 = vectors.linearity.c.getVector();
+                let v2plusv3 = { x: v2.x + v3.x, y: v2.y + v3.y };
+                
+                // 左侧：分配律演示
+                p.push();
+                p.translate(0, 0);
+                
+                // 绘制b+c向量
+                p.push();
+                p.stroke(167, 139, 250);
+                p.strokeWeight(3);
+                let bpcEnd = {
+                    x: 60 + v2plusv3.x * scale,
+                    y: 200 + v2plusv3.y * scale
+                };
+                p.line(60, 200, bpcEnd.x, bpcEnd.y);
+                
+                // 绘制箭头
+                let angle = p.atan2(v2plusv3.y, v2plusv3.x);
+                p.push();
+                p.translate(bpcEnd.x, bpcEnd.y);
+                p.rotate(angle);
+                p.line(0, 0, -12, -6);
+                p.line(0, 0, -12, 6);
+                p.pop();
+                
+                // 绘制标签
+                p.fill(30, 41, 59);
+                p.noStroke();
+                p.textAlign(p.CENTER);
+                p.textSize(16);
+                p.text('b + c', bpcEnd.x + 15, bpcEnd.y - 10);
+                p.pop();
+                
+                // 显示原始向量并获取缩放终点
+                let aScaledEnd = vectors.linearity.a.display(p, scale);
+                let bScaledEnd = vectors.linearity.b.display(p, scale);
+                let cScaledEnd = vectors.linearity.c.display(p, scale);
+                
+                // 计算a在b、c、b+c上的投影
+                let proj_b = project(v1, v2);
+                let proj_c = project(v1, v3);
+                let proj_bpc = project(v1, v2plusv3);
+                
+                // 从a的顶端向b、c、b+c分别引出投影线
+                p.push();
+                p.stroke(251, 191, 36);
+                p.strokeWeight(1);
+                p.drawingContext.setLineDash([3, 3]);
+                
+                // a在b上的投影线（从a顶端引出）
+                let projPointB = {
+                    x: vectors.linearity.a.origin.x + proj_b.x * scale,
+                    y: vectors.linearity.a.origin.y + proj_b.y * scale
+                };
+                p.line(aScaledEnd.x, aScaledEnd.y, projPointB.x, projPointB.y);
+                
+                // a在c上的投影线（从a顶端引出）
+                let projPointC = {
+                    x: vectors.linearity.a.origin.x + proj_c.x * scale,
+                    y: vectors.linearity.a.origin.y + proj_c.y * scale
+                };
+                p.line(aScaledEnd.x, aScaledEnd.y, projPointC.x, projPointC.y);
+                
+                // a在b+c上的投影线（从a顶端引出）
+                let projPointBPC = {
+                    x: vectors.linearity.a.origin.x + proj_bpc.x * scale,
+                    y: vectors.linearity.a.origin.y + proj_bpc.y * scale
+                };
+                p.line(aScaledEnd.x, aScaledEnd.y, projPointBPC.x, projPointBPC.y);
+                p.drawingContext.setLineDash([]);
+                
+                // 绘制投影点
+                p.fill(251, 191, 36);
+                p.noStroke();
+                p.circle(projPointB.x, projPointB.y, 6);
+                p.circle(projPointC.x, projPointC.y, 6);
+                p.circle(projPointBPC.x, projPointBPC.y, 8);
+                
+                // 绘制投影长度标记
+                p.stroke(199, 210, 254);
+                p.strokeWeight(2);
+                p.line(60, 200, projPointB.x, projPointB.y);
+                p.line(60, 200, projPointC.x, projPointC.y);
+                p.line(60, 200, projPointBPC.x, projPointBPC.y);
+                p.pop();
+                p.pop();
+                
+                // 右侧：数乘性质演示
+                p.push();
+                p.translate(250, 0);
+                
+                // 绘制k*a向量
+                let v1scaled = { x: k * v1.x, y: k * v1.y };
+                p.push();
+                p.stroke(66, 153, 225);
+                p.strokeWeight(3);
+                let kaEnd = {
+                    x: 60 + v1scaled.x * scale,
+                    y: 200 + v1scaled.y * scale
+                };
+                p.line(60, 200, kaEnd.x, kaEnd.y);
+                
+                // 绘制箭头
+                angle = p.atan2(v1scaled.y, v1scaled.x);
+                p.push();
+                p.translate(kaEnd.x, kaEnd.y);
+                p.rotate(angle);
+                p.line(0, 0, -12, -6);
+                p.line(0, 0, -12, 6);
+                p.pop();
+                
+                // 绘制标签
+                p.fill(30, 41, 59);
+                p.noStroke();
+                p.textAlign(p.CENTER);
+                p.textSize(16);
+                p.text(`k*a (${k.toFixed(1)})`, kaEnd.x + 15, kaEnd.y - 10);
+                p.pop();
+                
+                // 绘制k*a在b上的投影线（从k*a顶端引出）
+                p.push();
+                p.stroke(251, 191, 36);
+                p.strokeWeight(1);
+                p.drawingContext.setLineDash([3, 3]);
+                let projKa = project(v1scaled, v2);
+                let projPointKa = {
+                    x: vectors.linearity.a.origin.x + projKa.x * scale,
+                    y: vectors.linearity.a.origin.y + projKa.y * scale
+                };
+                p.line(kaEnd.x, kaEnd.y, projPointKa.x, projPointKa.y);
+                p.drawingContext.setLineDash([]);
+                
+                // 绘制投影点
+                p.fill(251, 191, 36);
+                p.noStroke();
+                p.circle(projPointKa.x, projPointKa.y, 8);
+                
+                // 绘制投影长度标记
+                p.stroke(199, 210, 254);
+                p.strokeWeight(2);
+                p.line(60, 200, projPointKa.x, projPointKa.y);
+                p.pop();
+                
+                // 绘制原始向量b
+                vectors.linearity.b.display(p, scale);
+                p.pop();
+                
+                // 计算投影长度
+                let projLen_b = projectionLength(v1, v2) * scale;
+                let projLen_c = projectionLength(v1, v3) * scale;
+                let projLen_bpc = projectionLength(v1, v2plusv3) * scale;
+                let projLen_ka = projectionLength(v1scaled, v2) * scale;
+                
+                // 计算并显示值
+                let a_bpc = dotProduct(v1, v2plusv3) * scale * scale;
+                let ab_p_ac = dotProduct(v1, v2) * scale * scale + dotProduct(v1, v3) * scale * scale;
+                let ka_b = dotProduct(v1scaled, v2) * scale * scale;
+                let k_ab = k * dotProduct(v1, v2) * scale * scale;
+                
+                document.getElementById('a-bpc').textContent = a_bpc.toFixed(2);
+                document.getElementById('ab-p-ac').textContent = ab_p_ac.toFixed(2);
+                document.getElementById('proj-bpc').textContent = projLen_bpc.toFixed(2);
+                document.getElementById('proj-b-p-c').textContent = (projLen_b + projLen_c).toFixed(2);
+                document.getElementById('ka-b').textContent = ka_b.toFixed(2);
+                document.getElementById('k-ab').textContent = k_ab.toFixed(2);
+            };
+            
+            p.mousePressed = () => {
+                if (p.mouseX < 0 || p.mouseX > 500 || p.mouseY < 0 || p.mouseY > 400) return;
+                vectors.linearity.a.checkPress(p) || 
+                vectors.linearity.b.checkPress(p) || 
+                vectors.linearity.c.checkPress(p);
+            };
+            
+            p.mouseReleased = () => {
+                vectors.linearity.a.checkRelease();
+                vectors.linearity.b.checkRelease();
+                vectors.linearity.c.checkRelease();
+            };
+        };
+        
+        // 施瓦茨不等式动画
+        const cauchySketch = (p) => {
+            p.setup = () => {
+                let canvas = p.createCanvas(500, 400);
+                canvas.parent('cauchy-sketch');
+                vectors.cauchy.a = new DraggableVector(100, 200, 150, 0, p.color(66, 153, 225), 'a');
+                vectors.cauchy.b = new DraggableVector(100, 200, 100, 100, p.color(245, 101, 101), 'b');
+                
+                // 缩放滑块事件
+                document.getElementById('scale-cau').addEventListener('input', (e) => {
+                    scales.cauchy = parseFloat(e.target.value);
+                    document.getElementById('scale-cau-value').textContent = scales.cauchy.toFixed(1);
+                });
+            };
+            
+            p.draw = () => {
+                p.background(241, 245, 249);
+                let scale = scales.cauchy;
+                
+                // 绘制坐标轴
+                p.stroke(148, 163, 184);
+                p.strokeWeight(1);
+                p.line(0, 200, 500, 200);
+                p.line(100, 0, 100, 400);
+                
+                // 绘制网格
+                p.stroke(226, 232, 240);
+                for (let i = 0; i < 500; i += 50) p.line(i, 0, i, 400);
+                for (let i = 0; i < 400; i += 50) p.line(0, i, 500, i);
+                
+                vectors.cauchy.a.update(p);
+                vectors.cauchy.b.update(p);
+                vectors.cauchy.a.display(p, scale);
+                vectors.cauchy.b.display(p, scale);
+                
+                let v1 = vectors.cauchy.a.getVector();
+                let v2 = vectors.cauchy.b.getVector();
+                let dot = dotProduct(v1, v2);
+                let mag1 = magnitude(v1);
+                let mag2 = magnitude(v2);
+                let absDot = Math.abs(dot);
+                let productMags = mag1 * mag2;
+                let ratio = absDot / (productMags || 1);
+                let cosValue = dot / (mag1 * mag2 || 1);
+                let angle = angleBetween(v1, v2) * 180 / Math.PI;
+                
+                // 左侧：单位圆可视化cosθ
+                p.push();
+                p.translate(350, 100);
+                
+                // 绘制单位圆
+                p.stroke(148, 163, 184);
+                p.strokeWeight(2);
+                p.noFill();
+                p.circle(0, 0, 80);
+                
+                // 绘制cosθ向量
+                p.stroke(251, 191, 36);
+                p.strokeWeight(3);
+                p.fill(251, 191, 36, 100);
+                let cosAngle = p.atan2(v2.y, v2.x) - p.atan2(v1.y, v1.x);
+                let cosX = 40 * Math.cos(cosAngle);
+                let cosY = 40 * Math.sin(cosAngle);
+                p.line(0, 0, cosX, cosY);
+                p.circle(cosX, cosY, 8);
+                
+                // cosθ标签
+                p.fill(251, 191, 36);
+                p.noStroke();
+                p.textAlign(p.CENTER);
+                p.textSize(14);
+                p.text(`cosθ = ${cosValue.toFixed(3)}`, 0, 60);
+                
+                // 单位圆标签
+                p.fill(148, 163, 184);
+                p.text('单位圆', 0, -50);
+                p.pop();
+                
+                // 右侧：不等式柱状图
+                p.push();
+                p.translate(0, 0);
+                p.noStroke();
+                
+                // 计算柱状图高度
+                let maxValue = Math.max(absDot, productMags, 100) * scale * scale;
+                let leftBar = p.map(absDot * scale * scale, 0, maxValue, 0, 250);
+                let rightBar = p.map(productMags * scale * scale, 0, maxValue, 0, 250);
+                
+                // 左边 |[a,b]|
+                p.fill(167, 139, 250, 200);
+                p.rect(50, 250, leftBar, 30);
+                
+                // 右边 |a||b|
+                p.fill(66, 153, 225, 200);
+                p.rect(50, 300, rightBar, 30);
+                
+                // 标签
+                p.fill(30, 41, 59);
+                p.textAlign(p.LEFT);
+                p.textSize(16);
+                p.text('|[a,b]|', 10, 270);
+                p.text('|a||b|', 10, 320);
+                
+                // 比例文字
+                p.textSize(14);
+                p.text(`比值: cosθ = ${ratio.toFixed(3)}`, 50 + Math.max(leftBar, rightBar) + 10, 285);
+                
+                // 等号条件提示
+                if (angle < 5 || angle > 175) {
+                    p.fill(72, 187, 120);
+                    p.textAlign(p.CENTER);
+                    p.textSize(16);
+                    p.text('✓ 等号成立! cosθ = ±1', 250, 350);
+                }
+                
+                p.pop();
+                
+                // 绘制角度弧
+                if (mag1 > 5 && mag2 > 5) {
+                    p.push();
+                    p.stroke(251, 191, 36);
+                    p.strokeWeight(2);
+                    p.noFill();
+                    let angleRadius = 40;
+                    p.arc(100, 200, angleRadius, angleRadius, 
+                          p.atan2(v2.y, v2.x), p.atan2(v1.y, v1.x));
+                    p.pop();
+                }
+                
+                // 计算并显示值
+                document.getElementById('abs-dot').textContent = (absDot * scale * scale).toFixed(2);
+                document.getElementById('product-mags').textContent = (productMags * scale * scale).toFixed(2);
+                document.getElementById('ratio').textContent = ratio.toFixed(3);
+                document.getElementById('cos-value').textContent = cosValue.toFixed(3);
+                document.getElementById('inequality-gap').textContent = ((productMags - absDot) * scale * scale).toFixed(2);
+                
+                // 等号条件显示
+                let equalityElement = document.getElementById('equality-condition');
+                if (angle < 5 || angle > 175) {
+                    equalityElement.textContent = `等号成立! 因为cosθ = ${cosValue.toFixed(2)} = ±1`;
+                } else {
+                    equalityElement.textContent = `严格不等式: cosθ = ${cosValue.toFixed(3)} ∈ (-1,1)`;
+                }
+            };
+            
+            p.mousePressed = () => {
+                if (p.mouseX < 0 || p.mouseX > 500 || p.mouseY < 0 || p.mouseY > 400) return;
+                vectors.cauchy.a.checkPress(p) || vectors.cauchy.b.checkPress(p);
+            };
+            
+            p.mouseReleased = () => {
+                vectors.cauchy.a.checkRelease();
+                vectors.cauchy.b.checkRelease();
+            };
+        };
+        
+        // 切换投影方向
+        function toggleProjection() {
+            projectionMode = projectionMode === 'a-on-b' ? 'b-on-a' : 'a-on-b';
+        }
+        
+        // 重置向量
+        function resetVectors(type) {
+            switch(type) {
+                case 'geometric':
+                    vectors.geometric.a = new DraggableVector(100, 200, 100, -50, color(66, 153, 225), 'a');
+                    vectors.geometric.b = new DraggableVector(100, 200, 150, 100, color(245, 101, 101), 'b');
+                    break;
+                case 'linearity':
+                    vectors.linearity.a = new DraggableVector(60, 200, 100, 0, color(66, 153, 225), 'a');
+                    vectors.linearity.b = new DraggableVector(60, 200, 80, 80, color(245, 101, 101), 'b');
+                    vectors.linearity.c = new DraggableVector(60, 200, 60, -40, color(72, 187, 120), 'c');
+                    break;
+                case 'symmetry':
+                    vectors.symmetry.a = new DraggableVector(150, 200, 120, -80, color(66, 153, 225), 'a');
+                    vectors.symmetry.b = new DraggableVector(150, 200, 150, 100, color(245, 101, 101), 'b');
+                    break;
+                case 'cauchy':
+                    vectors.cauchy.a = new DraggableVector(100, 200, 150, 0, color(66, 153, 225), 'a');
+                    vectors.cauchy.b = new DraggableVector(100, 200, 100, 100, color(245, 101, 101), 'b');
+                    break;
+            }
+        }
+        
+        // 创建所有动画
+        new p5(geometricSketch);
+        new p5(symmetrySketch);
+        new p5(linearitySketch);
+        new p5(cauchySketch);
+    </script>
+</body>
+</html>

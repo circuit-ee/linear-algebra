@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>特征值与特征向量 · 工程意义 + 辅助图形演示</title>
+<style>
+  :root{
+    --bg:#f4f7fb;--card:#fff;--ink:#1f2a37;--sub:#5b6b7b;
+    --brand:#2563eb;--brand2:#14b8a6;--warn:#ef4444;--ok:#22a06b;--line:#e5eaf0;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{font-size:20px;}
+  body{background:var(--bg);color:var(--ink);font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;line-height:1.7;}
+  header{background:linear-gradient(135deg,#2563eb,#14b8a6);color:#fff;padding:3rem 1.5rem 2.5rem;text-align:center;}
+  header h1{font-size:2.4rem;line-height:1.25;margin-bottom:1rem;}
+  header p{font-size:1.15rem;opacity:.95;max-width:880px;margin:0 auto;}
+  main{max-width:1040px;margin:0 auto;padding:2rem 1.25rem 4rem;}
+  section{margin:2.2rem 0;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:2rem;box-shadow:0 6px 24px rgba(30,50,90,.06);}
+  h2{font-size:1.7rem;color:var(--brand);margin-bottom:1rem;display:flex;align-items:center;gap:.6rem;}
+  h2 .num{background:var(--brand);color:#fff;border-radius:10px;padding:.15rem .7rem;font-size:1.15rem;}
+  h3{font-size:1.25rem;margin:1.2rem 0 .6rem;}
+  p{font-size:1.08rem;margin:.5rem 0;}
+  .sub{color:var(--sub);}
+  .formula{background:#eef4ff;border-left:5px solid var(--brand);padding:1rem 1.2rem;margin:1rem 0;border-radius:8px;font-family:"Times New Roman",serif;font-size:1.25rem;text-align:center;}
+  .golden{background:linear-gradient(135deg,#fff7e6,#eaf2ff);border:2px solid #f2c94c;border-radius:14px;padding:1.2rem 1.4rem;margin:1.2rem 0;font-size:1.12rem;line-height:1.8;}
+  .golden b{color:var(--brand);}
+  .ctrl{display:flex;flex-wrap:wrap;gap:.8rem;align-items:center;margin:1rem 0;}
+  .ctrl label{font-size:1.05rem;font-weight:600;}
+  input[type=range]{flex:1;min-width:180px;accent-color:var(--brand);}
+  .val{font-size:1.15rem;font-weight:700;color:var(--brand);min-width:60px;text-align:center;}
+  button{background:var(--brand);color:#fff;border:none;border-radius:10px;padding:.7rem 1.3rem;font-size:1.05rem;cursor:pointer;}
+  button.ghost{background:transparent;color:var(--brand);border:2px solid var(--brand);}
+  canvas{display:block;background:#f8fafc;border-radius:10px;width:100%;}
+  .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.4rem;}
+  .mini{background:#f8fafc;border:1px solid var(--line);border-radius:14px;padding:1.2rem;}
+  .mini h4{font-size:1.15rem;margin-bottom:.5rem;color:var(--brand2);}
+  .out{margin-top:1rem;padding:1rem;border-radius:12px;font-size:1.08rem;display:none;}
+  .out.show{display:block;}
+  .out.stable{background:#e9f8f0;color:#166c45;border:1px solid #bce8d2;}
+  .out.unstable{background:#fdecec;color:#9b1c1c;border:1px solid #f5c2c2;}
+  .out.crit{background:#fff5e6;color:#9a6700;border:1px solid #f2e3b3;}
+  .tip{font-size:.98rem;color:var(--sub);background:#fff8e6;border:1px solid #f2e3b3;border-radius:10px;padding:.8rem 1rem;margin:.8rem 0;}
+  table{width:100%;border-collapse:collapse;font-size:1.02rem;}
+  td,th{border:1px solid var(--line);padding:.55rem;text-align:left;}
+  th{background:#e3edff;}
+  footer{background:#eef2f7;color:var(--sub);text-align:center;padding:2rem 1rem;font-size:.98rem;}
+  @media(max-width:600px){html{font-size:18px;}header h1{font-size:1.9rem;}.card{padding:1.4rem;}}
+</style>
+</head>
+<body>
+<header>
+  <h1>特征值与特征向量 —— 工程意义 + 辅助图形演示</h1>
+  <p>面向大一新生 · 原理动画 + 稳定性轨迹 + 振型摆动 + PCA 数据云投影，看懂 λ 与 v 在工程里到底在干嘛。</p>
+</header>
+
+<main>
+<!-- 0. 根本原理 + 动画 -->
+<section class="card">
+  <h2><span class="num">1</span>根本原理：A v = λ v 在画什么</h2>
+  <div class="golden">
+    <b>特征向量 v</b> 刻画系统里一种<b>不变的方向 / 模式</b>（“长什么样、作用在哪些变量上”）；<br>
+    <b>特征值 λ</b> 是<b>在该特征向量所代表的方向（模式）下的量化特征</b>——方向在变换 A 作用下保持不变，只被放大 / 缩小 / 反向了 λ 倍。<br>
+    λ 的物理含义随问题而异：稳定性 ⇒ 增长/衰减率；振动 ⇒ 固有频率平方；PCA ⇒ 该主成分方向方差（信息量）。
+  </div>
+  <p>下方动画：灰色箭头是任意向量，蓝色箭头是 A 作用后的结果。<b>当你拖到特征向量方向时，输出箭头与输入共线，仅伸缩 λ 倍</b>——这就是“方向不变”。</p>
+  <div class="ctrl">
+    <label>输入向量角度 θ</label>
+    <input id="theta" type="range" min="0" max="360" step="1" value="35"><span class="val" id="vtheta">35°</span>
+    <label>A = [[2, 0.6], [0.6, 1]]</label>
+  </div>
+  <canvas id="principle" height="320"></canvas>
+  <p class="sub" id="principleNote"></p>
+</section>
+
+<!-- 1. 稳定性 -->
+<section class="card">
+  <h2><span class="num">2</span>工程应用一：系统稳定性（控制 / 电路 / 种群）</h2>
+  <p>系统 <code>ẋ = A x</code> 的解含 e<sup>λt</sup> 模态。<b>Re(λ)&lt;0 衰减，Re(λ)&gt;0 发散，Re(λ)=0 等幅振荡（临界）</b>。</p>
+  <div class="ctrl">
+    <label>λ₁ 实部</label><input id="r1" type="range" min="-3" max="3" step="0.1" value="-1.2"><span class="val" id="v1">-1.2</span>
+    <label>λ₂ 实部</label><input id="r2" type="range" min="-3" max="3" step="0.1" value="-0.5"><span class="val" id="v2">-0.5</span>
+  </div>
+  <div class="grid2">
+    <div class="mini">
+      <h4>e<sup>λt</sup> 模态曲线（t=0→6）</h4>
+      <canvas id="stablePlot" height="200"></canvas>
+    </div>
+    <div class="mini">
+      <h4>相平面轨迹（从初始点演化）</h4>
+      <canvas id="phasePlot" height="200"></canvas>
+    </div>
+  </div>
+  <div class="out" id="stableOut"></div>
+  <div class="tip">📌 飞机自动驾驶、电网、放大器防自激：只要一个 λ 实部 &gt; 0，系统就发散失控。工程师建模出 A 后第一步就是算特征值。</div>
+</section>
+
+<!-- 2. 振动 -->
+<section class="card">
+  <h2><span class="num">3</span>工程应用二：结构固有频率与振型（桥梁 / 建筑 / 电机）</h2>
+  <p>广义特征值问题 <code>K φ = ω² M φ</code>。λ=ω²，v=振型。下方为 3 质点弹簧系统，点击频率看振型<b>实时摆动动画</b>。</p>
+  <div class="grid2">
+    <div class="mini">
+      <h4>固有频率平方 ω²（点击切换）</h4>
+      <div id="vibEig" style="display:flex;flex-wrap:wrap;gap:.6rem;"></div>
+      <p class="sub" id="modeDesc">振型显示各质点相对位移方向。</p>
+    </div>
+    <div class="mini">
+      <h4>振型摆动演示（按 ω 动画）</h4>
+      <canvas id="modeCanvas" height="200"></canvas>
+    </div>
+  </div>
+  <div class="tip">📌 塔科马海峡大桥共振垮塌 → 工程师算桥梁 ω 避开风/车/地震激励频率。特征值=频率信息，特征向量=振动形态。</div>
+</section>
+
+<!-- 3. PCA -->
+<section class="card">
+  <h2><span class="num">4</span>工程应用三：PCA 主成分（数据压缩 / 人脸识别）</h2>
+  <p>协方差矩阵 C 的特征向量 = 主成分轴，特征值 = 该方向方差（信息量）。下方 2D 数据云，绘制 PC1/PC2 轴与<b>保留 k 维的投影</b>。</p>
+  <div class="ctrl">
+    <label>保留主成分数 k</label>
+    <input id="pcaK" type="range" min="1" max="2" step="1" value="1"><span class="val" id="pcaVK">1</span>
+  </div>
+  <div class="grid2">
+    <div class="mini">
+      <h4>数据云 + 主成分轴</h4>
+      <canvas id="pcaCloud" height="240"></canvas
+    </div>
+    <div class="mini">
+      <h4>降维投影结果（k 维重建）</h4>
+      <canvas id="pcaProj" height="240"></canvas>
+    </div>
+  </div>
+  <p class="sub" id="pcaInfo"></p>
+  <div class="tip">📌 Eigenface、金融风控、传感器压缩：按 λ 从大到小取前 k 个特征向量，“丢冗余、保主要信息”。</div>
+</section>
+
+<!-- 总结 -->
+<section class="card">
+  <h2><span class="num">5</span>一张表记住：工程里到底在看什么</h2>
+  <div style="background:#f0f7ff;border-radius:12px;padding:1rem;">
+    <table>
+      <tr><th>工程场景</th><th>看特征值的什么</th><th>看特征向量的什么</th></tr>
+      <tr><td>系统稳定性</td><td>实部符号（负=稳定）</td><td>各状态在失稳模态中的参与度</td></tr>
+      <tr><td>结构振动</td><td>大小→固有频率平方</td><td>方向→振型（各点相对位移）</td></tr>
+      <tr><td>PCA 降维</td><td>大小→信息量(方差)</td><td>方向→主成分轴</td></tr>
+    </table>
+  </div>
+</section>
+</main>
+<footer>交互式线性代数 · 特征值与特征向量工程意义 + 辅助图形演示 · 面向大一新生</footer>
+
+<script>
+/* ===== 工具：dpr 自适应 canvas ===== */
+function fitCanvas(cv, h){
+  const dpr = window.devicePixelRatio||1;
+  const rect = cv.getBoundingClientRect();
+  const w = rect.width || cv.parentElement.clientWidth || 320;
+  cv.width = w*dpr; cv.height = (h||cv.height)*dpr;
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.scale(dpr,dpr);
+  return {ctx, w, h:h||cv.height/dpr};
+}
+
+/* ===== 1. 原理动画 A v = λ v ===== */
+const A = [[2,0.6],[0.6,1]];
+const prCv = document.getElementById('principle');
+const thetaIn = document.getElementById('theta');
+const prNote = document.getElementById('principleNote');
+// 解析特征对
+function eig2(M){
+  const a=M[0][0],b=M[0][1],c=M[1][0],d=M[1][1];
+  const tr=a+d, det=a*d-b*c;
+  const disc=Math.sqrt(Math.max(tr*tr-4*det,0));
+  const l1=(tr+disc)/2,l2=(tr-disc)/2;
+  // 特征向量
+  function vec(l){ return Math.abs(c)>1e-6 ? [l-d,c] : [b,l-a]; }
+  return [[l1,vec(l1)],[l2,vec(l2)]];
+}
+const EIGS = eig2(A).map(([l,v])=>[l,[v[0],v[1]]]);
+EIGS.forEach(e=>{const n=Math.hypot(e[1][0],e[1][1])||1;e[1]=[e[1][0]/n,e[1][1]/n];});
+
+function drawPrinciple(){
+  const {ctx,w,h}=fitCanvas(prCv,320);
+  ctx.clearRect(0,0,w,h);
+  const cx=w/2, cy=h/2, R=Math.min(w,h)*0.32;
+  // 网格
+  ctx.strokeStyle='#e3e9f2';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(0,cy);ctx.lineTo(w,cy);ctx.moveTo(cx,0);ctx.lineTo(cx,h);ctx.stroke();
+  const th = (+thetaIn.value)*Math.PI/180;
+  document.getElementById('vtheta').textContent = thetaIn.value+'°';
+  let v=[Math.cos(th),Math.sin(th)];
+  let Av=[A[0][0]*v[0]+A[0][1]*v[1], A[1][0]*v[0]+A[1][1]*v[1]];
+  const len=Math.hypot(v[0],v[1]); v=[v[0]/len,v[1]/len];
+  // 特征方向参考线
+  ctx.setLineDash([5,5]);ctx.strokeStyle='#f2c94c';ctx.lineWidth=2;
+  EIGS.forEach(([l,ev])=>{
+    ctx.beginPath();ctx.moveTo(cx-ev[0]*R*1.4,cy+ev[1]*R*1.4);ctx.lineTo(cx+ev[0]*R*1.4,cy-ev[1]*R*1.4);ctx.stroke();
+  });
+  ctx.setLineDash([]);
+  // 原始向量（灰）
+  ctx.strokeStyle='#94a3b8';ctx.lineWidth=4;
+  ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+v[0]*R,cy-v[1]*R);ctx.stroke();
+  // A v（蓝）
+  const avLen=Math.hypot(Av[0],Av[1]);
+  const avDir=[Av[0]/avLen,Av[1]/avLen];
+  ctx.strokeStyle='#2563eb';ctx.lineWidth=4;
+  ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+avDir[0]*R,cy-avDir[1]*R);ctx.stroke();
+  // 判断共线度
+  const dot=Math.abs(v[0]*avDir[0]+v[1]*avDir[1]);
+  let msg=`输入方向 (${v[0].toFixed(2)}, ${v[1].toFixed(2)}) → A·v 长度 ${avLen.toFixed(2)}`;
+  if(dot>0.98){
+    const l=avLen; // 近似 λ
+    msg+=`　⚠ 接近特征方向！方向几乎不变，伸缩倍数 λ≈${l.toFixed(2)}（理论 λ: ${EIGS.map(e=>e[0].toFixed(2)).join(', ')})} `;
+  }
+  prNote.textContent=msg;
+}
+thetaIn.oninput=drawPrinciple;
+
+/* ===== 2. 稳定性：曲线 + 相平面 ===== */
+const r1=document.getElementById('r1'),r2=document.getElementById('r2');
+const stableOut=document.getElementById('stableOut');
+function drawStablePlots(){
+  const a=+r1.value,b=+r2.value;
+  document.getElementById('v1').textContent=a.toFixed(1);
+  document.getElementById('v2').textContent=b.toFixed(1);
+  // 曲线
+  let {ctx,w,h}=fitCanvas(document.getElementById('stablePlot'),200);
+  ctx.clearRect(0,0,w,h);
+  ctx.strokeStyle='#cbd5e1';ctx.beginPath();ctx.moveTo(40,0);ctx.lineTo(40,h-20);ctx.lineTo(w,h-20);ctx.stroke();
+  const T=6, x0=40, y0=h-20, plotW=w-50, plotH=h-40;
+  function curve(lam,color){
+    ctx.strokeStyle=color;ctx.lineWidth=2.5;ctx.beginPath();
+    for(let i=0;i<=200;i++){
+      const t=i/200*T;
+      const val=Math.exp(lam*t);
+      const px=x0+t/T*plotW;
+      const py=y0-Math.min(val,10)/10*plotH;
+      i?ctx.lineTo(px,py):ctx.moveTo(px,py);
+    }
+    ctx.stroke();
+  }
+  curve(a,'#2563eb');curve(b,'#14b8a6');
+  ctx.fillStyle='#5b6b7b';ctx.font='13px sans-serif';
+  ctx.fillText('e^{λ₁t}',x0+4,16);ctx.fillStyle='#14b8a6';ctx.fillText('e^{λ₂t}',x0+70,16);
+  ctx.fillStyle='#5b6b7b';ctx.fillText('t',w-14,h-6);
+  // 相平面（对角阵 A=diag(a,b)）
+  ({ctx,w,h}=fitCanvas(document.getElementById('phasePlot'),200));
+  ctx.clearRect(0,0,w,h);
+  const cx=w/2,cy=h/2,sc=Math.min(w,h)*0.18;
+  ctx.strokeStyle='#cbd5e1';ctx.beginPath();ctx.moveTo(0,cy);ctx.lineTo(w,cy);ctx.moveTo(cx,0);ctx.lineTo(cx,h);ctx.stroke();
+  let x0s=1.2,y0s=0.8;
+  ctx.strokeStyle='#ef4444';ctx.lineWidth=2;ctx.beginPath();
+  for(let i=0;i<=300;i++){
+    const t=i/300 * 6;
+    const x=x0s*Math.exp(a*t), y=y0s*Math.exp(b*t);
+    const px=cx+x*sc, py=cy-y*sc;
+    (i?ctx.lineTo(px,py):ctx.moveTo(px,py));
+    if(Math.abs(px)>w||Math.abs(py)>h) break;
+  }
+  ctx.stroke();
+  ctx.fillStyle='#ef4444';ctx.beginPath();ctx.arc(cx,cy,4,0,7);ctx.fill();
+  ctx.fillStyle='#5b6b7b';ctx.fillText('原点 = 平衡',8,h-8);
+  // 结论
+  const max=Math.max(a,b), min=Math.min(a,b);
+  stableOut.classList.add('show');
+  if(max<0){stableOut.className='out show stable';stableOut.innerHTML='<b>渐近稳定 ✓</b> Re(λ) 全 &lt;0，轨迹螺旋收敛到原点。';}
+  else if(min<0&&max===0){stableOut.className='out show crit';stableOut.innerHTML='<b>临界稳定 ⚠</b> 存在 Re(λ)=0，等幅振荡（如无损电路）。';}
+  else if(max===0&&min===0){stableOut.className='out show crit';stableOut.innerHTML='<b>临界稳定 ⚠</b> 纯虚特征值，持续等幅周期运动。';}
+  else {stableOut.className='out show unstable';stableOut.innerHTML='<b>不稳定 ✗</b> 存在 Re(λ)&gt;0，轨迹发散。';}
+}
+r1.oninput=drawStablePlots;r2.oninput=drawStablePlots;
+
+/* ===== 3. 振动：振型摆动动画 ===== */
+const eigVal=[0.586,2.0,3.414];
+const eigVec=[[0.5,0.707,0.5],[0.707,0,-0.707],[0.5,-0.707,0.5]];
+let curMode=0, t0=performance.now();
+const modeCv=document.getElementById('modeCanvas');
+const vibEigDiv=document.getElementById('vibEig');
+eigVal.forEach((v,i)=>{
+  const c=document.createElement('div');
+  c.className='eig-chip'+(i===0?'':'');
+  c.style.cssText='background:#eef4ff;border:1px solid #cfe0ff;border-radius:12px;padding:.5rem .9rem;font-weight:700;color:#2563eb;cursor:pointer;';
+  c.textContent='ω²='+v.toFixed(3);
+  c.onclick=()=>{curMode=i;[...vibEigDiv.children].forEach(x=>x.style.outline='none');c.style.outline='3px solid #14b8a6';document.getElementById('modeDesc').textContent='振型'+(i+1)+'：'+(i===1?'中点不动，两端反相':'两端同相/反相三质点摆动')+'，频率 ω='+Math.sqrt(v).toFixed(3);};
+  vibEigDiv.appendChild(c);
+});
+vibEigDiv.firstChild.style.outline='3px solid #14b8a6';
+document.getElementById('modeDesc').textContent='振型1：三质点同相摆动，频率 ω='+Math.sqrt(eigVal[0]).toFixed(3);
+function drawModeAnim(){
+  const {ctx,w,h}=fitCanvas(modeCv,200);
+  ctx.clearRect(0,0,w,h);
+  ctx.strokeStyle='#cdd8e6';ctx.beginPath();ctx.moveTo(10,h/2);ctx.lineTo(w-10,h/2);ctx.stroke();
+  const xs=[w*0.25,w*0.5,w*0.75];
+  const vec=eigVec[curMode];
+  const omega=Math.sqrt(eigVal[curMode]);
+  const t=(performance.now()-t0)/1000;
+  const amp=Math.sin(omega*t)*40;
+  vec.forEach((y,i)=>{
+    const yy=h/2 - y*amp;
+    ctx.beginPath();ctx.arc(xs[i],yy,11,0,7);
+    ctx.fillStyle=i===1?'#14b8a6':'#2563eb';ctx.fill();
+    ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
+  });
+  requestAnimationFrame(drawModeAnim);
+}
+
+/* ===== 4. PCA 数据云 + 投影 ===== */
+// 造一个相关 2D 数据
+const data=[];
+let seed=42; function rnd(){seed=(seed*9301+49297)%233280;return seed/233280;}
+for(let i=0;i<120;i++){
+  const u=rnd()*2-1, v=rnd()*2-1;
+  data.push([1.6*u+0.4*v, 0.5*u+1.2*v]);
+}
+function pcaCompute(pts){
+  const n=pts.length;
+  const mx=pts.reduce((s,p)=>s+p[0],0)/n, my=pts.reduce((s,p)=>s+p[1],0)/n;
+  let sxx=0,sxy=0,syy=0;
+  pts.forEach(p=>{sxx+=(p[0]-mx)**2;sxy+=(p[0]-mx)*(p[1]-my);syy+=(p[1]-my)**2;});
+  const tr=sxx+syy, det=sxx*syy-sxy*sxy, disc=Math.sqrt(Math.max(tr*tr-4*det,0));
+  const l1=(tr+disc)/2,l2=(tr-disc)/2;
+  let v1 = Math.abs(syy-sxx)>1e-6||Math.abs(sxy)>1e-6 ? [l1-(syy), sxy] : [1,0];
+  const n1=Math.hypot(v1[0],v1[1])||1; v1=[v1[0]/n1,v1[1]/n1];
+  const v2=[-v1[1],v1[0]];
+  return {mx,my,l1,l2,v1,v2};
+}
+const pca= pcaCompute(data);
+const pcaK=document.getElementById('pcaK');
+function drawPCA(){
+  const k=+pcaK.value;document.getElementById('pcaVK').textContent=k;
+  // 云
+  let {ctx,w,h}=fitCanvas(document.getElementById('pcaCloud'),240);
+  ctx.clearRect(0,0,w,h);
+  const cx=w/2,cy=h/2,sc=38;
+  ctx.strokeStyle='#cbd5e1';ctx.beginPath();ctx.moveTo(0,cy);ctx.lineTo(w,cy);ctx.moveTo(cx,0);ctx.lineTo(cx,h);ctx.stroke();
+  // 主成分轴
+  ctx.strokeStyle='#2563eb';ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(cx-pca.v1[0]*sc*3,cy+pca.v1[1]*sc*3);ctx.lineTo(cx+pca.v1[0]*sc*3,cy-pca.v1[1]*sc*3);ctx.stroke();
+  ctx.strokeStyle='#14b8a6';ctx.beginPath();ctx.moveTo(cx-pca.v2[0]*sc*3,cy+pca.v2[1]*sc*3);ctx.lineTo(cx+pca.v2[0]*sc*3,cy-pca.v2[1]*sc*3);ctx.stroke();
+  ctx.fillStyle='#2563eb';ctx.fillText('PC1 (λ='+pca.l1.toFixed(1)+')',cx+8,cy-60);
+  ctx.fillStyle='#14b8a6';ctx.fillText('PC2 (λ='+pca.l2.toFixed(1)+')',cx+8,cy+50);
+  // 点
+  ctx.fillStyle='rgba(37,99,235,.55)';
+  data.forEach(p=>{ctx.beginPath();ctx.arc(cx+(p[0]-pca.mx)*sc,cy-(p[1]-pca.my)*sc,3,0,7);ctx.fill();});
+  // 投影
+  ({ctx,w,h}=fitCanvas(document.getElementById('pcaProj'),240));
+  ctx.clearRect(0,0,w,h);
+  ctx.strokeStyle='#cbd5e1';ctx.beginPath();ctx.moveTo(0,cy);ctx.lineTo(w,cy);ctx.moveTo(cx,0);ctx.lineTo(cx,h);ctx.stroke();
+  ctx.fillStyle='rgba(20,184,166,.7)';
+  data.forEach(p=>{
+    const dx=p[0]-pca.mx, dy=p[1]-pca.my;
+    let rx=pca.mx, ry=pca.my;
+    const proj1=(dx*pca.v1[0]+dy*pca.v1[1]);
+    rx+=pca.v1[0]*proj1; ry+=pca.v1[1]*proj1;
+    if(k>=2){const proj2=(dx*pca.v2[0]+dy*pca.v2[1]);rx+=pca.v2[0]*proj2;ry+=pca.v2[1]*proj2;}
+    ctx.beginPath();ctx.arc(cx+(rx-pca.mx)*sc,cy-(ry-pca.my)*sc,3,0,7);ctx.fill();
+  });
+  ctx.fillStyle='#5b6b7b';ctx.fillText(k===1?'仅保留 PC1 的 1D 重建':'保留 PC1+PC2 完整 2D 重建',10,h-10);
+  const keep=pca.l1/(pca.l1+pca.l2)*100;
+  document.getElementById('pcaInfo').textContent=`λ₁=${(pca.l1).toFixed(2)}, λ₂=${(pca.l2).toFixed(2)}；保留 k=${k} 时信息比例 ≈ ${(k===1?keep:100).toFixed(1)}%（λ 越大=该主成分方向方差越大=信息越多）。`;
+}
+pcaK.oninput=drawPCA;
+
+/* ===== 启动 ===== */
+function initAll(){
+  drawPrinciple();drawStablePlots();drawPCA();
+}
+window.addEventListener('load',()=>{
+  initAll();drawModeAnim();
+});
+window.addEventListener('resize',()=>{drawPrinciple();drawStablePlots();drawPCA();});
+</script>
+</body>
+</html>

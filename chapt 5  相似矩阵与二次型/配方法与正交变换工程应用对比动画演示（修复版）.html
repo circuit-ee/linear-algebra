@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>配方法与正交变换工程应用对比动画演示（修复版）</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            font-size: 32px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            opacity: 0;
+            animation: fadeIn 1s forwards;
+        }
+        .section {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+        }
+        .section.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        h2 {
+            font-size: 26px;
+            font-weight: bold;
+            color: #3498db;
+            margin-bottom: 20px;
+            border-left: 5px solid #3498db;
+            padding-left: 15px;
+        }
+        h3 {
+            font-size: 22px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 15px 0;
+        }
+        p, li {
+            font-size: 18px;
+            margin-bottom: 10px;
+            line-height: 1.8;
+        }
+        .formula {
+            font-size: 20px;
+            font-weight: bold;
+            color: #e74c3c;
+            background: #f9f9f9;
+            padding: 5px 10px;
+            border-radius: 5px;
+            display: inline-block;
+            margin: 5px 0;
+        }
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            opacity: 0;
+            transform: scale(0.95);
+            transition: all 0.5s ease;
+        }
+        .comparison-table.show {
+            opacity: 1;
+            transform: scale(1);
+        }
+        .comparison-table th, .comparison-table td {
+            border: 2px solid #ddd;
+            padding: 15px;
+            text-align: left;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .comparison-table th {
+            background-color: #3498db;
+            color: white;
+        }
+        .comparison-table tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        .highlight {
+            background-color: #fff3cd !important;
+            color: #e74c3c;
+        }
+        .case-study {
+            background: #e8f4f8;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        /* 动画演示区域样式 */
+        .demo-container {
+            margin: 20px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .demo-canvas {
+            width: 100%;
+            height: 300px;
+            border: 2px solid #3498db;
+            border-radius: 8px;
+            margin: 15px 0;
+            position: relative;
+            overflow: hidden;
+            background-color: #f8f9fa;
+        }
+        .demo-step {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        .demo-step.active {
+            display: block;
+            opacity: 1;
+        }
+        .demo-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .demo-btn {
+            padding: 10px 20px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        .demo-btn:hover {
+            background: #2980b9;
+        }
+        .demo-btn:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+        }
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .step-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #bdc3c7;
+        }
+        .step-dot.active {
+            background: #3498db;
+        }
+        /* 电路动画元素 */
+        .circuit-element {
+            position: absolute;
+            transition: all 0.5s ease;
+        }
+        .resistor {
+            width: 60px;
+            height: 20px;
+            background: #2c3e50;
+            border-radius: 3px;
+        }
+        .voltage-source {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e74c3c;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        .wire {
+            background: #7f8c8d;
+        }
+        /* 结构振动动画元素 */
+        .beam {
+            width: 80%;
+            height: 10px;
+            background: #2c3e50;
+            margin: 20px auto;
+            position: relative;
+            border-radius: 5px;
+        }
+        .support {
+            width: 20px;
+            height: 20px;
+            background: #7f8c8d;
+            position: absolute;
+            top: 10px;
+            border-radius: 3px;
+        }
+        .vibration-point {
+            width: 20px;
+            height: 20px;
+            background: #3498db;
+            border-radius: 50%;
+            position: absolute;
+            transition: transform 0.1s linear;
+        }
+        .point-label {
+            position: absolute;
+            top: -25px;
+            left: 0;
+            width: 50px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .eigenvector-line {
+            position: absolute;
+            background: #e74c3c;
+            transform-origin: center;
+            height: 3px;
+        }
+        .eigenvalue-display {
+            position: absolute;
+            background: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .modal-label {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideIn {
+            from { transform: translateX(-50px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .slide-in {
+            animation: slideIn 0.8s forwards;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .pulse {
+            animation: pulse 1s infinite;
+        }
+        @keyframes vibrate {
+            0%, 100% { transform: translateY(0); }
+            25% { transform: translateY(-20px); }
+            50% { transform: translateY(0); }
+            75% { transform: translateY(20px); }
+        }
+        .vibrate {
+            animation: vibrate 2s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>配方法与正交变换工程应用对比动画演示（修复版）</h1>
+
+        <!-- 引言：二次型化简的工程意义 -->
+        <div class="section" id="intro">
+            <h2>一、二次型化简的工程意义</h2>
+            <p>二次型 <span class="formula">f(x)=xᵀAx</span>（<span class="formula">A</span>为实对称矩阵）描述工程中<span class="highlight">能量、误差、稳定性</span>等核心物理量：</p>
+            <ul>
+                <li>结构力学：应变能 <span class="formula">U=½uᵀKu</span>（<span class="formula">K</span>刚度矩阵）</li>
+                <li>控制理论：Lyapunov函数 <span class="formula">V(x)=xᵀPx</span>（稳定性判据）</li>
+                <li>信号处理：信号能量 <span class="formula">E=xᵀRx</span>（主成分分析）</li>
+            </ul>
+            <p>化简目标：化为<span class="highlight">标准形（仅含平方项）</span>，提取主导因素。</p>
+        </div>
+
+        <!-- 配方法介绍 -->
+        <div class="section" id="peifang">
+            <h2>二、配方法：灵活化简的实用工具</h2>
+            <h3>核心思想</h3>
+            <p>通过<span class="highlight">可逆线性变换</span>逐步消去交叉项，化为标准形：</p>
+            <p class="formula">f(x₁,x₂)=x₁²+2x₁x₂+3x₂² = (x₁+x₂)² + 2x₂²</p>
+            
+            <h3>工程应用</h3>
+            <div class="case-study">
+                <p><strong>案例：RLC电路最大功率传输</strong></p>
+                <p>负载功率 <span class="formula">P_L=Uₛ²R_L/(Rₛ+R_L)²</span>，配方得 <span class="formula">P_L=Uₛ²/[ (√R_L - √Rₛ/√R_L)² + 4Rₛ ]</span>，当<span class="formula">R_L=Rₛ</span>时功率最大。</p>
+                
+                <!-- 配方法动画演示 -->
+                <div class="demo-container">
+                    <h3>动画演示：配方法求最大功率传输</h3>
+                    <div class="step-indicator">
+                        <div class="step-dot active" data-step="1"></div>
+                        <div class="step-dot" data-step="2"></div>
+                        <div class="step-dot" data-step="3"></div>
+                        <div class="step-dot" data-step="4"></div>
+                    </div>
+                    
+                    <div class="demo-canvas" id="circuitCanvas">
+                        <!-- 电路图将通过JS动态绘制 -->
+                    </div>
+                    
+                    <div class="demo-step active" id="circuitStep1">
+                        <p><strong>步骤1：初始电路</strong></p>
+                        <p>RLC串联电路：电源电压 Uₛ = 10V，内阻 Rₛ = 50Ω，负载电阻 R_L 可变</p>
+                        <p class="formula">功率公式：P_L = Uₛ²R_L/(Rₛ+R_L)²</p>
+                    </div>
+                    
+                    <div class="demo-step" id="circuitStep2">
+                        <p><strong>步骤2：配方准备</strong></p>
+                        <p>将功率公式重写为：</p>
+                        <p class="formula">P_L = Uₛ² / [(Rₛ+R_L)²/R_L]</p>
+                        <p>令 t = (Rₛ+R_L)²/R_L，配方目标：找到使 t 最小的 R_L</p>
+                    </div>
+                    
+                    <div class="demo-step" id="circuitStep3">
+                        <p><strong>步骤3：完成配方</strong></p>
+                        <p>对 t 进行配方：</p>
+                        <p class="formula">t = (Rₛ+R_L)²/R_L = R_L + 2Rₛ + Rₛ²/R_L</p>
+                        <p>配方得：</p>
+                        <p class="formula">t = (√R_L - Rₛ/√R_L)² + 4Rₛ</p>
+                    </div>
+                    
+                    <div class="demo-step" id="circuitStep4">
+                        <p><strong>步骤4：找到最优解</strong></p>
+                        <p>当 (√R_L - Rₛ/√R_L)² = 0 时，t 最小，即 R_L = Rₛ</p>
+                        <p class="formula">最大功率：P_max = Uₛ²/(4Rₛ) = 100/(4×50) = 0.5W</p>
+                        <p>✅ 配方法结论：负载电阻等于电源内阻时获得最大功率</p>
+                    </div>
+                    
+                    <div class="demo-controls">
+                        <button class="demo-btn" id="circuitPrevStep">上一步</button>
+                        <button class="demo-btn" id="circuitNextStep">下一步</button>
+                        <button class="demo-btn" id="circuitResetDemo">重新开始</button>
+                    </div>
+                </div>
+            </div>
+            
+            <h3>特点</h3>
+            <ul>
+                <li>优点：<span class="highlight">低阶便捷、快速求极值</span>（适合2-3阶二次型）</li>
+                <li>局限：<span class="highlight">结果不唯一、无明确物理意义</span>（依赖变换路径）</li>
+            </ul>
+        </div>
+
+        <!-- 正交变换介绍 -->
+        <div class="section" id="zhengjiao">
+            <h2>三、正交变换：提取固有属性的物理工具</h2>
+            <h3>核心思想</h3>
+            <p>利用实对称矩阵<span class="highlight">正交对角化</span>，通过正交变换 <span class="formula">x=Qy</span>（<span class="formula">QᵀQ=I</span>）化为标准形：</p>
+            <p class="formula">f(x)=xᵀAx = yᵀ(QᵀAQ)y = λ₁y₁²+λ₂y₂²+…+λₙyₙ²</p>
+            <p>其中<span class="formula">λᵢ</span>为<span class="highlight">特征值</span>（固有属性），<span class="formula">Q</span>为特征向量矩阵（正交模态）。</p>
+            
+            <h3>工程应用</h3>
+            <div class="case-study">
+                <p><strong>案例：结构振动模态分析</strong></p>
+                <p>简支梁振动方程 <span class="formula">Kφ=ω²Mφ</span>，正交变换得<span class="formula">ωᵢ²</span>（固有频率）和<span class="formula">φᵢ</span>（主振型），指导减振设计。</p>
+                
+                <!-- 正交变换动画演示 -->
+                <div class="demo-container">
+                    <h3>动画演示：正交变换提取模态参数</h3>
+                    <div class="step-indicator">
+                        <div class="step-dot active" data-step="1"></div>
+                        <div class="step-dot" data-step="2"></div>
+                        <div class="step-dot" data-step="3"></div>
+                        <div class="step-dot" data-step="4"></div>
+                    </div>
+                    
+                    <div class="demo-canvas" id="vibrationCanvas">
+                        <!-- 结构振动动画将通过JS动态绘制 -->
+                    </div>
+                    
+                    <div class="demo-step active" id="vibrationStep1">
+                        <p><strong>步骤1：简支梁模型</strong></p>
+                        <p>简支梁离散为3个质点，刚度矩阵 K 和质量矩阵 M 为：</p>
+                        <p class="formula">K = [[2, -1, 0], [-1, 2, -1], [0, -1, 2]]</p>
+                        <p class="formula">M = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]</p>
+                        <p>广义特征值问题：Kφ = ω²Mφ</p>
+                    </div>
+                    
+                    <div class="demo-step" id="vibrationStep2">
+                        <p><strong>步骤2：正交变换对角化</strong></p>
+                        <p>对刚度矩阵 K 进行正交对角化：</p>
+                        <p class="formula">QᵀKQ = Λ = diag(λ₁, λ₂, λ₃)</p>
+                        <p>其中 Q 由特征向量组成，Λ 为特征值对角阵</p>
+                    </div>
+                    
+                    <div class="demo-step" id="vibrationStep3">
+                        <p><strong>步骤3：计算特征值与特征向量</strong></p>
+                        <p>求解特征值问题得：</p>
+                        <p class="formula">λ₁ = 0.5858, λ₂ = 2.0000, λ₃ = 3.4142</p>
+                        <p class="formula">固有频率：ω₁ = √λ₁ = 0.765, ω₂ = √λ₂ = 1.414, ω₃ = √λ₃ = 1.848</p>
+                    </div>
+                    
+                    <div class="demo-step" id="vibrationStep4">
+                        <p><strong>步骤4：振动模态可视化</strong></p>
+                        <p>三个主振型（特征向量）对应不同振动模式：</p>
+                        <p>1. 一阶模态：同相振动（最低频率）</p>
+                        <p>2. 二阶模态：中点固定，两端反相</p>
+                        <p>3. 三阶模态：交替反相（最高频率）</p>
+                        <p>✅ 正交变换结论：提取了系统的固有振动特性</p>
+                    </div>
+                    
+                    <div class="demo-controls">
+                        <button class="demo-btn" id="vibrationPrevStep">上一步</button>
+                        <button class="demo-btn" id="vibrationNextStep">下一步</button>
+                        <button class="demo-btn" id="vibrationResetDemo">重新开始</button>
+                    </div>
+                </div>
+            </div>
+            
+            <h3>特点</h3>
+            <ul>
+                <li>优点：<span class="highlight">结果唯一（特征值）、保留几何意义</span>（正交模态）</li>
+                <li>局限：<span class="highlight">计算复杂（需特征值分解）</span>（依赖数值软件）</li>
+            </ul>
+        </div>
+
+        <!-- 对比表格 -->
+        <div class="section">
+            <h2>四、工程应用对比</h2>
+            <table class="comparison-table" id="compareTable">
+                <tr>
+                    <th>对比维度</th>
+                    <th>配方法</th>
+                    <th>正交变换法</th>
+                </tr>
+                <tr>
+                    <td>核心价值</td>
+                    <td>灵活化简、快速求极值<br><span class="formula">（定性分析）</span></td>
+                    <td>提取固有属性（特征值/模态）<br><span class="formula">（定量设计）</span></td>
+                </tr>
+                <tr>
+                    <td>工程首选场景</td>
+                    <td>低阶二次型、临时估算<br>（如简单优化问题）</td>
+                    <td>模态分析、主成分提取<br>（如结构动力学、PCA）</td>
+                </tr>
+                <tr>
+                    <td>结果意义</td>
+                    <td>简化代数表达<br><span class="formula">（系数依赖变换）</span></td>
+                    <td>固有物理参数<br><span class="formula">（特征值=能量主分量）</span></td>
+                </tr>
+                <tr>
+                    <td>计算复杂度</td>
+                    <td>低（手工友好）</td>
+                    <td>高（需数值软件）</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- 总结 -->
+        <div class="section" id="summary">
+            <h2>五、总结：方法选择依据</h2>
+            <p>✅ <span class="highlight">配方法</span>：侧重<span class="formula">代数简化</span>，适合快速估算、低阶优化（如临时求极值）。</p>
+            <p>✅ <span class="highlight">正交变换</span>：侧重<span class="formula">物理本质</span>，适合提取系统固有特征（如模态、主成分）。</p>
+            <p class="formula">工程启示：二者互补，定性分析用配方法，定量设计用正交变换！</p>
+        </div>
+    </div>
+
+    <script>
+        // 页面加载动画
+        document.addEventListener('DOMContentLoaded', function() {
+            const sections = [
+                'intro', 'peifang', 'zhengjiao', 
+                'compareTable', 'summary'
+            ];
+            let delay = 500;
+            
+            sections.forEach(id => {
+                setTimeout(() => {
+                    const el = document.getElementById(id);
+                    if (el.classList.contains('section')) {
+                        el.classList.add('show');
+                    } else if (el.classList.contains('comparison-table')) {
+                        el.classList.add('show');
+                    }
+                    // 表格行逐个显示
+                    if (id === 'compareTable') {
+                        const rows = el.querySelectorAll('tr');
+                        rows.forEach((row, index) => {
+                            setTimeout(() => {
+                                row.style.opacity = 1;
+                                row.style.transform = 'translateX(0)';
+                            }, index * 200);
+                        });
+                    }
+                }, delay);
+                delay += 1000;
+            });
+            
+            // 初始化动画演示
+            initCircuitDemo();
+            initVibrationDemo();
+        });
+
+        // 配方法电路演示
+        let circuitStep = 1;
+        const totalCircuitSteps = 4;
+        let circuitAnimationInterval;
+        
+        function initCircuitDemo() {
+            drawCircuit();
+            
+            // 绑定电路演示按钮事件
+            const circuitNextBtn = document.getElementById('circuitNextStep');
+            const circuitPrevBtn = document.getElementById('circuitPrevStep');
+            const circuitResetBtn = document.getElementById('circuitResetDemo');
+            
+            if (circuitNextBtn) {
+                circuitNextBtn.addEventListener('click', () => {
+                    if (circuitStep < totalCircuitSteps) {
+                        circuitStep++;
+                        updateCircuitDemo();
+                    }
+                });
+            }
+            
+            if (circuitPrevBtn) {
+                circuitPrevBtn.addEventListener('click', () => {
+                    if (circuitStep > 1) {
+                        circuitStep--;
+                        updateCircuitDemo();
+                    }
+                });
+            }
+            
+            if (circuitResetBtn) {
+                circuitResetBtn.addEventListener('click', () => {
+                    circuitStep = 1;
+                    updateCircuitDemo();
+                });
+            }
+        }
+        
+        function updateCircuitDemo() {
+            // 更新步骤指示器
+            const circuitStepIndicator = document.querySelector('#peifang .step-indicator');
+            if (circuitStepIndicator) {
+                circuitStepIndicator.querySelectorAll('.step-dot').forEach((dot, index) => {
+                    dot.classList.toggle('active', index + 1 === circuitStep);
+                });
+            }
+            
+            // 更新步骤内容
+            for (let i = 1; i <= totalCircuitSteps; i++) {
+                const step = document.getElementById(`circuitStep${i}`);
+                if (step) {
+                    step.classList.toggle('active', i === circuitStep);
+                }
+            }
+            
+            // 更新按钮状态
+            const circuitPrevBtn = document.getElementById('circuitPrevStep');
+            const circuitNextBtn = document.getElementById('circuitNextStep');
+            if (circuitPrevBtn) circuitPrevBtn.disabled = circuitStep === 1;
+            if (circuitNextBtn) circuitNextBtn.disabled = circuitStep === totalCircuitSteps;
+            
+            // 更新电路图
+            drawCircuit();
+        }
+        
+        function drawCircuit() {
+            const canvas = document.getElementById('circuitCanvas');
+            if (!canvas) return;
+            
+            canvas.innerHTML = '';
+            
+            const width = canvas.clientWidth;
+            const height = canvas.clientHeight;
+            
+            // 绘制电路背景
+            const bg = document.createElement('div');
+            bg.style.position = 'absolute';
+            bg.style.width = '100%';
+            bg.style.height = '100%';
+            bg.style.backgroundColor = '#f8f9fa';
+            canvas.appendChild(bg);
+            
+            // 根据步骤绘制不同的电路状态
+            if (circuitStep === 1) {
+                // 初始电路
+                drawCircuitElement(canvas, '电压源', width/2 - 100, height/2, 40, 40, 'voltage-source pulse', 'Uₛ');
+                drawCircuitElement(canvas, '电阻', width/2, height/2 - 10, 60, 20, 'resistor', 'Rₛ');
+                drawCircuitElement(canvas, '负载', width/2 + 100, height/2 - 10, 60, 20, 'resistor', 'R_L');
+                drawWire(canvas, width/2 - 60, height/2 + 20, width/2 + 160, height/2 + 20, 2);
+                drawWire(canvas, width/2 - 60, height/2 - 20, width/2 + 160, height/2 - 20, 2);
+                
+                // 功率显示
+                const powerDisplay = document.createElement('div');
+                powerDisplay.style.position = 'absolute';
+                powerDisplay.style.left = '10px';
+                powerDisplay.style.top = '10px';
+                powerDisplay.style.backgroundColor = 'white';
+                powerDisplay.style.padding = '10px';
+                powerDisplay.style.borderRadius = '5px';
+                powerDisplay.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
+                powerDisplay.innerHTML = `<strong>当前功率: P = ${calculatePower(50).toFixed(3)}W</strong>`;
+                canvas.appendChild(powerDisplay);
+            } else if (circuitStep === 2 || circuitStep === 3) {
+                // 配方过程
+                const rl = circuitStep === 2 ? 50 : 100; // 示例值
+                drawCircuitElement(canvas, '电压源', width/2 - 100, height/2, 40, 40, 'voltage-source', 'Uₛ');
+                drawCircuitElement(canvas, '电阻', width/2, height/2 - 10, 60, 20, 'resistor', 'Rₛ');
+                drawCircuitElement(canvas, '负载', width/2 + 100, height/2 - 10, 60, 20, 'resistor pulse', `R_L=${rl}Ω`);
+                drawWire(canvas, width/2 - 60, height/2 + 20, width/2 + 160, height/2 + 20, 2);
+                drawWire(canvas, width/2 - 60, height/2 - 20, width/2 + 160, height/2 - 20, 2);
+                
+                // 公式显示
+                const formulaDisplay = document.createElement('div');
+                formulaDisplay.style.position = 'absolute';
+                formulaDisplay.style.left = '10px';
+                formulaDisplay.style.top = '10px';
+                formulaDisplay.style.backgroundColor = 'white';
+                formulaDisplay.style.padding = '10px';
+                formulaDisplay.style.borderRadius = '5px';
+                formulaDisplay.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
+                formulaDisplay.innerHTML = `<strong>配方过程:</strong><br>t = R_L + 2Rₛ + Rₛ²/R_L`;
+                canvas.appendChild(formulaDisplay);
+            } else if (circuitStep === 4) {
+                // 最优解
+                drawCircuitElement(canvas, '电压源', width/2 - 100, height/2, 40, 40, 'voltage-source', 'Uₛ');
+                drawCircuitElement(canvas, '电阻', width/2, height/2 - 10, 60, 20, 'resistor', 'Rₛ=50Ω');
+                drawCircuitElement(canvas, '负载', width/2 + 100, height/2 - 10, 60, 20, 'resistor pulse', 'R_L=50Ω');
+                drawWire(canvas, width/2 - 60, height/2 + 20, width/2 + 160, height/2 + 20, 2);
+                drawWire(canvas, width/2 - 60, height/2 - 20, width/2 + 160, height/2 - 20, 2);
+                
+                // 最大功率显示
+                const maxPowerDisplay = document.createElement('div');
+                maxPowerDisplay.style.position = 'absolute';
+                maxPowerDisplay.style.left = '10px';
+                maxPowerDisplay.style.top = '10px';
+                maxPowerDisplay.style.backgroundColor = '#d4edda';
+                maxPowerDisplay.style.padding = '10px';
+                maxPowerDisplay.style.borderRadius = '5px';
+                maxPowerDisplay.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
+                maxPowerDisplay.innerHTML = `<strong>最大功率: P_max = 0.5W</strong><br>当 R_L = Rₛ 时取得`;
+                canvas.appendChild(maxPowerDisplay);
+            }
+        }
+        
+        function drawCircuitElement(canvas, type, x, y, w, h, className, text) {
+            const element = document.createElement('div');
+            element.className = `circuit-element ${className}`;
+            element.style.left = `${x}px`;
+            element.style.top = `${y}px`;
+            element.style.width = `${w}px`;
+            element.style.height = `${h}px`;
+            
+            if (text) {
+                const textEl = document.createElement('div');
+                textEl.style.position = 'absolute';
+                textEl.style.width = '100%';
+                textEl.style.textAlign = 'center';
+                textEl.style.top = '50%';
+                textEl.style.transform = 'translateY(-50%)';
+                textEl.style.color = 'white';
+                textEl.style.fontWeight = 'bold';
+                textEl.textContent = text;
+                element.appendChild(textEl);
+            }
+            
+            canvas.appendChild(element);
+        }
+        
+        function drawWire(canvas, x1, y1, x2, y2, thickness) {
+            const wire = document.createElement('div');
+            wire.className = 'circuit-element wire';
+            wire.style.left = `${Math.min(x1, x2)}px`;
+            wire.style.top = `${y1}px`;
+            wire.style.width = `${Math.abs(x2 - x1)}px`;
+            wire.style.height = `${thickness}px`;
+            canvas.appendChild(wire);
+        }
+        
+        function calculatePower(rl) {
+            const us = 10; // 电压
+            const rs = 50; // 内阻
+            return (us * us * rl) / ((rs + rl) * (rs + rl));
+        }
+
+        // 正交变换振动演示
+        let vibrationStep = 1;
+        const totalVibrationSteps = 4;
+        let vibrationInterval = null;
+        
+        function initVibrationDemo() {
+            drawVibration();
+            
+            // 绑定振动演示按钮事件
+            const vibrationNextBtn = document.getElementById('vibrationNextStep');
+            const vibrationPrevBtn = document.getElementById('vibrationPrevStep');
+            const vibrationResetBtn = document.getElementById('vibrationResetDemo');
+            
+            if (vibrationNextBtn) {
+                vibrationNextBtn.addEventListener('click', () => {
+                    if (vibrationStep < totalVibrationSteps) {
+                        vibrationStep++;
+                        updateVibrationDemo();
+                    }
+                });
+            }
+            
+            if (vibrationPrevBtn) {
+                vibrationPrevBtn.addEventListener('click', () => {
+                    if (vibrationStep > 1) {
+                        vibrationStep--;
+                        updateVibrationDemo();
+                    }
+                });
+            }
+            
+            if (vibrationResetBtn) {
+                vibrationResetBtn.addEventListener('click', () => {
+                    vibrationStep = 1;
+                    updateVibrationDemo();
+                });
+            }
+        }
+        
+        function updateVibrationDemo() {
+            // 更新步骤指示器
+            const vibrationStepIndicator = document.querySelector('#zhengjiao .step-indicator');
+            if (vibrationStepIndicator) {
+                vibrationStepIndicator.querySelectorAll('.step-dot').forEach((dot, index) => {
+                    dot.classList.toggle('active', index + 1 === vibrationStep);
+                });
+            }
+            
+            // 更新步骤内容
+            for (let i = 1; i <= totalVibrationSteps; i++) {
+                const step = document.getElementById(`vibrationStep${i}`);
+                if (step) {
+                    step.classList.toggle('active', i === vibrationStep);
+                }
+            }
+            
+            // 更新按钮状态
+            const vibrationPrevBtn = document.getElementById('vibrationPrevStep');
+            const vibrationNextBtn = document.getElementById('vibrationNextStep');
+            if (vibrationPrevBtn) vibrationPrevBtn.disabled = vibrationStep === 1;
+            if (vibrationNextBtn) vibrationNextBtn.disabled = vibrationStep === totalVibrationSteps;
+            
+            // 更新振动图
+            drawVibration();
+        }
+        
+        function drawVibration() {
+            const canvas = document.getElementById('vibrationCanvas');
+            if (!canvas) return;
+            
+            canvas.innerHTML = '';
+            
+            const width = canvas.clientWidth;
+            const height = canvas.clientHeight;
+            
+            // 绘制背景
+            const bg = document.createElement('div');
+            bg.style.position = 'absolute';
+            bg.style.width = '100%';
+            bg.style.height = '100%';
+            bg.style.backgroundColor = '#f8f9fa';
+            canvas.appendChild(bg);
+            
+            // 停止之前的动画
+            if (vibrationInterval) {
+                clearInterval(vibrationInterval);
+                vibrationInterval = null;
+            }
+            
+            if (vibrationStep === 1) {
+                // 初始静止状态 - 简支梁模型
+                const beam = document.createElement('div');
+                beam.className = 'beam';
+                beam.style.position = 'absolute';
+                beam.style.left = '10%';
+                beam.style.top = '50%';
+                canvas.appendChild(beam);
+                
+                // 绘制两个支座
+                const support1 = document.createElement('div');
+                support1.className = 'support';
+                support1.style.left = '10%';
+                support1.style.top = 'calc(50% + 10px)';
+                canvas.appendChild(support1);
+                
+                const support2 = document.createElement('div');
+                support2.className = 'support';
+                support2.style.left = '90%';
+                support2.style.top = 'calc(50% + 10px)';
+                canvas.appendChild(support2);
+                
+                // 绘制三个质点
+                const points = [
+                    {x: 0.25, label: '质点1'},
+                    {x: 0.5, label: '质点2'},
+                    {x: 0.75, label: '质点3'}
+                ];
+                
+                points.forEach(point => {
+                    const pointElement = document.createElement('div');
+                    pointElement.className = 'vibration-point';
+                    pointElement.style.left = `${point.x * 80 + 10}%`;
+                    pointElement.style.top = '50%';
+                    canvas.appendChild(pointElement);
+                    
+                    const label = document.createElement('div');
+                    label.className = 'point-label';
+                    label.style.left = `${point.x * 80 + 10}%`;
+                    label.style.top = '45%';
+                    label.textContent = point.label;
+                    canvas.appendChild(label);
+                });
+                
+                // 显示矩阵
+                const matrixDisplay = document.createElement('div');
+                matrixDisplay.style.position = 'absolute';
+                matrixDisplay.style.left = '10px';
+                matrixDisplay.style.top = '10px';
+                matrixDisplay.style.backgroundColor = 'white';
+                matrixDisplay.style.padding = '10px';
+                matrixDisplay.style.borderRadius = '5px';
+                matrixDisplay.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
+                matrixDisplay.innerHTML = `
+                    <strong>刚度矩阵 K:</strong><br>
+                    [2, -1, 0]<br>
+                    [-1, 2, -1]<br>
+                    [0, -1, 2]
+                `;
+                canvas.appendChild(matrixDisplay);
+                
+                const massDisplay = document.createElement('div');
+                massDisplay.style.position = 'absolute';
+                massDisplay.style.right = '10px';
+                massDisplay.style.top = '10px';
+                massDisplay.style.backgroundColor = 'white';
+                massDisplay.style.padding = '10px';
+                massDisplay.style.borderRadius = '5px';
+                massDisplay.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
+                massDisplay.innerHTML = `
+                    <strong>质量矩阵 M:</strong><br>
+                    [1, 0, 0]<br>
+                    [0, 1, 0]<br>
+                    [0, 0, 1]
+                `;
+                canvas.appendChild(massDisplay);
+                
+            } else if (vibrationStep === 2) {
+                // 正交变换过程
+                const formulaDisplay = document.createElement('div');
+                formulaDisplay.style.position = 'absolute';
+                formulaDisplay.style.left = '50%';
+                formulaDisplay.style.top = '50%';
+                formulaDisplay.style.transform = 'translate(-50%, -50%)';
+                formulaDisplay.style.backgroundColor = 'white';
+                formulaDisplay.style.padding = '20px';
+                formulaDisplay.style.borderRadius = '10px';
+                formulaDisplay.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
+                formulaDisplay.style.textAlign = 'center';
+                formulaDisplay.style.maxWidth = '80%';
+                formulaDisplay.innerHTML = `
+                    <h3 style="margin-bottom: 15px; color: #3498db;">正交对角化</h3>
+                    <div style="font-size: 20px; font-weight: bold; margin: 10px 0;">
+                        QᵀKQ = Λ = diag(λ₁, λ₂, λ₃)
+                    </div>
+                    <p style="margin-top: 10px;">其中 Q 由特征向量组成，Λ 为特征值对角阵</p>
+                `;
+                canvas.appendChild(formulaDisplay);
+                
+                // 绘制特征向量示意
+                const vectors = [
+                    {x: 0.2, y: 0.3, label: 'φ₁', color: '#e74c3c'},
+                    {x: 0.5, y: 0.5, label: 'φ₂', color: '#2ecc71'},
+                    {x: 0.8, y: 0.7, label: 'φ₃', color: '#9b59b6'}
+                ];
+                
+                vectors.forEach(vector => {
+                    const vectorEl = document.createElement('div');
+                    vectorEl.className = 'eigenvector-line';
+                    vectorEl.style.left = `${vector.x * 80 + 10}%`;
+                    vectorEl.style.top = `${vector.y * 100}%`;
+                    vectorEl.style.width = '40px';
+                    vectorEl.style.backgroundColor = vector.color;
+                    
+                    // 添加向量箭头
+                    vectorEl.innerHTML = '<div style="position: absolute; right: -5px; top: -5px; width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 5px solid ' + vector.color + ';"></div>';
+                    canvas.appendChild(vectorEl);
+                    
+                    const label = document.createElement('div');
+                    label.style.position = 'absolute';
+                    label.style.left = `${vector.x * 80 + 12}%`;
+                    label.style.top = `${vector.y * 100 - 20}%`;
+                    label.style.color = vector.color;
+                    label.style.fontWeight = 'bold';
+                    label.textContent = vector.label;
+                    canvas.appendChild(label);
+                });
+                
+            } else if (vibrationStep === 3) {
+                // 特征值显示
+                const eigenvalues = [
+                    {x: 0.2, y: 0.3, value: 'λ₁ = 0.5858', freq: 'ω₁ = 0.765 rad/s'},
+                    {x: 0.5, y: 0.5, value: 'λ₂ = 2.0000', freq: 'ω₂ = 1.414 rad/s'},
+                    {x: 0.8, y: 0.7, value: 'λ₃ = 3.4142', freq: 'ω₃ = 1.848 rad/s'}
+                ];
+                
+                eigenvalues.forEach(eig => {
+                    const display = document.createElement('div');
+                    display.className = 'eigenvalue-display';
+                    display.style.left = `${eig.x * 100}%`;
+                    display.style.top = `${eig.y * 100}%`;
+                    display.innerHTML = `<strong>${eig.value}</strong><br>${eig.freq}`;
+                    canvas.appendChild(display);
+                });
+                
+                // 添加特征值说明
+                const explanation = document.createElement('div');
+                explanation.style.position = 'absolute';
+                explanation.style.left = '50%';
+                explanation.style.top = '80%';
+                explanation.style.transform = 'translateX(-50%)';
+                explanation.style.backgroundColor = 'white';
+                explanation.style.padding = '10px';
+                explanation.style.borderRadius = '5px';
+                explanation.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
+                explanation.style.textAlign = 'center';
+                explanation.innerHTML = '特征值 λᵢ 对应固有频率平方 ωᵢ²';
+                canvas.appendChild(explanation);
+                
+            } else if (vibrationStep === 4) {
+                // 振动模态
+                startVibrationAnimation(canvas);
+            }
+        }
+        
+        function startVibrationAnimation(canvas) {
+            const width = canvas.clientWidth;
+            const height = canvas.clientHeight;
+            
+            // 清空画布
+            canvas.innerHTML = '';
+            
+            // 绘制梁
+            const beam = document.createElement('div');
+            beam.className = 'beam';
+            beam.style.position = 'absolute';
+            beam.style.left = '10%';
+            beam.style.top = '50%';
+            canvas.appendChild(beam);
+            
+            // 支座
+            const support1 = document.createElement('div');
+            support1.className = 'support';
+            support1.style.left = '10%';
+            support1.style.top = 'calc(50% + 10px)';
+            canvas.appendChild(support1);
+            
+            const support2 = document.createElement('div');
+            support2.className = 'support';
+            support2.style.left = '90%';
+            support2.style.top = 'calc(50% + 10px)';
+            canvas.appendChild(support2);
+            
+            // 模态标签
+            const modalLabels = [
+                {text: '一阶模态：同相振动', top: '20%'},
+                {text: '二阶模态：中点固定，两端反相', top: '40%'},
+                {text: '三阶模态：交替反相', top: '60%'}
+            ];
+            
+            modalLabels.forEach(label => {
+                const labelEl = document.createElement('div');
+                labelEl.className = 'modal-label';
+                labelEl.style.left = '10%';
+                labelEl.style.top = label.top;
+                labelEl.textContent = label.text;
+                canvas.appendChild(labelEl);
+            });
+            
+            // 创建三个模态的振动点
+            const modes = [
+                { // 一阶模态：同相振动
+                    points: [
+                        {x: 0.25, phase: 0, amplitude: 20},
+                        {x: 0.5, phase: 0, amplitude: 20},
+                        {x: 0.75, phase: 0, amplitude: 20}
+                    ],
+                    top: '25%',
+                    color: '#3498db',
+                    frequency: 0.5
+                },
+                { // 二阶模态：中点固定，两端反相
+                    points: [
+                        {x: 0.25, phase: 0, amplitude: 30},
+                        {x: 0.5, phase: Math.PI, amplitude: 0},
+                        {x: 0.75, phase: Math.PI, amplitude: 30}
+                    ],
+                    top: '45%',
+                    color: '#2ecc71',
+                    frequency: 1.0
+                },
+                { // 三阶模态：交替反相
+                    points: [
+                        {x: 0.25, phase: 0, amplitude: 25},
+                        {x: 0.5, phase: Math.PI, amplitude: 25},
+                        {x: 0.75, phase: 0, amplitude: 25}
+                    ],
+                    top: '65%',
+                    color: '#9b59b6',
+                    frequency: 1.5
+                }
+            ];
+            
+            const points = [];
+            
+            // 创建振动点
+            modes.forEach((mode, modeIndex) => {
+                mode.points.forEach(point => {
+                    const pointEl = document.createElement('div');
+                    pointEl.className = 'vibration-point';
+                    pointEl.style.left = `${point.x * 80 + 10}%`;
+                    pointEl.style.top = mode.top;
+                    pointEl.style.backgroundColor = mode.color;
+                    
+                    // 存储动画参数
+                    pointEl.dataset.phase = point.phase;
+                    pointEl.dataset.amplitude = point.amplitude;
+                    pointEl.dataset.frequency = mode.frequency;
+                    pointEl.dataset.originalTop = mode.top;
+                    
+                    canvas.appendChild(pointEl);
+                    points.push(pointEl);
+                });
+            });
+            
+            // 开始振动动画
+            let time = 0;
+            vibrationInterval = setInterval(() => {
+                time += 0.05;
+                
+                points.forEach(point => {
+                    const phase = parseFloat(point.dataset.phase);
+                    const amplitude = parseFloat(point.dataset.amplitude);
+                    const frequency = parseFloat(point.dataset.frequency);
+                    const originalTop = point.dataset.originalTop;
+                    
+                    if (amplitude > 0) {
+                        const displacement = amplitude * Math.sin(time * frequency + phase);
+                        point.style.top = `calc(${originalTop} + ${displacement}px)`;
+                    }
+                });
+            }, 50);
+        }
+    </script>
+</body>
+</html>

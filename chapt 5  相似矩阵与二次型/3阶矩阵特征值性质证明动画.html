@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3阶矩阵特征值性质证明</title>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3a0ca3;
+            --accent: #4895ef;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --success: #4cc9f0;
+            --warning: #f72585;
+            --trace: #e63946;
+            --det: #2a9d8f;
+            --eigen: #7209b7;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+            color: #212529;
+            line-height: 1.8;
+            padding: 20px;
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        header {
+            text-align: center;
+            padding: 40px 0;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+            color: #3a0ca3;
+            font-weight: 800;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .subtitle {
+            font-size: 1.8rem;
+            max-width: 900px;
+            margin: 0 auto;
+            color: #4361ee;
+            font-weight: 700;
+        }
+        
+        .theorem-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+            border-left: 5px solid #4895ef;
+        }
+        
+        .theorem-title {
+            font-size: 2.2rem;
+            margin-bottom: 25px;
+            color: #4361ee;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+        }
+        
+        .theorem-title i {
+            margin-right: 15px;
+            font-size: 2.5rem;
+        }
+        
+        .matrix {
+            display: inline-block;
+            margin: 15px 0;
+            border-collapse: collapse;
+        }
+        
+        .matrix-row {
+            display: flex;
+        }
+        
+        .matrix-element {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 2px;
+            background: white;
+            border: 3px solid #4361ee;
+            border-radius: 8px;
+            font-size: 1.6rem;
+            font-weight: 800;
+        }
+        
+        .bracket {
+            font-size: 3rem;
+            font-weight: 900;
+            color: #212529;
+            margin: 0 10px;
+        }
+        
+        .formula {
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            background: rgba(72, 149, 239, 0.1);
+            border: 2px solid #4895ef;
+        }
+        
+        .trace {
+            color: #e63946;
+            background: rgba(230, 57, 70, 0.1);
+            border-color: #e63946;
+        }
+        
+        .determinant {
+            color: #2a9d8f;
+            background: rgba(42, 157, 143, 0.1);
+            border-color: #2a9d8f;
+        }
+        
+        .eigenvalue {
+            color: #7209b7;
+            background: rgba(114, 9, 183, 0.1);
+            border-color: #7209b7;
+        }
+        
+        .proof-step {
+            margin: 25px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #4895ef;
+        }
+        
+        .step-title {
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+            color: #3a0ca3;
+            font-weight: 800;
+        }
+        
+        .highlight {
+            background: linear-gradient(120deg, rgba(72, 149, 239, 0.3) 0%, transparent 100%);
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-weight: 800;
+            color: #3a0ca3;
+        }
+        
+        .animation-container {
+            height: 300px;
+            position: relative;
+            margin: 25px 0;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 25px;
+        }
+        
+        button {
+            background: #4361ee;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 1.3rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+        }
+        
+        button:hover {
+            background: #3a0ca3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.4);
+        }
+        
+        button i {
+            margin-right: 10px;
+        }
+        
+        .conclusion {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 40px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            border: 3px solid #4cc9f0;
+        }
+        
+        .conclusion-title {
+            font-size: 2.2rem;
+            margin-bottom: 20px;
+            color: #4cc9f0;
+            font-weight: 800;
+            text-align: center;
+        }
+        
+        .conclusion-content {
+            font-size: 1.6rem;
+            font-weight: 700;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        @media (max-width: 768px) {
+            h1 { font-size: 2.5rem; }
+            .subtitle { font-size: 1.4rem; }
+            .theorem-title { font-size: 1.8rem; }
+            .formula { font-size: 1.4rem; }
+            .matrix-element { width: 50px; height: 50px; font-size: 1.3rem; }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>3阶矩阵特征值性质证明</h1>
+            <p class="subtitle">特征值之和等于矩阵的迹 · 特征值之积等于矩阵的行列式</p>
+        </header>
+        
+        <div class="theorem-card">
+            <h2 class="theorem-title"><i class="fas fa-calculator"></i> 预备知识</h2>
+            <p>设3阶矩阵 A 为：</p>
+            <div class="matrix">
+                <div class="matrix-row">
+                    <span class="bracket">[</span>
+                    <div class="matrix-element">a₁₁</div>
+                    <div class="matrix-element">a₁₂</div>
+                    <div class="matrix-element">a₁₃</div>
+                    <span class="bracket">]</span>
+                </div>
+                <div class="matrix-row">
+                    <span class="bracket">[</span>
+                    <div class="matrix-element">a₂₁</div>
+                    <div class="matrix-element">a₂₂</div>
+                    <div class="matrix-element">a₂₃</div>
+                    <span class="bracket">]</span>
+                </div>
+                <div class="matrix-row">
+                    <span class="bracket">[</span>
+                    <div class="matrix-element">a₃₁</div>
+                    <div class="matrix-element">a₃₂</div>
+                    <div class="matrix-element">a₃₃</div>
+                    <span class="bracket">]</span>
+                </div>
+            </div>
+            
+            <p>矩阵 A 的特征值为 λ₁, λ₂, λ₃，特征多项式定义为：</p>
+            <div class="formula">
+                f(λ) = det(λI - A)
+            </div>
+            
+            <p>根据特征多项式理论，3阶矩阵的特征多项式可表示为：</p>
+            <div class="formula eigenvalue">
+                f(λ) = λ³ - (a₁₁+a₂₂+a₃₃)λ² + (a₁₁a₂₂+a₁₁a₃₃+a₂₂a₃₃-a₁₂a₂₁-a₁₃a₃₁-a₂₃a₃₂)λ - det(A)
+            </div>
+        </div>
+        
+        <div class="theorem-card">
+            <h2 class="theorem-title"><i class="fas fa-plus-circle"></i> 性质一证明：特征值之和等于矩阵的迹</h2>
+            
+            <div class="proof-step">
+                <h3 class="step-title">步骤1：特征多项式与特征值关系</h3>
+                <p>特征多项式 f(λ) = det(λI - A) 的根就是矩阵 A 的特征值 λ₁, λ₂, λ₃。</p>
+                <p>根据多项式根与系数的关系（韦达定理），对于三次方程：</p>
+                <div class="formula">
+                    λ³ + c₁λ² + c₂λ + c₃ = 0
+                </div>
+                <p>三个根满足：</p>
+                <div class="formula eigenvalue">
+                    λ₁ + λ₂ + λ₃ = -c₁
+                </div>
+            </div>
+            
+            <div class="proof-step">
+                <h3 class="step-title">步骤2：对比特征多项式系数</h3>
+                <p>矩阵 A 的特征多项式为：</p>
+                <div class="formula">
+                    f(λ) = λ³ - (a₁₁+a₂₂+a₃₃)λ² + ... - det(A)
+                </div>
+                <p>与标准三次方程对比，系数 c₁ = -(a₁₁+a₂₂+a₃₃)</p>
+                <p>根据韦达定理：</p>
+                <div class="formula trace">
+                    λ₁ + λ₂ + λ₃ = -c₁ = a₁₁ + a₂₂ + a₃₃
+                </div>
+                <p>而 a₁₁ + a₂₂ + a₃₃ 正是矩阵 A 的迹 tr(A)</p>
+            </div>
+            
+            <div class="proof-step">
+                <h3 class="step-title">步骤3：得出结论</h3>
+                <div class="formula trace">
+                    λ₁ + λ₂ + λ₃ = tr(A) = a₁₁ + a₂₂ + a₃₃
+                </div>
+                <p>✅ 特征值之和等于矩阵的迹，证明完成！</p>
+            </div>
+            
+            <div class="animation-container">
+                <canvas id="traceAnimation"></canvas>
+            </div>
+        </div>
+        
+        <div class="theorem-card">
+            <h2 class="theorem-title"><i class="fas fa-times-circle"></i> 性质二证明：特征值之积等于矩阵的行列式</h2>
+            
+            <div class="proof-step">
+                <h3 class="step-title">步骤1：特征多项式常数项分析</h3>
+                <p>特征多项式 f(λ) = det(λI - A) 的常数项为 f(0)</p>
+                <div class="formula">
+                    f(0) = det(0·I - A) = det(-A) = (-1)³ det(A) = -det(A)
+                </div>
+                <p>所以特征多项式的常数项为 -det(A)</p>
+            </div>
+            
+            <div class="proof-step">
+                <h3 class="step-title">步骤2：利用韦达定理</h3>
+                <p>特征多项式 f(λ) = λ³ + c₁λ² + c₂λ + c₃ 的常数项为 c₃</p>
+                <p>从步骤1可知 c₃ = -det(A)</p>
+                <p>根据韦达定理，三个根的乘积为：</p>
+                <div class="formula eigenvalue">
+                    λ₁ · λ₂ · λ₃ = -c₃
+                </div>
+            </div>
+            
+            <div class="proof-step">
+                <h3 class="step-title">步骤3：代入常数项表达式</h3>
+                <p>将 c₃ = -det(A) 代入韦达定理公式：</p>
+                <div class="formula determinant">
+                    λ₁ · λ₂ · λ₃ = -(-det(A)) = det(A)
+                </div>
+            </div>
+            
+            <div class="proof-step">
+                <h3 class="step-title">步骤4：得出结论</h3>
+                <div class="formula determinant">
+                    λ₁ · λ₂ · λ₃ = det(A)
+                </div>
+                <p>✅ 特征值之积等于矩阵的行列式，证明完成！</p>
+            </div>
+            
+            <div class="animation-container">
+                <canvas id="determinantAnimation"></canvas>
+            </div>
+        </div>
+        
+        <div class="theorem-card">
+            <h2 class="theorem-title"><i class="fas fa-check-double"></i> 实例验证</h2>
+            <p>考虑具体矩阵验证上述性质：</p>
+            <div class="matrix">
+                <div class="matrix-row">
+                    <span class="bracket">[</span>
+                    <div class="matrix-element">4</div>
+                    <div class="matrix-element">1</div>
+                    <div class="matrix-element">0</div>
+                    <span class="bracket">]</span>
+                </div>
+                <div class="matrix-row">
+                    <span class="bracket">[</span>
+                    <div class="matrix-element">0</div>
+                    <div class="matrix-element">2</div>
+                    <div class="matrix-element">1</div>
+                    <span class="bracket">]</span>
+                </div>
+                <div class="matrix-row">
+                    <span class="bracket">[</span>
+                    <div class="matrix-element">0</div>
+                    <div class="matrix-element">0</div>
+                    <div class="matrix-element">3</div>
+                    <span class="bracket">]</span>
+                </div>
+            </div>
+            
+            <div class="proof-step">
+                <h3 class="step-title">计算验证</h3>
+                <p>矩阵的迹 tr(A) = 4 + 2 + 3 = <span class="highlight">9</span></p>
+                <p>矩阵的行列式 det(A) = 4×2×3 = <span class="highlight">24</span>（上三角矩阵）</p>
+                <p>特征值：λ₁=4, λ₂=2, λ₃=3（上三角矩阵的特征值就是对角线元素）</p>
+                <p>特征值之和：4+2+3 = <span class="highlight">9</span> = tr(A) ✅</p>
+                <p>特征值之积：4×2×3 = <span class="highlight">24</span> = det(A) ✅</p>
+            </div>
+        </div>
+        
+        <div class="conclusion">
+            <h2 class="conclusion-title"><i class="fas fa-award"></i> 证明总结</h2>
+            <div class="conclusion-content">
+                <p>对任意3阶矩阵 A，设特征值为 λ₁, λ₂, λ₃，则：</p>
+                <div class="formula trace" style="margin: 15px 0;">
+                    λ₁ + λ₂ + λ₃ = tr(A) = a₁₁ + a₂₂ + a₃₃
+                </div>
+                <div class="formula determinant" style="margin: 15px 0;">
+                    λ₁ · λ₂ · λ₃ = det(A)
+                </div>
+                <p>这两个性质通过特征多项式理论和韦达定理得到完美证明！</p>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button onclick="animateTraceProof()">
+                <i class="fas fa-play"></i> 播放迹性质动画
+            </button>
+            <button onclick="animateDeterminantProof()">
+                <i class="fas fa-play"></i> 播放行列式性质动画
+            </button>
+            <button onclick="resetAnimation()">
+                <i class="fas fa-redo"></i> 重置动画
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // 初始化画布
+        function initCanvases() {
+            const traceCanvas = document.getElementById('traceAnimation');
+            const detCanvas = document.getElementById('determinantAnimation');
+            
+            traceCanvas.width = traceCanvas.parentElement.clientWidth;
+            traceCanvas.height = traceCanvas.parentElement.clientHeight;
+            
+            detCanvas.width = detCanvas.parentElement.clientWidth;
+            detCanvas.height = detCanvas.parentElement.clientHeight;
+            
+            drawInitialState(traceCanvas, '迹');
+            drawInitialState(detCanvas, '行列式');
+        }
+        
+        // 绘制初始状态
+        function drawInitialState(canvas, type) {
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 绘制标题
+            ctx.fillStyle = '#3a0ca3';
+            ctx.font = 'bold 24px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(`特征值${type === '迹' ? '之和' : '之积'} = 矩阵的${type}`, canvas.width/2, 40);
+            
+            // 绘制矩阵和特征值示意图
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            
+            // 绘制矩阵
+            ctx.strokeStyle = '#4361ee';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(centerX - 100, centerY - 80, 200, 160);
+            
+            // 绘制对角线元素（示意）
+            ctx.fillStyle = '#e63946';
+            ctx.font = 'bold 20px Arial';
+            ctx.fillText('a₁₁', centerX - 60, centerY - 40);
+            ctx.fillText('a₂₂', centerX - 10, centerY + 10);
+            ctx.fillText('a₃₃', centerX + 40, centerY + 60);
+            
+            // 绘制特征值
+            ctx.fillStyle = '#7209b7';
+            ctx.font = 'bold 22px Arial';
+            ctx.fillText('λ₁', centerX - 150, centerY - 40);
+            ctx.fillText('λ₂', centerX - 150, centerY + 10);
+            ctx.fillText('λ₃', centerX - 150, centerY + 60);
+            
+            // 绘制等号
+            ctx.fillStyle = '#212529';
+            ctx.font = 'bold 30px Arial';
+            ctx.fillText('=', centerX - 180, centerY + 10);
+            
+            if (type === '迹') {
+                // 绘制加号
+                ctx.fillText('+', centerX - 120, centerY - 10);
+                ctx.fillText('+', centerX - 120, centerY + 40);
+            } else {
+                // 绘制乘号
+                ctx.fillText('×', centerX - 120, centerY - 10);
+                ctx.fillText('×', centerX - 120, centerY + 40);
+            }
+        }
+        
+        // 动画证明迹性质
+        function animateTraceProof() {
+            const canvas = document.getElementById('traceAnimation');
+            const ctx = canvas.getContext('2d');
+            
+            // 清除画布
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            
+            // 绘制标题
+            ctx.fillStyle = '#3a0ca3';
+            ctx.font = 'bold 24px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('特征值之和 = 矩阵的迹', centerX, 40);
+            
+            // 步骤1：显示特征多项式
+            ctx.fillStyle = '#212529';
+            ctx.font = 'bold 20px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText('步骤1: 特征多项式 f(λ) = λ³ - (a₁₁+a₂₂+a₃₃)λ² + ...', 50, 80);
+            
+            // 步骤2：显示韦达定理
+            ctx.fillStyle = '#7209b7';
+            ctx.font = 'bold 22px Arial';
+            ctx.fillText('步骤2: 根据韦达定理 λ₁+λ₂+λ₃ = -c₁', 50, 120);
+            
+            // 步骤3：对比系数
+            ctx.fillStyle = '#e63946';
+            ctx.font = 'bold 22px Arial';
+            ctx.fillText('步骤3: 对比得 c₁ = -(a₁₁+a₂₂+a₃₃)', 50, 160);
+            
+            // 步骤4：得出结论
+            ctx.fillStyle = '#2a9d8f';
+            ctx.font = 'bold 26px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('∴ λ₁+λ₂+λ₃ = a₁₁+a₂₂+a₃₃ = tr(A)', centerX, 220);
+            
+            // 绘制动态效果
+            let radius = 5;
+            function drawParticles() {
+                ctx.fillStyle = '#4361ee';
+                for (let i = 0; i < 10; i++) {
+                    const x = Math.random() * canvas.width;
+                    const y = Math.random() * canvas.height;
+                    ctx.beginPath();
+                    ctx.arc(x, y, radius, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                radius += 0.1;
+                if (radius < 10) {
+                    requestAnimationFrame(drawParticles);
+                }
+            }
+            
+            drawParticles();
+        }
+        
+        // 动画证明行列式性质
+        function animateDeterminantProof() {
+            const canvas = document.getElementById('determinantAnimation');
+            const ctx = canvas.getContext('2d');
+            
+            // 清除画布
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            
+            // 绘制标题
+            ctx.fillStyle = '#3a0ca3';
+            ctx.font = 'bold 24px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('特征值之积 = 矩阵的行列式', centerX, 40);
+            
+            // 步骤1：显示常数项计算
+            ctx.fillStyle = '#212529';
+            ctx.font = 'bold 20px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText('步骤1: f(0) = det(-A) = -det(A) ⇒ c₃ = -det(A)', 50, 80);
+            
+            // 步骤2：显示韦达定理
+            ctx.fillStyle = '#7209b7';
+            ctx.font = 'bold 22px Arial';
+            ctx.fillText('步骤2: 根据韦达定理 λ₁·λ₂·λ₃ = -c₃', 50, 120);
+            
+            // 步骤3：代入计算
+            ctx.fillStyle = '#e63946';
+            ctx.font = 'bold 22px Arial';
+            ctx.fillText('步骤3: 代入得 λ₁·λ₂·λ₃ = -(-det(A))', 50, 160);
+            
+            // 步骤4：得出结论
+            ctx.fillStyle = '#2a9d8f';
+            ctx.font = 'bold 26px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('∴ λ₁·λ₂·λ₃ = det(A)', centerX, 220);
+            
+            // 绘制动态效果
+            let angle = 0;
+            function drawRotatingElements() {
+                ctx.clearRect(0, 200, canvas.width, canvas.height - 200);
+                
+                // 绘制旋转的特征值符号
+                ctx.save();
+                ctx.translate(centerX, 300);
+                ctx.rotate(angle);
+                
+                ctx.fillStyle = '#7209b7';
+                ctx.font = 'bold 30px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('λ₁·λ₂·λ₃', 0, 0);
+                
+                ctx.restore();
+                
+                // 绘制旋转的行列式符号
+                ctx.save();
+                ctx.translate(centerX, 300);
+                ctx.rotate(-angle);
+                
+                ctx.fillStyle = '#2a9d8f';
+                ctx.font = 'bold 30px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('det(A)', 0, 0);
+                
+                ctx.restore();
+                
+                // 绘制等号
+                ctx.fillStyle = '#212529';
+                ctx.font = 'bold 40px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('=', centerX, 300);
+                
+                angle += 0.02;
+                if (angle < Math.PI * 2) {
+                    requestAnimationFrame(drawRotatingElements);
+                }
+            }
+            
+            drawRotatingElements();
+        }
+        
+        // 重置动画
+        function resetAnimation() {
+            initCanvases();
+        }
+        
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            initCanvases();
+        });
+    </script>
+</body>
+</html>

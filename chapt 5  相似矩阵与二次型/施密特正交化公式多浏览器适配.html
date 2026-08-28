@@ -1,0 +1,1492 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>施密特正交化演示（教育网兼容版）</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e7f1 100%);
+            overflow: hidden; color: #2d3748;
+        }
+        #container { display: flex; height: 100vh; }
+        #canvas-container { 
+            flex: 1; 
+            position: relative; 
+            overflow: hidden; 
+            min-width: 70%;
+        }
+        #canvas { width: 100%; height: 100%; display: block; }
+        #info-panel {
+            width: 320px;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(12px); 
+            padding: 20px; 
+            overflow-y: auto;
+            border-left: 1px solid rgba(0, 0, 0, 0.05);
+            box-shadow: -5px 0 15px rgba(0, 0, 0, 0.08);
+        }
+        h1 {
+            color: #1a56db; 
+            margin-bottom: 20px; 
+            font-size: 40px;
+            font-weight: 700;
+            text-align: center; 
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+        }
+        .input-section {
+            margin-bottom: 20px; 
+            padding: 20px; 
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 12px; 
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+            border: 1px solid rgba(0, 0, 0, 0.03);
+        }
+        .input-section h3 { 
+            color: #1a56db; 
+            margin-bottom: 15px; 
+            font-size: 22px;
+            font-weight: 700;
+        }
+        .vector-input {
+            margin: 12px 0;
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+            flex-wrap: wrap;
+        }
+        .vector-input label { 
+            font-weight: 700;
+            color: #2d3748; 
+            min-width: 30px; 
+            font-size: 18px;
+        }
+        .vector-input input {
+            width: 70px;
+            padding: 10px;
+            border: 2px solid #cbd5e0;
+            border-radius: 6px;
+            font-size: 16px;
+            font-family: 'Courier New', monospace; 
+            text-align: center;
+            background: rgba(255, 255, 255, 0.8); 
+            transition: border-color 0.2s;
+            font-weight: 700;
+        }
+        .vector-input input:focus {
+            outline: none; 
+            border-color: #3b82f6; 
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        .update-btn {
+            width: 100%; 
+            margin-top: 10px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            font-size: 18px;
+            font-weight: 700;
+            padding: 14px;
+        }
+        .update-btn:hover {
+            background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+        }
+        .error-message {
+            color: #dc2626; 
+            font-size: 16px;
+            margin-top: 10px; 
+            min-height: 20px; 
+            font-weight: 700;
+        }
+        .step-section {
+            margin-bottom: 25px; 
+            padding: 20px; 
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 12px; 
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+            border: 1px solid rgba(0, 0, 0, 0.03); 
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .step-section:hover { transform: translateY(-3px); box-shadow: 0 6px 15px rgba(0, 0, 0, 0.05); }
+        .step-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1a56db; 
+            margin-bottom: 15px;
+            display: flex; 
+            align-items: center; 
+            gap: 10px;
+        }
+        .step-title .step-number {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white; 
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: inline-flex; 
+            align-items: center; 
+            justify-content: center;
+            font-size: 20px;
+            font-weight: bold; 
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .formula {
+            background: rgba(235, 248, 255, 0.7); 
+            padding: 22px 28px;
+            border-radius: 8px;
+            margin: 15px 0; 
+            font-size: 24px;
+            font-weight: 700;
+            border-left: 6px solid #3b82f6;
+            font-family: 'Courier New', monospace; 
+            line-height: 1.8; 
+            overflow-x: auto;
+        }
+        .vector-info {
+            margin: 12px 0; 
+            padding: 10px 0; 
+            font-size: 18px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        .vector-info:last-child { border-bottom: none; }
+        .vector-value { 
+            font-family: 'Courier New', monospace; 
+            font-weight: 700;
+            font-size: 24px;
+        }
+        .controls {
+            margin-top: 25px; 
+            padding-top: 25px; 
+            border-top: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        button {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white; 
+            border: none; 
+            padding: 14px 20px;
+            margin: 8px 5px;
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-size: 18px;
+            font-weight: 700;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        button:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); }
+        button:active { transform: translateY(0); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); }
+        button:disabled {
+            background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+            cursor: not-allowed; 
+            transform: none; 
+            box-shadow: none;
+        }
+        .progress-bar {
+            width: 100%; 
+            height: 10px;
+            background: #e5e7eb; 
+            border-radius: 4px;
+            margin: 20px 0 15px; 
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%; 
+            background: linear-gradient(90deg, #3b82f6 0%, #1d4ed8 100%);
+            width: 0%; 
+            transition: width 0.5s cubic-bezier(0.22, 0.61, 0.36, 1);
+        }
+        .status {
+            text-align: center; 
+            font-size: 24px;
+            color: #1d4ed8;
+            margin: 15px 0; 
+            font-weight: 700;
+            min-height: 28px;
+        }
+        .legend {
+            margin-top: 25px; 
+            padding: 15px; 
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 8px; 
+            font-size: 16px;
+            border: 1px solid rgba(0, 0, 0, 0.03);
+        }
+        .legend-item { margin: 8px 0; display: flex; align-items: center; gap: 10px; }
+        .legend-color {
+            width: 24px;
+            height: 24px;
+            border-radius: 5px; 
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .zoom-control {
+            margin-top: 20px; 
+            padding: 18px; 
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 8px; 
+            border: 1px solid rgba(0, 0, 0, 0.03);
+        }
+        .zoom-control label {
+            display: block; 
+            margin-bottom: 12px; 
+            font-weight: 700;
+            color: #1e40af; 
+            font-size: 18px;
+        }
+        #zoom-slider {
+            width: 100%; 
+            height: 10px;
+            -webkit-appearance: none; 
+            appearance: none;
+            background: #e5e7eb; 
+            border-radius: 4px; 
+            outline: none; 
+            margin: 10px 0;
+        }
+        #zoom-slider::-webkit-slider-thumb {
+            -webkit-appearance: none; 
+            appearance: none; 
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            border-radius: 50%; 
+            cursor: pointer; 
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+            transition: all 0.2s ease;
+        }
+        #zoom-value {
+            display: inline-block; 
+            margin-left: 10px; 
+            font-weight: bold;
+            color: #1d4ed8; 
+            min-width: 50px; 
+            font-size: 18px;
+        }
+        .zoom-buttons { display: flex; gap: 8px; margin-top: 8px; }
+        .zoom-btn { 
+            flex: 1; 
+            padding: 8px 10px; 
+            font-size: 16px;
+            margin: 0; 
+            font-weight: 700;
+        }
+        
+        .performance-info {
+            margin-top: 15px; 
+            padding: 12px;
+            background: rgba(254, 249, 195, 0.7);
+            border-radius: 6px; 
+            font-size: 14px;
+            color: #92400e;
+            font-weight: 700;
+        }
+        
+        /* 新增：错误提示样式 */
+        .error-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(220, 38, 38, 0.95);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            max-width: 80%;
+            z-index: 2000;
+            display: none;
+            font-size: 18px;
+            line-height: 1.6;
+        }
+        .error-overlay button {
+            margin-top: 15px;
+            background: white;
+            color: #dc2626;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .error-overlay button:hover {
+            background: #f3f4f6;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="canvas-container">
+            <canvas id="canvas"></canvas>
+            <!-- 新增：加载中提示 -->
+            <div id="loading-overlay" class="loading-overlay">
+                <div>正在加载3D库...</div>
+                <div id="loading-detail" style="font-size: 14px; margin-top: 10px; color: #666;">请稍候</div>
+            </div>
+            
+            <!-- 新增：错误提示 -->
+            <div id="error-overlay" class="error-overlay">
+                <div id="error-title">加载失败</div>
+                <div id="error-message" style="margin-top: 10px;"></div>
+                <button onclick="retryLoad()">重新加载</button>
+            </div>
+            
+            <!-- 快捷键面板 -->
+            <div class="shortcut-panel">
+                <h4>⌨️ 快捷键</h4>
+                <div class="shortcut-item">
+                    <span>开始/暂停</span>
+                    <span class="shortcut-key">空格</span>
+                </div>
+                <div class="shortcut-item">
+                    <span>开始动画</span>
+                    <span class="shortcut-key">A</span>
+                </div>
+                <div class="shortcut-item">
+                    <span>下一步</span>
+                    <span class="shortcut-key">S</span>
+                </div>
+                <div class="shortcut-item">
+                    <span>下一步</span>
+                    <span class="shortcut-key">N</span>
+                </div>
+                <div class="shortcut-item">
+                    <span>重置</span>
+                    <span class="shortcut-key">R</span>
+                </div>
+                <div class="shortcut-item">
+                    <span>自动旋转</span>
+                    <span class="shortcut-key">O</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 右侧信息面板 - 完整DOM结构 -->
+        <div id="info-panel">
+            <!-- 标题 -->
+            <h1>施密特正交化演示</h1>
+            
+            <!-- 向量输入区域 -->
+            <div class="input-section">
+                <h3>📝 向量输入</h3>
+                <div class="vector-input">
+                    <label>v₁ = (</label>
+                    <input type="number" id="v1-x" value="1" step="0.1">
+                    <input type="number" id="v1-y" value="0" step="0.1">
+                    <input type="number" id="v1-z" value="0" step="0.1">
+                    <label>)</label>
+                </div>
+                <div class="vector-input">
+                    <label>v₂ = (</label>
+                    <input type="number" id="v2-x" value="1" step="0.1">
+                    <input type="number" id="v2-y" value="2" step="0.1">
+                    <input type="number" id="v2-z" value="0" step="0.1">
+                    <label>)</label>
+                </div>
+                <div class="vector-input">
+                    <label>v₃ = (</label>
+                    <input type="number" id="v3-x" value="1" step="0.1">
+                    <input type="number" id="v3-y" value="1" step="0.1">
+                    <input type="number" id="v3-z" value="3" step="0.1">
+                    <label>)</label>
+                </div>
+                <button id="update-btn" class="update-btn">更新向量</button>
+                <div class="error-message" id="error-message"></div>
+            </div>
+            
+            <!-- 核心公式展示 -->
+            <div class="formula" style="background: rgba(235, 248, 255, 0.7); border-left: 6px solid #3b82f6;">
+                <strong>👉 核心公式：</strong><br>
+                <strong style="color: #FFD700;">projₑ₁ₑ₂(v₃)</strong> = proj(<strong style="color: #0000FF;">v₃</strong> onto <strong style="color: #FF6600;">e₁</strong>) + proj(<strong style="color: #0000FF;">v₃</strong> onto <strong style="color: #00DDFF;">e₂</strong>)<br>
+                <strong style="color: #FF33FF;">e₃</strong> = <strong style="color: #0000FF;">v₃</strong> - <strong style="color: #FFD700;">projₑ₁ₑ₂(v₃)</strong>
+            </div>
+            
+            <!-- 状态与进度 -->
+            <div class="status" id="status">准备就绪</div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+            
+            <!-- 步骤展示区域 -->
+            <div id="step-0" class="step-section">
+                <div class="step-title">
+                    <span class="step-number">0</span>
+                    初始向量
+                </div>
+                <div class="formula">
+                    <strong style="color: #FF3333;">v₁</strong> = <span id="init-v1">(1.00, 0.00, 0.00)</span><br>
+                    <strong style="color: #33FF33;">v₂</strong> = <span id="init-v2">(1.00, 2.00, 0.00)</span><br>
+                    <strong style="color: #3333FF;">v₃</strong> = <span id="init-v3">(1.00, 1.00, 3.00)</span>
+                </div>
+            </div>
+            
+            <div id="step-1" class="step-section">
+                <div class="step-title">
+                    <span class="step-number">1</span>
+                    第一步：直接取 v₁ 作为正交基
+                </div>
+                <div class="formula">
+                    <strong style="color: #FF6600;">e₁</strong> = <strong style="color: #FF3333;">v₁</strong>
+                </div>
+                <div class="vector-info">
+                    <strong style="color: #FF6600;">e₁</strong> = <span class="vector-value" id="e1-value">(1.00, 0.00, 0.00)</span>
+                </div>
+            </div>
+            
+            <div id="step-2" class="step-section">
+                <div class="step-title">
+                    <span class="step-number">2</span>
+                    第二步：让 v₂ 与 e₁ 正交
+                </div>
+                <div class="formula">
+                    <strong style="color: #00DDFF;">e₂</strong> = <strong style="color: #33FF33;">v₂</strong> - proj(<strong style="color: #33FF33;">v₂</strong> onto <strong style="color: #FF6600;">e₁</strong>)
+                </div>
+                <div class="vector-info">
+                    proj(<strong style="color: #33FF33;">v₂</strong> onto <strong style="color: #FF6600;">e₁</strong>) = <span class="vector-value" id="proj-v2">(1.00, 0.00, 0.00)</span>
+                </div>
+                <div class="vector-info">
+                    <strong style="color: #00DDFF;">e₂</strong> = <span class="vector-value" id="e2-value">(0.00, 2.00, 0.00)</span>
+                </div>
+            </div>
+            
+            <div id="step-3" class="step-section">
+                <div class="step-title">
+                    <span class="step-number">3</span>
+                    第三步：v₃ 减去在 e₁-e₂ 平面上的投影
+                </div>
+                <div class="formula">
+                    <strong style="color: #FFD700;">projₑ₁ₑ₂(v₃)</strong> = proj(<strong style="color: #3333FF;">v₃</strong> onto <strong style="color: #FF6600;">e₁</strong>) + proj(<strong style="color: #3333FF;">v₃</strong> onto <strong style="color: #00DDFF;">e₂</strong>)
+                </div>
+                <div class="vector-info">
+                    proj(<strong style="color: #3333FF;">v₃</strong> onto <strong style="color: #FF6600;">e₁</strong>) = <span class="vector-value" id="proj-v3-e1">(1.00, 0.00, 0.00)</span>
+                </div>
+                <div class="vector-info">
+                    proj(<strong style="color: #3333FF;">v₃</strong> onto <strong style="color: #00DDFF;">e₂</strong>) = <span class="vector-value" id="proj-v3-e2">(0.00, 1.00, 0.00)</span>
+                </div>
+                <div class="formula" style="background: rgba(255, 240, 245, 0.7); border-left: 6px solid #FFD700; margin-top: 10px;">
+                    <strong style="color: #FFD700;">projₑ₁ₑ₂(v₃)</strong> = <span class="vector-value" id="proj-plane-v3">(1.00, 1.00, 0.00)</span>
+                    <br><small style="font-size: 18px; color: #666;">（e₁-e₂平面上的总投影）</small>
+                </div>
+                
+                <div class="formula" style="background: rgba(255, 240, 245, 0.7); border-left: 6px solid #FF33FF; margin-top: 15px;">
+                    <strong style="color: #FF33FF;">e₃</strong> = <strong style="color: #3333FF;">v₃</strong> - <strong style="color: #FFD700;">projₑ₁ₑ₂(v₃)</strong>
+                </div>
+                <div class="vector-info">
+                    <strong style="color: #FF33FF;">e₃</strong> = <span class="vector-value" id="e3-value">(0.00, 0.00, 3.00)</span>
+                </div>
+                
+                <div class="formula" style="background: rgba(255, 240, 245, 0.7); border-left: 6px solid #FF33FF; margin-top: 15px;">
+                    <strong>📍 验证e₃：</strong><br>
+                    e₃ = <span id="e3-current">(0.00, 0.00, 3.00)</span><br>
+                    ✅ 垂直于e₁-e₂平面<br>
+                    🔴 末端红色标记球
+                </div>
+            </div>
+            
+            <!-- 性能提示 -->
+            <div class="performance-info" id="performance-info">
+                💡 提示：紫色粗线是v₃在e₁-e₂平面上的总投影 | 快捷键：空格-动画 R-重置 N-下一步
+            </div>
+            
+            <!-- 控制按钮 -->
+            <div class="controls">
+                <button id="play-btn">开始动画</button>
+                <button id="reset-btn">重置</button>
+                <button id="next-btn">下一步</button>
+                <button id="rotate-btn">自动旋转</button>
+                
+                <div class="zoom-control">
+                    <label>🔍 画布缩放控制</label>
+                    <input type="range" id="zoom-slider" min="0.5" max="3" step="0.1" value="1">
+                    <span id="zoom-value">1.0x</span>
+                    <div class="zoom-buttons">
+                        <button class="zoom-btn" data-zoom="0.5">缩小</button>
+                        <button class="zoom-btn" data-zoom="1">重置</button>
+                        <button class="zoom-btn" data-zoom="2">放大</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 图例 -->
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #FF3333;"></div>
+                    <span>原始向量 v₁</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #33FF33;"></div>
+                    <span>原始向量 v₂</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #3333FF;"></div>
+                    <span>原始向量 v₃</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #FF6600;"></div>
+                    <span>正交基 e₁</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #00DDFF;"></div>
+                    <span>正交基 e₂</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #FFD700;"></div>
+                    <span>平面投影 projₑ₁ₑ₂(v₃)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #FF33FF;"></div>
+                    <span><strong>正交基 e₃（洋红色）</strong></span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #CC00FF;"></div>
+                    <span><strong>分量投影（紫色虚线）</strong></span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #FF1493;"></div>
+                    <span><strong>投影分解（粉色虚线）</strong></span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #FF6600;"></div>
+                    <span><strong>v₃→projₑ₁连接线（橙色虚线）</strong></span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #00DDFF;"></div>
+                    <span><strong>v₃→projₑ₂连接线（青色虚线）</strong></span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #00DDFF;"></div>
+                    <span><strong>projₑ₁ₑ₂→projₑ₂连接线（青色虚线）</strong></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ✅ CDN配置 -->
+    <script id="threejs-importmap" type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <!-- ✅ 加载逻辑 -->
+    <script>
+        // 全局变量
+        let THREE_GLOBAL = null;
+        let OrbitControls_GLOBAL = null;
+        
+        // 检测浏览器是否支持importmap
+        function supportsImportMap() {
+            try {
+                return HTMLScriptElement.supports && HTMLScriptElement.supports('importmap');
+            } catch (e) {
+                return false;
+            }
+        }
+        
+        // 显示错误信息
+        function showError(title, message) {
+            document.getElementById('loading-overlay').style.display = 'none';
+            document.getElementById('error-overlay').style.display = 'block';
+            document.getElementById('error-title').textContent = title;
+            document.getElementById('error-message').innerHTML = message;
+        }
+        
+        // 重新加载
+        function retryLoad() {
+            location.reload();
+        }
+        
+        // 主加载函数
+        async function bootstrap() {
+            const loadingDetail = document.getElementById('loading-detail');
+            
+            try {
+                // 检测WebGL支持
+                if (!window.WebGLRenderingContext) {
+                    throw new Error('浏览器不支持WebGL，请使用现代浏览器（如Chrome、Firefox、Edge）');
+                }
+                
+                // 检测importmap支持
+                if (!supportsImportMap()) {
+                    loadingDetail.textContent = '正在使用兼容模式加载...';
+                    console.warn('浏览器不支持importmap，使用动态导入...');
+                    
+                    // 备用方案：直接动态导入
+                    const threeModule = await import('https://unpkg.com/three@0.160.0/build/three.module.js');
+                    THREE_GLOBAL = threeModule;
+                    
+                    const controlsModule = await import('https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js');
+                    OrbitControls_GLOBAL = controlsModule.OrbitControls;
+                } else {
+                    loadingDetail.textContent = '正在加载核心库...';
+                    // 正常加载
+                    await import('three').then(m => { THREE_GLOBAL = m; });
+                    await import('three/addons/controls/OrbitControls.js').then(m => { OrbitControls_GLOBAL = m.OrbitControls; });
+                }
+                
+                loadingDetail.textContent = '初始化场景...';
+                
+            } catch (error) {
+                console.error('加载失败:', error);
+                
+                let errorMessage = `<strong>错误详情：</strong>${error.message}<br><br>`;
+                errorMessage += '<strong>可能原因：</strong><br>';
+                errorMessage += '1. 网络无法访问unpkg.com<br>';
+                errorMessage += '2. 浏览器版本过旧<br>';
+                errorMessage += '3. WebGL被禁用<br><br>';
+                errorMessage += '<strong>解决方案：</strong><br>';
+                errorMessage += '• 尝试使用手机热点<br>';
+                errorMessage += '• 更新浏览器到最新版<br>';
+                errorMessage += '• 在浏览器设置中启用WebGL<br>';
+                errorMessage += '• 使用Chrome/Firefox浏览器';
+                
+                showError('资源加载失败', errorMessage);
+                return false;
+            }
+        }
+        
+        // 启动加载
+        bootstrap().then(success => {
+            if (success !== false) {
+                document.getElementById('loading-detail').textContent = '即将完成...';
+                setTimeout(() => {
+                    document.getElementById('loading-overlay').style.display = 'none';
+                    initApplication();
+                }, 500);
+            }
+        });
+    </script>
+
+    <!-- ✅ 主应用逻辑 -->
+    <script>
+        function initApplication() {
+            // 使用全局变量
+            const THREE = THREE_GLOBAL;
+            const OrbitControls = OrbitControls_GLOBAL;
+            
+            if (!THREE || !OrbitControls) {
+                showError('初始化失败', '核心库未正确加载，请刷新页面重试');
+                return;
+            }
+            
+            // ==================== 原有代码逻辑（完全保留） ====================
+            let scene, camera, renderer, controls;
+            let vectors = {};
+            let currentStep = 0;
+            let isAnimating = false;
+            let autoRotate = false;
+            let animationId;
+            let currentZoom = 1;
+            let e3Marker = null;
+            let vectorObjects = [];
+            let isInitialized = false;
+            let isDraggingPanel = false;
+            let panelInitialX = 0;
+            let panelInitialY = 0;
+            let mouseInitialX = 0;
+            let mouseInitialY = 0;
+            
+            class Vector3D {
+                constructor(x, y, z, color, name) {
+                    this.x = x; this.y = y; this.z = z;
+                    this.color = color; this.name = name;
+                    this.length = Math.sqrt(x*x + y*y + z*z);
+                }
+                clone() {
+                    return new Vector3D(this.x, this.y, this.z, this.color, this.name);
+                }
+                multiplyScalar(s) {
+                    return new Vector3D(this.x * s, this.y * s, this.z * s, this.color, this.name + '_scaled');
+                }
+                add(v) {
+                    return new Vector3D(this.x + v.x, this.y + v.y, this.z + v.z, this.color, this.name + '_add');
+                }
+                subtract(v) {
+                    return new Vector3D(this.x - v.x, this.y - v.y, this.z - v.z, this.color, this.name + '_sub');
+                }
+                dot(v) {
+                    return this.x * v.x + this.y * v.y + this.z * v.z;
+                }
+                toArray() { return [this.x, this.y, this.z]; }
+                toString() {
+                    return `(${this.x.toFixed(2)}, ${this.y.toFixed(2)}, ${this.z.toFixed(2)})`;
+                }
+                projectOnto(v) {
+                    const dotProduct = this.dot(v);
+                    const vLengthSq = v.length * v.length;
+                    if (Math.abs(vLengthSq) < 1e-10) {
+                        console.warn("投影到零向量！");
+                        return new Vector3D(0, 0, 0, this.color, this.name + '_proj');
+                    }
+                    const scalar = dotProduct / vLengthSq;
+                    return v.multiplyScalar(scalar);
+                }
+            }
+            
+            function getVectorFromInput(prefix) {
+                const x = parseFloat(document.getElementById(`${prefix}-x`).value);
+                const y = parseFloat(document.getElementById(`${prefix}-y`).value);
+                const z = parseFloat(document.getElementById(`${prefix}-z`).value);
+                if (isNaN(x) || isNaN(y) || isNaN(z)) {
+                    throw new Error(`请输入有效的数字作为${prefix}的分量`);
+                }
+                return { x, y, z };
+            }
+            
+            function areVectorsLinearlyIndependent(v1, v2, v3) {
+                const det = v1.x * (v2.y * v3.z - v2.z * v3.y) -
+                            v1.y * (v2.x * v3.z - v2.z * v3.x) +
+                            v1.z * (v2.x * v3.y - v2.y * v3.x);
+                return Math.abs(det) > 1e-6;
+            }
+            
+            function updateVectorsFromInput() {
+                try {
+                    const v1Data = getVectorFromInput('v1');
+                    const v2Data = getVectorFromInput('v2');
+                    const v3Data = getVectorFromInput('v3');
+                    
+                    const tempV1 = new Vector3D(v1Data.x, v1Data.y, v1Data.z);
+                    const tempV2 = new Vector3D(v2Data.x, v2Data.y, v2Data.z);
+                    const tempV3 = new Vector3D(v3Data.x, v3Data.y, v3Data.z);
+                    
+                    if (!areVectorsLinearlyIndependent(tempV1, tempV2, tempV3)) {
+                        throw new Error('输入的三个向量线性相关，请确保行列式不为0（当前det≈0）');
+                    }
+                    
+                    clearAllVectors();
+                    
+                    vectors.v1 = new Vector3D(v1Data.x, v1Data.y, v1Data.z, 0xFF3333, 'v1');
+                    vectors.v2 = new Vector3D(v2Data.x, v2Data.y, v2Data.z, 0x33FF33, 'v2');
+                    vectors.v3 = new Vector3D(v3Data.x, v3Data.y, v3Data.z, 0x3333FF, 'v3');
+                    
+                    vectors.e1 = null; vectors.e2 = null; vectors.e3 = null;
+                    vectors.proj_v2 = null; vectors.proj_v3_e1 = null; vectors.proj_v3_e2 = null;
+                    vectors.proj_plane_v3 = null; vectors.ortho_v2 = null; vectors.ortho_v3 = null;
+                    
+                    currentStep = 0; isAnimating = false;
+                    document.getElementById('play-btn').textContent = '开始动画';
+                    document.getElementById('error-message').textContent = '';
+                    
+                    displayVectors();
+                    updateInitialVectorDisplay();
+                    
+                } catch (error) {
+                    document.getElementById('error-message').textContent = '❌ ' + error.message;
+                    console.error("输入错误:", error);
+                }
+            }
+            
+            function updateInitialVectorDisplay() {
+                document.getElementById('init-v1').textContent = vectors.v1.toString();
+                document.getElementById('init-v2').textContent = vectors.v2.toString();
+                document.getElementById('init-v3').textContent = vectors.v3.toString();
+                if (vectors.e3) {
+                    document.getElementById('e3-current').textContent = vectors.e3.toString();
+                }
+            }
+            
+            function clearAllVectors() {
+                vectorObjects.forEach(obj => {
+                    try {
+                        if (obj.geometry) obj.geometry.dispose();
+                        if (obj.material) {
+                            if (Array.isArray(obj.material)) {
+                                obj.material.forEach(m => m.dispose());
+                            } else {
+                                obj.material.dispose();
+                            }
+                        }
+                        scene.remove(obj);
+                    } catch (e) {
+                        console.warn("清理对象时出错:", e);
+                    }
+                });
+                vectorObjects = [];
+                
+                if (e3Marker) {
+                    scene.remove(e3Marker);
+                    e3Marker = null;
+                }
+            }
+            
+            function initScene() {
+                const canvas = document.getElementById('canvas');
+                const container = document.getElementById('canvas-container');
+                
+                scene = new THREE.Scene();
+                scene.background = new THREE.Color(0xf8f9fa);
+                
+                camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+                camera.position.set(8, 6, 8);
+                
+                renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+                renderer.setSize(container.clientWidth, container.clientHeight);
+                renderer.shadowMap.enabled = true;
+                renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                
+                controls = new OrbitControls(camera, renderer.domElement);
+                controls.enableDamping = true;
+                controls.dampingFactor = 0.05;
+                
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+                scene.add(ambientLight);
+                
+                const directionalLight = new THREE.DirectionalLight(0xffffff, 0.4);
+                directionalLight.position.set(5, 5, 5);
+                directionalLight.castShadow = true;
+                scene.add(directionalLight);
+                
+                createAxes();
+                window.addEventListener('resize', onWindowResize);
+            }
+            
+            function createAxes() {
+                const axesHelper = new THREE.AxesHelper(5);
+                scene.add(axesHelper);
+                
+                const gridHelper = new THREE.GridHelper(10, 10, 0xcbd5e0, 0xe2e8f0);
+                gridHelper.material.opacity = 0.8;
+                gridHelper.material.transparent = true;
+                scene.add(gridHelper);
+                
+                function addAxisLabel(text, position, color) {
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+                    canvas.width = 80; canvas.height = 40;
+                    context.font = 'bold 16px Arial';
+                    context.fillStyle = `#${color.toString(16).padStart(6, '0')}`;
+                    context.textAlign = 'center'; context.textBaseline = 'middle';
+                    context.fillText(text, 40, 20);
+                    
+                    const texture = new THREE.CanvasTexture(canvas);
+                    const spriteMaterial = new THREE.SpriteMaterial({ map: texture, sizeAttenuation: false });
+                    const sprite = new THREE.Sprite(spriteMaterial);
+                    sprite.scale.set(0.2, 0.1, 1);
+                    sprite.position.copy(position);
+                    scene.add(sprite);
+                }
+                
+                addAxisLabel('X', new THREE.Vector3(5.5, 0, 0), 0xFF0000);
+                addAxisLabel('Y', new THREE.Vector3(0, 5.5, 0), 0x00FF00);
+                addAxisLabel('Z', new THREE.Vector3(0, 0, 5.5), 0x0000FF);
+            }
+            
+            function createE3Marker(position) {
+                if (e3Marker) {
+                    scene.remove(e3Marker);
+                }
+                
+                const geometry = new THREE.SphereGeometry(0.12, 16, 16);
+                const material = new THREE.MeshBasicMaterial({ 
+                    color: 0xFF0000,
+                    transparent: true,
+                    opacity: 0.9
+                });
+                e3Marker = new THREE.Mesh(geometry, material);
+                e3Marker.position.copy(position);
+                scene.add(e3Marker);
+                vectorObjects.push(e3Marker);
+            }
+            
+            function createVector(vector, color, name, dashed = false, opacity = 1) {
+                const group = new THREE.Group();
+                
+                if (!vector || vector.length < 0.0001) {
+                    console.warn(`向量 ${name} 长度太小，无法显示`);
+                    return { group: null, arrowHelper: null, sprite: null };
+                }
+                
+                const origin = new THREE.Vector3(0, 0, 0);
+                const direction = new THREE.Vector3(vector.x, vector.y, vector.z).normalize();
+                const length = vector.length;
+                
+                const isE3 = name === 'e₃' || (vector.name && vector.name.startsWith('e3'));
+                const isPlaneProj = name.includes('plane');
+                
+                const arrowLength = isE3 ? length * 1.15 : (isPlaneProj ? length * 1.05 : length);
+                const headLength = isE3 ? length * 0.25 : (isPlaneProj ? length * 0.15 : length * 0.2);
+                const headWidth = isE3 ? length * 0.12 : (isPlaneProj ? length * 0.08 : length * 0.1);
+                
+                const arrowHelper = new THREE.ArrowHelper(
+                    direction,
+                    origin,
+                    arrowLength,
+                    color,
+                    headLength,
+                    headWidth
+                );
+                
+                const configMaterial = (material) => {
+                    material.transparent = true;
+                    material.opacity = opacity * (isE3 ? 0.9 : (isPlaneProj ? 0.75 : 0.85));
+                    if (isE3 || isPlaneProj) {
+                        material.depthWrite = true;
+                        material.depthTest = true;
+                    }
+                };
+                
+                if (dashed) {
+                    arrowHelper.line.material = new THREE.LineDashedMaterial({
+                        color: color, dashSize: 0.1, gapSize: 0.05,
+                        transparent: true, opacity: opacity * 0.7
+                    });
+                    arrowHelper.line.computeLineDistances();
+                } else {
+                    configMaterial(arrowHelper.line.material);
+                    configMaterial(arrowHelper.cone.material);
+                    
+                    if (isE3) {
+                        arrowHelper.line.material.linewidth = 3;
+                        arrowHelper.cone.material.linewidth = 3;
+                    }
+                }
+                
+                group.add(arrowHelper);
+                
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                canvas.width = 80; canvas.height = 40;
+                context.font = 'bold 16px Arial';
+                context.fillStyle = `#${color.toString(16).padStart(6, '0')}`;
+                context.textAlign = 'center'; context.textBaseline = 'middle';
+                const displayName = isE3 ? 'e₃' : (isPlaneProj ? 'projₑ₁ₑ₂' : name);
+                context.fillText(displayName, 40, 20);
+                
+                const texture = new THREE.CanvasTexture(canvas);
+                const spriteMaterial = new THREE.SpriteMaterial({ map: texture, sizeAttenuation: false });
+                const sprite = new THREE.Sprite(spriteMaterial);
+                sprite.scale.set(0.2, 0.1, 1);
+                sprite.position.copy(direction.multiplyScalar(length + 0.6));
+                group.add(sprite);
+                
+                group.userData.isVectorObject = true;
+                vectorObjects.push(group);
+                
+                return { group, arrowHelper, sprite };
+            }
+            
+            function createProjectionVisualization(originalVector, projection, orthogonal, color) {
+                const group = new THREE.Group();
+                
+                const points = [
+                    new THREE.Vector3(originalVector.x, originalVector.y, originalVector.z),
+                    new THREE.Vector3(projection.x, projection.y, projection.z)
+                ];
+                const geometry = new THREE.BufferGeometry().setFromPoints(points);
+                const material = new THREE.LineDashedMaterial({
+                    color: color, dashSize: 0.1, gapSize: 0.05,
+                    transparent: true, opacity: 0.6
+                });
+                const line = new THREE.Line(geometry, material);
+                line.computeLineDistances();
+                line.userData.isVectorObject = true;
+                group.add(line);
+                
+                if (orthogonal && orthogonal.length > 0.001) {
+                    const orthoPoints = [
+                        new THREE.Vector3(projection.x, projection.y, projection.z),
+                        new THREE.Vector3(originalVector.x, originalVector.y, originalVector.z)
+                    ];
+                    const orthoGeometry = new THREE.BufferGeometry().setFromPoints(orthoPoints);
+                    const orthoMaterial = new THREE.LineDashedMaterial({
+                        color: orthogonal.color || 0x00FFFF, dashSize: 0.1, gapSize: 0.05,
+                        transparent: true, opacity: 0.6
+                    });
+                    const orthoLine = new THREE.Line(orthoGeometry, orthoMaterial);
+                    orthoLine.computeLineDistances();
+                    orthoLine.userData.isVectorObject = true;
+                    group.add(orthoLine);
+                }
+                
+                group.userData.isVectorObject = true;
+                vectorObjects.push(group);
+                
+                return group;
+            }
+            
+            function createProjectionDecomposition(projPlane, projE1, projE2) {
+                const group = new THREE.Group();
+                
+                if (projE1 && projE1.length > 0.001) {
+                    const e1Dir = new THREE.Vector3(projE1.x, projE1.y, projE1.z).normalize();
+                    const e1End = e1Dir.multiplyScalar(projE1.length);
+                    
+                    const e1Geometry = new THREE.BufferGeometry().setFromPoints([
+                        new THREE.Vector3(0, 0, 0),
+                        e1End
+                    ]);
+                    const e1Material = new THREE.LineDashedMaterial({
+                        color: 0xFF6600, dashSize: 0.08, gapSize: 0.04,
+                        transparent: true, opacity: 0.8, linewidth: 2
+                    });
+                    const e1Line = new THREE.Line(e1Geometry, e1Material);
+                    e1Line.computeLineDistances();
+                    e1Line.userData.isVectorObject = true;
+                    group.add(e1Line);
+                }
+                
+                if (projE2 && projE2.length > 0.001) {
+                    const e2Dir = new THREE.Vector3(projE2.x, projE2.y, projE2.z).normalize();
+                    const e2Start = new THREE.Vector3(projE1.x, projE1.y, projE1.z);
+                    const e2End = e2Start.clone().add(e2Dir.multiplyScalar(projE2.length));
+                    
+                    const e2Geometry = new THREE.BufferGeometry().setFromPoints([
+                        e2Start,
+                        e2End
+                    ]);
+                    const e2Material = new THREE.LineDashedMaterial({
+                        color: 0x00DDFF, dashSize: 0.08, gapSize: 0.04,
+                        transparent: true, opacity: 0.8, linewidth: 2
+                    });
+                    const e2Line = new THREE.Line(e2Geometry, e2Material);
+                    e2Line.computeLineDistances();
+                    e2Line.userData.isVectorObject = true;
+                    group.add(e2Line);
+                }
+                
+                const projEnd = new THREE.Vector3(projPlane.x, projPlane.y, projPlane.z);
+                const decompEnd = new THREE.Vector3(projE1.x + projE2.x, projE1.y + projE2.y, projE1.z + projE2.z);
+                if (projEnd.distanceTo(decompEnd) < 0.01) {
+                    console.log("✅ 投影分解验证通过！");
+                }
+                
+                group.userData.isVectorObject = true;
+                vectorObjects.push(group);
+                
+                return group;
+            }
+            
+            function createOrthogonalPlane(normalVector, size, color) {
+                const group = new THREE.Group();
+                
+                const planeGeometry = new THREE.PlaneGeometry(size * 2, size * 2);
+                const planeMaterial = new THREE.MeshBasicMaterial({
+                    color: color,
+                    transparent: true,
+                    opacity: 0.15,
+                    side: THREE.DoubleSide
+                });
+                const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+                
+                const normal = new THREE.Vector3(normalVector.x, normalVector.y, normalVector.z).normalize();
+                plane.lookAt(normal.x * size, normal.y * size, normal.z * size);
+                
+                group.add(plane);
+                group.userData.isVectorObject = true;
+                vectorObjects.push(group);
+                
+                return group;
+            }
+            
+            function initVectors() {
+                vectors.v1 = new Vector3D(1, 0, 0, 0xFF3333, 'v1');
+                vectors.v2 = new Vector3D(1, 2, 0, 0x33FF33, 'v2');
+                vectors.v3 = new Vector3D(1, 1, 3, 0x3333FF, 'v3');
+                
+                vectors.e1 = null; vectors.e2 = null; vectors.e3 = null;
+                vectors.proj_v2 = null; vectors.proj_v3_e1 = null; vectors.proj_v3_e2 = null;
+                vectors.proj_plane_v3 = null; vectors.ortho_v2 = null; vectors.ortho_v3 = null;
+                
+                displayVectors();
+            }
+            
+            function displayVectors() {
+                clearAllVectors();
+                
+                if (currentStep >= 0) {
+                    ['v1', 'v2', 'v3'].forEach(key => {
+                        const vec = vectors[key];
+                        const obj = createVector(vec, vec.color, key);
+                        if (obj.group) scene.add(obj.group);
+                    });
+                }
+                
+                if (currentStep >= 1 && vectors.e1) {
+                    vectors.e1.color = 0xFF6600;
+                    const e1Obj = createVector(vectors.e1, vectors.e1.color, 'e₁');
+                    if (e1Obj.group) scene.add(e1Obj.group);
+                }
+                
+                if (currentStep >= 2 && vectors.e1 && vectors.e2) {
+                    if (vectors.proj_v2 && vectors.v2) {
+                        const projGroup = createProjectionVisualization(vectors.v2, vectors.proj_v2, vectors.e2, 0xCC00FF);
+                        scene.add(projGroup);
+                    }
+                    
+                    vectors.e2.color = 0x00DDFF;
+                    const e2Obj = createVector(vectors.e2, vectors.e2.color, 'e₂');
+                    if (e2Obj.group) scene.add(e2Obj.group);
+                    
+                    const plane = createOrthogonalPlane(vectors.e1, 2, 0xFF6600);
+                    scene.add(plane);
+                }
+                
+                if (currentStep >= 3) {
+                    if (vectors.proj_plane_v3 && vectors.v3) {
+                        const planeProjObj = createVector(vectors.proj_plane_v3, 0xCC00FF, 'plane_proj', false, 0.8);
+                        if (planeProjObj.group) {
+                            scene.add(planeProjObj.group);
+                        }
+                        
+                        if (vectors.proj_v3_e1) {
+                            const projE1Obj = createVector(vectors.proj_v3_e1, 0xFF6600, 'proj_e1', true, 0.6);
+                            if (projE1Obj.group) scene.add(projE1Obj.group);
+                        }
+                        if (vectors.proj_v3_e2) {
+                            const projE2Obj = createVector(vectors.proj_v3_e2, 0x00DDFF, 'proj_e2', true, 0.6);
+                            if (projE2Obj.group) scene.add(projE2Obj.group);
+                        }
+                        
+                        const startPoint = new THREE.Vector3(vectors.v3.x, vectors.v3.y, vectors.v3.z);
+                        const endPoint = new THREE.Vector3(vectors.proj_plane_v3.x, vectors.proj_plane_v3.y, vectors.proj_plane_v3.z);
+                        
+                        const geometry = new THREE.BufferGeometry().setFromPoints([startPoint, endPoint]);
+                        const material = new THREE.LineDashedMaterial({
+                            color: 0xFF3333, dashSize: 0.12, gapSize: 0.06,
+                            transparent: true, opacity: 0.7, linewidth: 2
+                        });
+                        const line = new THREE.Line(geometry, material);
+                        line.computeLineDistances();
+                        line.userData.isVectorObject = true;
+                        scene.add(line);
+                        vectorObjects.push(line);
+                        
+                        if (vectors.v3 && vectors.proj_v3_e1) {
+                            const points_v3_proj_e1 = [
+                                new THREE.Vector3(vectors.v3.x, vectors.v3.y, vectors.v3.z),
+                                new THREE.Vector3(vectors.proj_v3_e1.x, vectors.proj_v3_e1.y, vectors.proj_v3_e1.z)
+                            ];
+                            const geom_v3_proj_e1 = new THREE.BufferGeometry().setFromPoints(points_v3_proj_e1);
+                            const mat_v3_proj_e1 = new THREE.LineDashedMaterial({
+                                color: 0xFF6600, dashSize: 0.08, gapSize: 0.04,
+                                transparent: true, opacity: 0.7, linewidth: 2
+                            });
+                            const line_v3_proj_e1 = new THREE.Line(geom_v3_proj_e1, mat_v3_proj_e1);
+                            line_v3_proj_e1.computeLineDistances();
+                            line_v3_proj_e1.userData.isVectorObject = true;
+                            scene.add(line_v3_proj_e1);
+                            vectorObjects.push(line_v3_proj_e1);
+                        }
+                        
+                        if (vectors.v3 && vectors.proj_v3_e2) {
+                            const points_v3_proj_e2 = [
+                                new THREE.Vector3(vectors.v3.x, vectors.v3.y, vectors.v3.z),
+                                new THREE.Vector3(vectors.proj_v3_e2.x, vectors.proj_v3_e2.y, vectors.proj_v3_e2.z)
+                            ];
+                            const geom_v3_proj_e2 = new THREE.BufferGeometry().setFromPoints(points_v3_proj_e2);
+                            const mat_v3_proj_e2 = new THREE.LineDashedMaterial({
+                                color: 0x00DDFF, dashSize: 0.08, gapSize: 0.04,
+                                transparent: true, opacity: 0.7, linewidth: 2
+                            });
+                            const line_v3_proj_e2 = new THREE.Line(geom_v3_proj_e2, mat_v3_proj_e2);
+                            line_v3_proj_e2.computeLineDistances();
+                            line_v3_proj_e2.userData.isVectorObject = true;
+                            scene.add(line_v3_proj_e2);
+                            vectorObjects.push(line_v3_proj_e2);
+                        }
+                        
+                        if (vectors.proj_plane_v3 && vectors.proj_v3_e2) {
+                            const points_plane_proj_e2 = [
+                                new THREE.Vector3(vectors.proj_plane_v3.x, vectors.proj_plane_v3.y, vectors.proj_plane_v3.z),
+                                new THREE.Vector3(vectors.proj_v3_e2.x, vectors.proj_v3_e2.y, vectors.proj_v3_e2.z)
+                            ];
+                            const geom_plane_proj_e2 = new THREE.BufferGeometry().setFromPoints(points_plane_proj_e2);
+                            const mat_plane_proj_e2 = new THREE.LineDashedMaterial({
+                                color: 0x00DDFF, dashSize: 0.08, gapSize: 0.04,
+                                transparent: true, opacity: 0.7, linewidth: 2
+                            });
+                            const line_plane_proj_e2 = new THREE.Line(geom_plane_proj_e2, mat_plane_proj_e2);
+                            line_plane_proj_e2.computeLineDistances();
+                            line_plane_proj_e2.userData.isVectorObject = true;
+                            scene.add(line_plane_proj_e2);
+                            vectorObjects.push(line_plane_proj_e2);
+                        }
+                        
+                        if (vectors.proj_v3_e1 && vectors.proj_v3_e2) {
+                            const decompGroup = createProjectionDecomposition(
+                                vectors.proj_plane_v3, 
+                                vectors.proj_v3_e1, 
+                                vectors.proj_v3_e2
+                            );
+                            scene.add(decompGroup);
+                        }
+                    }
+                    
+                    if (vectors.e3 && vectors.e3.length > 0.001) {
+                        vectors.e3.color = 0xFF33FF;
+                        if (!vectors.e3.name || !vectors.e3.name.startsWith('e3')) {
+                            vectors.e3.name = 'e3';
+                        }
+                        const e3Obj = createVector(vectors.e3, vectors.e3.color, 'e₃');
+                        if (e3Obj.group) {
+                            scene.add(e3Obj.group);
+                            
+                            const endPoint = new THREE.Vector3(vectors.e3.x, vectors.e3.y, vectors.e3.z);
+                            createE3Marker(endPoint);
+                        }
+                    }
+                    
+                    const plane = createOrthogonalPlane(vectors.e2, 2, 0x00DDFF);
+                    scene.add(plane);
+                    
+                    document.getElementById('e3-current').textContent = vectors.e3.toString();
+                }
+                
+                updateInfoPanel();
+            }
+            
+            function updateInfoPanel() {
+                for (let i = 0; i <= 3; i++) {
+                    const step = document.getElementById(`step-${i}`);
+                    step.style.display = 'block';
+                    step.style.opacity = i <= currentStep ? '1' : '0.4';
+                }
+                
+                if (vectors.e1) document.getElementById('e1-value').textContent = vectors.e1.toString();
+                if (vectors.proj_v2) document.getElementById('proj-v2').textContent = vectors.proj_v2.toString();
+                if (vectors.e2) document.getElementById('e2-value').textContent = vectors.e2.toString();
+                if (vectors.proj_v3_e1) document.getElementById('proj-v3-e1').textContent = vectors.proj_v3_e1.toString();
+                if (vectors.proj_v3_e2) document.getElementById('proj-v3-e2').textContent = vectors.proj_v3_e2.toString();
+                if (vectors.proj_plane_v3) document.getElementById('proj-plane-v3').textContent = vectors.proj_plane_v3.toString();
+                if (vectors.e3) document.getElementById('e3-value').textContent = vectors.e3.toString();
+                
+                const progress = (currentStep / 3) * 100;
+                document.getElementById('progress-fill').style.width = progress + '%';
+                
+                const statusTexts = ['初始向量', '第一步完成', '第二步完成', '正交化完成'];
+                document.getElementById('status').textContent = statusTexts[currentStep];
+            }
+            
+            function performStep(step) {
+                try {
+                    switch(step) {
+                        case 1:
+                            vectors.e1 = vectors.v1.clone();
+                            vectors.e1.color = 0xFF6600;
+                            vectors.e1.name = 'e1';
+                            break;
+                        case 2:
+                            if (!vectors.e1) vectors.e1 = vectors.v1.clone();
+                            vectors.proj_v2 = vectors.v2.projectOnto(vectors.e1);
+                            vectors.e2 = vectors.v2.subtract(vectors.proj_v2);
+                            vectors.ortho_v2 = vectors.e2.clone();
+                            vectors.e2.color = 0x00DDFF;
+                            vectors.e2.name = 'e2';
+                            break;
+                        case 3:
+                            if (!vectors.e1) vectors.e1 = vectors.v1.clone();
+                            if (!vectors.e2) {
+                                vectors.proj_v2 = vectors.v2.projectOnto(vectors.e1);
+                                vectors.e2 = vectors.v2.subtract(vectors.proj_v2);
+                                vectors.ortho_v2 = vectors.e2.clone();
+                                vectors.e2.name = 'e2';
+                            }
+                            vectors.proj_v3_e1 = vectors.v3.projectOnto(vectors.e1);
+                            vectors.proj_v3_e2 = vectors.v3.projectOnto(vectors.e2);
+                            vectors.proj_plane_v3 = vectors.proj_v3_e1.clone().add(vectors.proj_v3_e2);
+                            vectors.e3 = vectors.v3.subtract(vectors.proj_plane_v3);
+                            vectors.ortho_v3 = vectors.e3.clone();
+                            vectors.e3.color = 0xFF33FF;
+                            vectors.e3.name = 'e3';
+                            break;
+                    }
+                    currentStep = step;
+                    displayVectors();
+                } catch (error) {
+                    console.error("步骤计算错误:", error);
+                    document.getElementById('error-message').textContent = '计算错误: ' + error.message;
+                }
+            }
+            
+            function applyZoom(zoom) {
+                const baseDistance = 8;
+                const targetDistance = baseDistance / zoom;
+                const direction = camera.position.clone().normalize();
+                camera.position.copy(direction.multiplyScalar(targetDistance));
+                camera.updateProjectionMatrix();
+                currentZoom = zoom;
+                document.getElementById('zoom-value').textContent = zoom.toFixed(1) + 'x';
+                document.getElementById('zoom-slider').value = zoom;
+            }
+            
+            function setZoom(value) { applyZoom(value); }
+            
+            function toggleAnimation() {
+                const btn = document.getElementById('play-btn');
+                if (isAnimating) {
+                    isAnimating = false; btn.textContent = '继续动画';
+                    if (animationId) cancelAnimationFrame(animationId);
+                } else {
+                    isAnimating = true; btn.textContent = '暂停动画';
+                    animate();
+                }
+            }
+            
+            function animate() {
+                if (!isAnimating) return;
+                if (currentStep < 3) {
+                    performStep(currentStep + 1);
+                    setTimeout(() => { if (isAnimating) animate(); }, 2500);
+                } else {
+                    isAnimating = false;
+                    document.getElementById('play-btn').textContent = '重新开始';
+                }
+            }
+            
+            function nextStep() {
+                if (currentStep < 3) performStep(currentStep + 1);
+            }
+            
+            function resetAnimation() {
+                currentStep = 0; isAnimating = false;
+                document.getElementById('play-btn').textContent = '开始动画';
+                document.getElementById('status').textContent = '准备就绪';
+                
+                clearAllVectors();
+                initVectors();
+                applyZoom(1);
+                
+                document.getElementById('error-message').textContent = '';
+                document.getElementById('performance-info').textContent = 
+                    '💡 提示：紫色粗线是v₃在e₁-e₂平面上的总投影 | 快捷键：空格-动画 R-重置 N-下一步';
+            }
+            
+            function toggleAutoRotate() {
+                autoRotate = !autoRotate;
+                controls.autoRotate = autoRotate;
+                document.getElementById('rotate-btn').textContent = autoRotate ? '停止旋转' : '自动旋转';
+            }
+            
+            function onWindowResize() {
+                const container = document.getElementById('canvas-container');
+                camera.aspect = container.clientWidth / container.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(container.clientWidth, container.clientHeight);
+            }
+            
+            function render() {
+                requestAnimationFrame(render);
+                controls.update();
+                if (autoRotate) scene.rotation.y += 0.005;
+                renderer.render(scene, camera);
+            }
+            
+            function initDragFeature() {
+                const shortcutPanel = document.querySelector('.shortcut-panel');
+                
+                function startDragging(e) {
+                    isDraggingPanel = true;
+                    mouseInitialX = e.clientX || e.touches[0].clientX;
+                    mouseInitialY = e.clientY || e.touches[0].clientY;
+                    const rect = shortcutPanel.getBoundingClientRect();
+                    panelInitialX = rect.left;
+                    panelInitialY = rect.top;
+                    shortcutPanel.style.left = panelInitialX + 'px';
+                    shortcutPanel.style.top = panelInitialY + 'px';
+                    shortcutPanel.style.right = 'auto';
+                    e.preventDefault();
+                }
+                
+                function dragPanel(e) {
+                    if (!isDraggingPanel) return;
+                    const currentMouseX = e.clientX || e.touches[0].clientX;
+                    const currentMouseY = e.clientY || e.touches[0].clientY;
+                    const deltaX = currentMouseX - mouseInitialX;
+                    const deltaY = currentMouseY - mouseInitialY;
+                    shortcutPanel.style.left = (panelInitialX + deltaX) + 'px';
+                    shortcutPanel.style.top = (panelInitialY + deltaY) + 'px';
+                    e.preventDefault();
+                }
+                
+                function stopDragging() {
+                    isDraggingPanel = false;
+                }
+                
+                shortcutPanel.addEventListener('mousedown', startDragging);
+                shortcutPanel.addEventListener('touchstart', startDragging);
+                document.addEventListener('mousemove', dragPanel);
+                document.addEventListener('touchmove', dragPanel);
+                document.addEventListener('mouseup', stopDragging);
+                document.addEventListener('touchend', stopDragging);
+                shortcutPanel.addEventListener('selectstart', (e) => e.preventDefault());
+            }
+            
+            function bindEvents() {
+                document.getElementById('update-btn').addEventListener('click', updateVectorsFromInput);
+                document.getElementById('play-btn').addEventListener('click', toggleAnimation);
+                document.getElementById('reset-btn').addEventListener('click', resetAnimation);
+                document.getElementById('next-btn').addEventListener('click', nextStep);
+                document.getElementById('rotate-btn').addEventListener('click', toggleAutoRotate);
+                
+                document.getElementById('zoom-slider').addEventListener('input', function(e) {
+                    setZoom(parseFloat(e.target.value));
+                });
+                
+                document.querySelectorAll('.zoom-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const zoom = parseFloat(this.dataset.zoom);
+                        setZoom(zoom);
+                    });
+                });
+                
+                document.addEventListener('keydown', (e) => {
+                    if (!isInitialized) return;
+                    switch(e.key.toLowerCase()) {
+                        case ' ': 
+                            e.preventDefault();
+                            toggleAnimation(); 
+                            break;
+                        case 'a': 
+                            e.preventDefault();
+                            if (!isAnimating) {
+                                isAnimating = true;
+                                document.getElementById('play-btn').textContent = '暂停动画';
+                                animate();
+                            }
+                            break;
+                        case 's': 
+                            e.preventDefault();
+                            nextStep(); 
+                            break;
+                        case 'n': 
+                            nextStep(); 
+                            break;
+                        case 'r': 
+                            resetAnimation(); 
+                            break;
+                        case 'o': 
+                            toggleAutoRotate(); 
+                            break;
+                    }
+                });
+                
+                initDragFeature();
+            }
+            
+            async function initializeApp() {
+                try {
+                    initScene();
+                    initVectors();
+                    updateInitialVectorDisplay();
+                    bindEvents();
+                    
+                    isInitialized = true;
+                    console.log("✅ 应用初始化完成！");
+                    
+                } catch (error) {
+                    console.error("❌ 初始化失败:", error);
+                    showError('场景初始化失败', 
+                        `错误: ${error.message}<br><br>请刷新页面或检查WebGL支持。`);
+                }
+            }
+            
+            // 启动应用
+            initializeApp();
+            render();
+        }
+    </script>
+</body>
+</html>

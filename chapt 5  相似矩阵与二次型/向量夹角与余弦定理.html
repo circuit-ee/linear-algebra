@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>向量夹角与余弦定理公式推导</title>
+    <style>
+        /* === 核心样式（全部内联）=== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+            min-height: 100vh; padding: 20px; color: #1e293b; line-height: 1.6;
+            font-size: 18px;
+        }
+        .container {
+            max-width: 1400px; margin: 0 auto; background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px; border: 1px solid rgba(148, 163, 184, 0.2);
+            box-shadow: 0 8px 32px rgba(2, 8, 20, 0.1);
+            padding: 50px;
+        }
+        .header { text-align: center; margin-bottom: 50px; }
+        .title {
+            font-size: 3.5em; background: linear-gradient(45deg, #0f172a, #1e40af);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            margin-bottom: 15px; font-weight: 700;
+        }
+        .subtitle { font-size: 1.4em; font-weight: 500; }
+        .progress-bar {
+            width: 100%; height: 12px; background: rgba(226, 232, 240, 0.7);
+            border-radius: 6px; margin-bottom: 40px; overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%; background: linear-gradient(90deg, #0ea5e9, #0d9488);
+            width: 0%; transition: width 0.5s ease; border-radius: 6px;
+        }
+        .controls {
+            display: flex; justify-content: center; gap: 20px;
+            margin-bottom: 50px; flex-wrap: wrap;
+        }
+        .btn {
+            padding: 15px 30px; border: none; border-radius: 25px; cursor: pointer;
+            font-size: 20px; font-weight: 600; transition: all 0.3s ease;
+            background: rgba(241, 245, 249, 0.9); color: #1e293b;
+        }
+        .btn:hover {
+            background: linear-gradient(45deg, #0ea5e9, #0d9488);
+            color: white; transform: translateY(-3px);
+            box-shadow: 0 7px 20px rgba(14, 165, 233, 0.3);
+        }
+        .step {
+            display: none; opacity: 0; transform: translateY(20px);
+            transition: all 0.5s ease; position: relative;
+        }
+        .step.active {
+            display: block; opacity: 1; transform: translateY(0);
+        }
+        .step-title {
+            font-size: 2.5em; color: #1e40af; margin-bottom: 30px;
+            text-align: center; font-weight: 600;
+        }
+        .step-number {
+            background: linear-gradient(45deg, #0ea5e9, #0d9488); color: white;
+            width: 50px; height: 50px; border-radius: 50%; display: inline-flex;
+            align-items: center; justify-content: center;
+            margin-right: 20px; font-size: 1.1em; font-weight: bold;
+        }
+        .step-description {
+            font-size: 1.3em; font-weight: 500;
+            margin-bottom: 30px; text-align: center;
+        }
+        .math-content {
+            background: rgba(255, 255, 255, 0.7); border-radius: 15px;
+            padding: 40px; margin-bottom: 30px;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            box-shadow: 0 4px 20px rgba(2, 8, 20, 0.1);
+        }
+        .step-layout {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: start;
+        }
+        @media (max-width: 768px) { .step-layout { grid-template-columns: 1fr; } }
+        
+        /* === 画布SVG样式放大 === */
+        .triangle-svg {
+            width: 100%; max-width: 700px; height: 600px;
+            margin: 0 auto; display: block;
+        }
+        .vector-arrow {
+            fill: none; stroke-width: 8;
+            stroke-linecap: round; transition: all 0.5s ease;
+        }
+        .vector-a { stroke: #1e40af; }
+        .vector-b { stroke: #059669; }
+        .vector-c { stroke: #dc2626; }
+        .vector-label {
+            font-size: 36px; font-weight: bold; fill: #1e293b;
+            transition: all 0.3s ease;
+        }
+        .angle-arc {
+            fill: none; stroke: #0ea5e9; stroke-width: 4;
+            stroke-dasharray: 8,8; opacity: 0; transition: opacity 0.5s ease;
+        }
+        .angle-arc.show { opacity: 1; }
+        .vector-point { fill: #1e293b; r: 6; }
+        .formula-box {
+            background: rgba(255, 255, 255, 0.85); border: 1px solid rgba(148, 163, 184, 0.3);
+            border-radius: 15px; padding: 30px; margin: 20px 0;
+            transition: all 0.4s ease;
+        }
+        .formula-box:hover {
+            border-color: rgba(14, 165, 233, 0.6); transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(14, 165, 233, 0.1);
+        }
+        .formula-text {
+            font-size: 1.8em; font-weight: bold; color: #1e293b;
+            text-align: center; margin: 15px 0;
+            font-family: 'Cambria Math', 'Times New Roman', serif;
+        }
+        .formula-text .highlight {
+            color: #0ea5e9; background: rgba(14, 165, 233, 0.1);
+            padding: 3px 12px; border-radius: 6px; font-weight: bold;
+        }
+        .derivation-arrow {
+            text-align: center; font-size: 3em;
+            color: #0ea5e9; margin: 30px 0;
+        }
+        .step-indicator {
+            position: absolute; top: 20px; right: 20px;
+            background: rgba(14, 165, 233, 0.1); padding: 10px 20px;
+            border-radius: 25px; font-size: 1.1em; font-weight: 500;
+            color: #0ea5e9;
+        }
+        .summary-box {
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.05), rgba(13, 148, 136, 0.05));
+            border-radius: 20px; padding: 30px; margin: 25px 0;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+        }
+        .summary-content, .summary-title { font-size: 1.3em; font-weight: 500; }
+        .final-formula {
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.1), rgba(13, 148, 136, 0.1));
+            border: 3px solid rgba(14, 165, 233, 0.4); border-radius: 20px;
+            padding: 40px; margin: 30px 0; text-align: center;
+        }
+        @keyframes flash {
+            0%, 100% { background: transparent; transform: scale(1); }
+            50% { background: rgba(14, 165, 233, 0.1); transform: scale(1.03); }
+        }
+        .highlight-flash { animation: flash 1.5s ease-in-out 3; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.8s ease-in; }
+        .triangle-container {
+            background: rgba(241, 245, 249, 0.5); border-radius: 20px;
+            padding: 30px; margin-bottom: 30px;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+        }
+        .triangle-title {
+            font-size: 1.5em; font-weight: bold;
+            text-align: center; margin-bottom: 15px; color: #1e40af;
+        }
+        @keyframes anglePulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.1); }
+        }
+        .angle-label-pulse { animation: anglePulse 2s infinite; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">向量夹角与余弦定理公式推导</h1>
+            <p class="subtitle">从三角形余弦定理到向量内积表达式的完整推导过程</p>
+        </div>
+
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <div class="controls">
+            <button class="btn" onclick="startAnimation()">
+                <span id="startBtnText">开始动画</span>
+            </button>
+            <button class="btn" onclick="previousStep()">上一步</button>
+            <button class="btn" onclick="nextStep()">下一步</button>
+            <button class="btn" onclick="resetAnimation()">重置</button>
+            <button class="btn" onclick="toggleSpeed()">
+                <span id="speedText">调整速度</span>
+            </button>
+        </div>
+
+        <div class="step-container" id="stepContainer"></div>
+    </div>
+
+    <script>
+        class VectorAngleDerivationAnimation {
+            constructor() {
+                this.currentStep = 0;
+                this.totalSteps = 7;
+                this.animationSpeed = 2000;
+                this.isAnimating = false;
+                this.animationInterval = null;
+                
+                this.steps = [
+                    { title: "向量三角形", description: "两个向量a和b构成三角形的两边，a-b是第三边", content: () => this.renderTriangle() },
+                    { title: "余弦定理", description: "根据三角形余弦定理，三边长度与夹角的关系", content: () => this.renderCosineLaw() },
+                    { title: "向量长度表示", description: "将边长用向量长度表示，建立向量与几何的联系", content: () => this.renderVectorLengths() },
+                    { title: "内积替换长度", description: "将长度平方用向量内积替换，|v|² = [v,v]", content: () => this.renderInnerProductSubstitution() },
+                    { title: "展开并整理", description: "展开内积表达式，消去相同项，整理方程", content: () => this.renderExpansion() },
+                    { title: "得到夹角公式", description: "最终得到向量夹角的余弦公式", content: () => this.renderFinalFormula() },
+                    { title: "夹角范围与特殊情况", description: "讨论向量夹角的取值范围、三角形内角关系及特殊情况", content: () => this.renderAngleDiscussion() }
+                ];
+
+                try {
+                    this.init();
+                    console.log('✅ 动画初始化成功');
+                } catch (error) {
+                    console.error('❌ 动画初始化失败:', error);
+                    alert('初始化失败，请查看控制台错误信息');
+                }
+            }
+
+            init() {
+                const container = document.getElementById('stepContainer');
+                if (!container) throw new Error('步骤容器未找到');
+                
+                container.innerHTML = '';
+                
+                this.steps.forEach((step, index) => {
+                    const stepDiv = document.createElement('div');
+                    stepDiv.className = 'step' + (index === 0 ? ' active' : '');
+                    stepDiv.id = `step${index}`;
+                    
+                    stepDiv.innerHTML = `
+                        <div class="step-indicator">步骤 ${index + 1}/${this.totalSteps}</div>
+                        <h2 class="step-title">
+                            <span class="step-number">${index + 1}</span>${step.title}
+                        </h2>
+                        <p class="step-description">${step.description}</p>
+                        <div class="math-content">${step.content()}</div>
+                    `;
+                    
+                    container.appendChild(stepDiv);
+                });
+                
+                this.updateProgress();
+                setTimeout(() => this.animateStep0Angle(), 500);
+            }
+
+            animateStep0Angle() {
+                const angleLabel = document.querySelector('#step0 #angleLabel');
+                if (angleLabel) angleLabel.classList.add('angle-label-pulse');
+            }
+
+            renderTriangle() {
+                // === 放大后的三角形坐标 ===
+                // O点: (50, 350) -> B点: (350, 350) -> A点: (200, 100)
+                // 向量b长度: 300px (原为150px，放大2倍)
+                // 向量a长度: ~291px (原为~156px，放大1.87倍)
+                // 整个三角形占据画布更大空间
+                return `
+                    <div class="step-layout">
+                        <div class="triangle-container">
+                            <div class="triangle-title">向量三角形</div>
+                            <svg class="triangle-svg" viewBox="0 0 500 400">
+                                <defs>
+                                    <marker id="arrowhead-blue" markerWidth="14" markerHeight="14" refX="13" refY="7" orient="auto">
+                                        <polygon points="0 0, 14 7, 0 14" fill="#1e40af" />
+                                    </marker>
+                                    <marker id="arrowhead-green" markerWidth="14" markerHeight="14" refX="13" refY="7" orient="auto">
+                                        <polygon points="0 0, 14 7, 0 14" fill="#059669" />
+                                    </marker>
+                                    <marker id="arrowhead-red" markerWidth="14" markerHeight="14" refX="13" refY="7" orient="auto">
+                                        <polygon points="0 0, 14 7, 0 14" fill="#dc2626" />
+                                    </marker>
+                                </defs>
+                                <line class="vector-arrow vector-b" x1="50" y1="350" x2="350" y2="350" marker-end="url(#arrowhead-green)"/>
+                                <line class="vector-arrow vector-a" x1="50" y1="350" x2="200" y2="100" marker-end="url(#arrowhead-blue)"/>
+                                <line class="vector-arrow vector-c" x1="350" y1="350" x2="200" y2="100" marker-end="url(#arrowhead-red)"/>
+                                <circle class="vector-point" cx="50" cy="350"/>
+                                <circle class="vector-point" cx="350" cy="350"/>
+                                <circle class="vector-point" cx="200" cy="100"/>
+                                <text x="40" y="380" class="vector-label" fill="#1e293b" font-weight="bold">O</text>
+                                <text x="360" y="390" class="vector-label" fill="#059669" font-weight="bold">B</text>
+                                <text x="210" y="90" class="vector-label" fill="#1e40af" font-weight="bold">A</text>
+                                <text x="190" y="300" class="vector-label" fill="#059669" font-weight="bold">b</text>
+                                <text x="110" y="210" class="vector-label" fill="#1e40af" font-weight="bold">a</text>
+                                <text x="260" y="230" class="vector-label" fill="#dc2626" font-weight="bold">a-b</text>
+                                <path id="angleArc" class="angle-arc show" d="M 80 350 A 30 30 0 0 0 65 335"/>
+                                <text id="angleLabel" x="80" y="330" class="vector-label angle-label-pulse" fill="#0ea5e9" font-weight="bold">θ</text>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="formula-box">
+                                <div class="formula-text">
+                                    <div>向量关系：</div>
+                                    <div style="margin-top: 20px; text-align: left; padding-left: 30px;">
+                                        <div>• <span class="highlight">OA = a</span></div>
+                                        <div>• <span class="highlight">OB = b</span></div>
+                                        <div>• <span class="highlight">BA = a - b</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            renderCosineLaw() {
+                return `
+                    <div class="step-layout">
+                        <div class="triangle-container">
+                            <svg class="triangle-svg" viewBox="0 0 500 400">
+                                <line class="vector-arrow vector-b" x1="50" y1="350" x2="350" y2="350" marker-end="url(#arrowhead-green)"/>
+                                <line class="vector-arrow vector-a" x1="50" y1="350" x2="200" y2="100" marker-end="url(#arrowhead-blue)"/>
+                                <line class="vector-arrow vector-c" x1="350" y1="350" x2="200" y2="100" marker-end="url(#arrowhead-red)"/>
+                                <path class="angle-arc show" d="M 80 350 A 30 30 0 0 0 65 335"/>
+                                <text x="80" y="330" class="vector-label" fill="#0ea5e9" font-weight="bold">θ</text>
+                                <text x="190" y="300" class="vector-label" fill="#059669" font-weight="bold">|b|</text>
+                                <text x="110" y="210" class="vector-label" fill="#1e40af" font-weight="bold">|a|</text>
+                                <text x="260" y="230" class="vector-label" fill="#dc2626" font-weight="bold">|a-b|</text>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="formula-box">
+                                <div class="formula-text">余弦定理: <span class="highlight">c² = a² + b² - 2ab cos(C)</span></div>
+                            </div>
+                            <div class="derivation-arrow">↓</div>
+                            <div class="formula-box">
+                                <div class="formula-text">
+                                    <div style="display: flex; align-items: center; justify-content: center; gap: 15px; flex-wrap: wrap;">
+                                        <span>|a-b|²</span><span style="color: #0ea5e9;">=</span>
+                                        <span>|a|²</span><span style="color: #0ea5e9;">+</span>
+                                        <span>|b|²</span><span style="color: #0ea5e9;">-</span>
+                                        <span>2|a||b| cos(θ)</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            renderVectorLengths() {
+                return `
+                    <div class="step-layout">
+                        <div class="triangle-container">
+                            <svg class="triangle-svg" viewBox="0 0 500 400">
+                                <line class="vector-arrow vector-b" x1="50" y1="350" x2="350" y2="350" marker-end="url(#arrowhead-green)"/>
+                                <line class="vector-arrow vector-a" x1="50" y1="350" x2="200" y2="100" marker-end="url(#arrowhead-blue)"/>
+                                <line class="vector-arrow vector-c" x1="350" y1="350" x2="200" y2="100" marker-end="url(#arrowhead-red)"/>
+                                <path class="angle-arc show" d="M 80 350 A 30 30 0 0 0 65 335"/>
+                                <text x="80" y="330" class="vector-label" fill="#0ea5e9" font-weight="bold">θ</text>
+                                <text x="170" y="300" class="vector-label" fill="#059669" font-weight="bold">|b| = √[b,b]</text>
+                                <text x="110" y="210" class="vector-label" fill="#1e40af" font-weight="bold">|a| = √[a,a]</text>
+                                <text x="230" y="230" class="vector-label" fill="#dc2626" font-weight="bold">|a-b| = √[(a-b),(a-b)]</text>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="formula-box">
+                                <div class="formula-text" style="font-size: 1.4em;">
+                                    |a|² = [a,a] = Σ aᵢ²<br>
+                                    |b|² = [b,b] = Σ bᵢ²<br>
+                                    |a-b|² = [(a-b),(a-b)]
+                                </div>
+                            </div>
+                            <div class="derivation-arrow">↓</div>
+                            <div class="formula-box">
+                                <div class="formula-text">
+                                    <span class="highlight">[(a-b),(a-b)] = [a,a] + [b,b] - 2|a||b| cos(θ)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            renderInnerProductSubstitution() {
+                return `
+                    <div class="step-layout">
+                        <div class="triangle-container">
+                            <svg class="triangle-svg" viewBox="0 0 500 400">
+                                <line class="vector-arrow vector-b" x1="50" y1="350" x2="350" y2="350" marker-end="url(#arrowhead-green)"/>
+                                <line class="vector-arrow vector-a" x1="50" y1="350" x2="200" y2="100" marker-end="url(#arrowhead-blue)"/>
+                                <line class="vector-arrow vector-c" x1="350" y1="350" x2="200" y2="100" marker-end="url(#arrowhead-red)"/>
+                                <path class="angle-arc show" d="M 80 350 A 30 30 0 0 0 65 335"/>
+                                <text x="80" y="330" class="vector-label" fill="#0ea5e9" font-weight="bold">θ</text>
+                                <text x="200" y="400" class="vector-label" fill="#1e293b" font-weight="bold" text-anchor="middle">[(a-b),(a-b)] = [a,a] - 2[a,b] + [b,b]</text>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="formula-box">
+                                <div class="formula-text" style="font-size: 1.4em;">
+                                    展开左边: <span class="highlight">[(a-b),(a-b)] = [a,a] - 2[a,b] + [b,b]</span>
+                                </div>
+                            </div>
+                            <div class="derivation-arrow">↓</div>
+                            <div class="formula-box">
+                                <div class="formula-text">
+                                    <span class="highlight">[a,a] - 2[a,b] + [b,b] = [a,a] + [b,b] - 2|a||b| cos(θ)</span>
+                                </div>
+                            </div>
+                            <div class="derivation-arrow">↓</div>
+                            <div class="formula-box">
+                                <div class="formula-text">
+                                    消去相同项: <span class="highlight">-2[a,b] = -2|a||b| cos(θ)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            renderExpansion() {
+                return `
+                    <div class="step-layout">
+                        <div class="triangle-container">
+                            <svg class="triangle-svg" viewBox="0 0 500 400">
+                                <line class="vector-arrow vector-b" x1="50" y1="350" x2="350" y2="350" marker-end="url(#arrowhead-green)"/>
+                                <line class="vector-arrow vector-a" x1="50" y1="350" x2="200" y2="100" marker-end="url(#arrowhead-blue)"/>
+                                <path class="angle-arc show" d="M 80 350 A 30 30 0 0 0 65 335"/>
+                                <text x="80" y="330" class="vector-label" fill="#0ea5e9" font-weight="bold">θ</text>
+                                <text x="200" y="400" class="vector-label" fill="#0d9488" font-weight="bold" text-anchor="middle">[a,b] = |a||b| cos(θ)</text>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="formula-box">
+                                <div class="formula-text" style="font-size: 1.6em;">
+                                    两边同除以 -2: <span class="highlight">[a,b] = |a||b| cos(θ)</span>
+                                </div>
+                            </div>
+                            <div class="derivation-arrow">↓</div>
+                            <div class="formula-box">
+                                <div class="formula-text" style="font-size: 1.8em;">
+                                    <span class="highlight">cos(θ) = [a,b] / (|a||b|)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            renderFinalFormula() {
+                return `
+                    <div class="step-layout">
+                        <div class="triangle-container">
+                            <svg class="triangle-svg" viewBox="0 0 500 400">
+                                <line class="vector-arrow vector-b" x1="50" y1="350" x2="350" y2="350" marker-end="url(#arrowhead-green)"/>
+                                <line class="vector-arrow vector-a" x1="50" y1="350" x2="200" y2="100" marker-end="url(#arrowhead-blue)"/>
+                                <path class="angle-arc show" d="M 80 350 A 30 30 0 0 0 65 335"/>
+                                <text x="80" y="330" class="vector-label" fill="#0ea5e9" font-weight="bold">θ</text>
+                                <text x="200" y="400" class="vector-label" fill="#1e40af" font-weight="bold" text-anchor="middle">θ = arccos( [a,b] / (|a||b|) )</text>
+                            </svg>
+                            <div class="final-formula">
+                                <div class="formula-text" style="font-size: 2em;">
+                                    <div style="display: flex; align-items: center; justify-content: center; gap: 20px; margin: 20px 0;">
+                                        <span>cos(θ)</span><span style="color: #0ea5e9;">=</span>
+                                        <div style="display: flex; flex-direction: column; align-items: center;">
+                                            <span style="color: #1e40af;">[a,b]</span>
+                                            <hr style="width: 80px; border: 2px solid #1e40af; margin: 5px 0;">
+                                            <span style="color: #1e40af;">|a||b|</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="summary-box">
+                                <div class="summary-content">
+                                    <p>• <strong>几何意义</strong>：夹角余弦等于内积除以模长乘积</p>
+                                    <p>• <strong>正交判定</strong>：[a,b] = 0 ⇔ θ = 90°</p>
+                                    <p>• <strong>平行判定</strong>：[a,b] = ±|a||b| ⇔ θ = 0°或180°</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            renderAngleDiscussion() {
+                return `
+                    <div class="step-layout">
+                        <div class="triangle-container">
+                            <div class="triangle-title">夹角范围与特殊情况</div>
+                            <div class="formula-box">
+                                <div class="formula-text">
+                                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; font-size: 1em;">
+                                        <div style="color: #0ea5e9;">锐角: 0° < θ < 90°<br>cos(θ) > 0</div>
+                                        <div style="color: #8b5cf6;">直角: θ = 90°<br>cos(θ) = 0</div>
+                                        <div style="color: #f59e0b;">钝角: 90° < θ ≤ 180°<br>cos(θ) < 0</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="summary-box" style="margin-top: 20px;">
+                                <div class="summary-title">重要性质</div>
+                                <div class="summary-content" style="font-size: 1.1em;">
+                                    <p>• <strong>取值范围</strong>：θ ∈ [0°, 180°]（或 [0, π] 弧度）</p>
+                                    <p>• <strong>与三角形关系</strong>：在△OAB中，∠AOB就是向量a与b的夹角</p>
+                                    <p>• <strong>共线情况</strong>：θ = 0°（同向）或 180°（反向）</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="final-formula">
+                                <p style="margin-bottom: 20px; font-size: 1.4em; color: #1e40af; font-weight: bold;">特殊情况汇总</p>
+                                <div style="text-align: left; font-size: 1.2em; line-height: 2;">
+                                    <div>• <span class="highlight">正交</span>：[a,b] = 0 ↔ θ = 90°</div>
+                                    <div>• <span class="highlight">同向</span>：[a,b] = |a||b| ↔ θ = 0°</div>
+                                    <div>• <span class="highlight">反向</span>：[a,b] = -|a||b| ↔ θ = 180°</div>
+                                    <div>• <span class="highlight">锐角</span>：[a,b] > 0 ↔ 0° < θ < 90°</div>
+                                    <div>• <span class="highlight">钝角</span>：[a,b] < 0 ↔ 90° < θ < 180°</div>
+                                </div>
+                            </div>
+                            <div class="summary-box" style="margin-top: 20px;">
+                                <p style="color: #0d9488; font-weight: bold; font-size: 1.2em;">结论：</p>
+                                <p style="margin-top: 10px; font-size: 1.1em;">向量夹角公式 cos(θ) = [a,b] / (|a||b|) 完整描述了向量间的几何关系，适用于所有夹角范围。</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            startAnimation() {
+                if (this.isAnimating) {
+                    this.pauseAnimation();
+                    return;
+                }
+                
+                this.isAnimating = true;
+                document.getElementById('startBtnText').textContent = '暂停动画';
+                
+                this.animationInterval = setInterval(() => {
+                    if (this.currentStep < this.totalSteps - 1) {
+                        this.nextStep();
+                    } else {
+                        this.pauseAnimation();
+                        this.showCompletionMessage();
+                    }
+                }, this.animationSpeed);
+            }
+
+            pauseAnimation() {
+                this.isAnimating = false;
+                document.getElementById('startBtnText').textContent = '继续动画';
+                if (this.animationInterval) {
+                    clearInterval(this.animationInterval);
+                    this.animationInterval = null;
+                }
+            }
+
+            nextStep() {
+                if (this.currentStep < this.totalSteps - 1) {
+                    this.goToStep(this.currentStep + 1);
+                }
+            }
+
+            previousStep() {
+                if (this.currentStep > 0) {
+                    this.goToStep(this.currentStep - 1);
+                }
+            }
+
+            goToStep(stepIndex) {
+                const currentStepEl = document.getElementById(`step${this.currentStep}`);
+                if (currentStepEl) currentStepEl.classList.remove('active');
+                
+                this.currentStep = stepIndex;
+                const newStepEl = document.getElementById(`step${this.currentStep}`);
+                if (newStepEl) {
+                    newStepEl.classList.add('active');
+                    newStepEl.classList.add('fade-in');
+                    setTimeout(() => newStepEl.classList.remove('fade-in'), 500);
+                }
+                
+                this.updateProgress();
+                
+                if (this.currentStep === this.totalSteps - 1 && this.isAnimating) {
+                    this.pauseAnimation();
+                    this.showCompletionMessage();
+                }
+            }
+
+            updateProgress() {
+                const progress = ((this.currentStep + 1) / this.totalSteps) * 100;
+                const fill = document.getElementById('progressFill');
+                if (fill) fill.style.width = progress + '%';
+            }
+
+            resetAnimation() {
+                this.pauseAnimation();
+                this.currentStep = 0;
+                this.goToStep(0);
+            }
+
+            toggleSpeed() {
+                const speeds = [1000, 2000, 3000, 5000];
+                const speedText = ['快速', '正常', '较慢', '慢速'];
+                const currentIndex = speeds.indexOf(this.animationSpeed);
+                const nextIndex = (currentIndex + 1) % speeds.length;
+                this.animationSpeed = speeds[nextIndex];
+                
+                document.getElementById('speedText').textContent = `速度: ${speedText[nextIndex]}`;
+                
+                if (this.isAnimating) {
+                    this.pauseAnimation();
+                    setTimeout(() => this.startAnimation(), 500);
+                }
+            }
+
+            showCompletionMessage() {
+                const message = document.createElement('div');
+                message.style.cssText = `
+                    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                    background: linear-gradient(135deg, #0ea5e9, #0d9488); color: white;
+                    padding: 40px; border-radius: 20px; text-align: center; z-index: 9999;
+                    animation: fadeIn 0.5s ease; box-shadow: 0 10px 30px rgba(14, 165, 233, 0.4);
+                    font-size: 1.3em;
+                `;
+                message.innerHTML = `
+                    <h3 style="margin-bottom: 20px; font-size: 1.5em;">🎉 推导完成！</h3>
+                    <p style="margin-bottom: 25px; font-size: 1.2em;">成功推导出向量夹角公式</p>
+                    <button onclick="this.parentElement.remove()" style="
+                        background: rgba(255,255,255,0.2); border: none; color: white;
+                        padding: 12px 25px; border-radius: 20px; cursor: pointer; font-size: 1.1em;
+                    ">关闭</button>
+                `;
+                document.body.appendChild(message);
+                setTimeout(() => message.remove(), 5000);
+            }
+        }
+
+        // === 全局控制 ===
+        let animation = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+                animation = new VectorAngleDerivationAnimation();
+                console.log('✅ 动画初始化成功');
+            } catch (error) {
+                console.error('❌ 动画初始化失败:', error);
+                console.error(error.stack);
+            }
+        });
+
+        function startAnimation() {
+            if (animation) animation.startAnimation();
+        }
+        function previousStep() {
+            if (animation) animation.previousStep();
+        }
+        function nextStep() {
+            if (animation) animation.nextStep();
+        }
+        function resetAnimation() {
+            if (animation) animation.resetAnimation();
+        }
+        function toggleSpeed() {
+            if (animation) animation.toggleSpeed();
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowLeft') previousStep();
+            if (e.key === 'ArrowRight') nextStep();
+            if (e.key === ' ') {
+                e.preventDefault();
+                startAnimation();
+            }
+        });
+
+        console.log('脚本加载完成，等待DOM初始化...');
+    </script>
+</body>
+</html>

@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>二次型化简 · 工程意义</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--ink:#1a202c;--sub:#5b6b7b;--brand:#2563eb;--green:#10b981;--warn:#ea580c;--purple:#8b5cf6;--line:#e4e9f2;}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:20px;}
+body{background:var(--bg);color:var(--ink);font-family:-apple-system,"PingFang SC","Microsoft YaHei","Cambria Math","Noto Sans Math","STIX Two Math",sans-serif;line-height:1.8;}
+header{background:linear-gradient(135deg,#2563eb,#8b5cf6);color:#fff;padding:2.6rem 1.5rem 2.2rem;text-align:center;}
+header h1{font-size:2.2rem;margin-bottom:.6rem;}
+header p{font-size:1.08rem;opacity:.95;max-width:900px;margin:0 auto;}
+main{max-width:1100px;margin:0 auto;padding:2rem 1.2rem 4rem;}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:2rem;box-shadow:0 6px 24px rgba(30,50,90,.07);margin:1.8rem 0;}
+h2{font-size:1.55rem;color:var(--brand);margin-bottom:.8rem;display:flex;align-items:center;gap:.6rem;}
+h2 .num{background:var(--brand);color:#fff;border-radius:10px;padding:.2rem .8rem;font-size:1.05rem;}
+code{background:#eef4ff;border-radius:6px;padding:.1rem .5rem;font-family:"Cambria Math","STIX Two Math",serif;font-size:1.05em;}
+.formula{background:#eef4ff;border-left:5px solid var(--brand);padding:1rem 1.2rem;margin:1rem 0;border-radius:8px;font-family:"Cambria Math","STIX Two Math",serif;font-size:1.25rem;text-align:center;}
+.ctrl{display:flex;flex-wrap:wrap;gap:.8rem;align-items:center;margin:.8rem 0;}
+.ctrl label{font-size:1rem;font-weight:600;}
+input[type=range]{flex:1;min-width:140px;accent-color:var(--brand);}
+.val{font-size:1.1rem;font-weight:800;color:var(--brand);min-width:60px;text-align:center;}
+canvas{display:block;background:#f8fafc;border-radius:10px;width:100%;}
+.golden{background:linear-gradient(135deg,#fff7e6,#eaf2ff);border:2px solid #f2c94c;border-radius:14px;padding:1.1rem 1.3rem;margin:1rem 0;font-size:1.08rem;}
+.tip{background:#eef4ff;border-left:4px solid var(--brand);padding:1rem;border-radius:8px;margin:.8rem 0;}
+table{width:100%;border-collapse:collapse;font-size:1rem;}
+td,th{border:1px solid var(--line);padding:.6rem;text-align:center;}
+th{background:#e8f4fd;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+@media(max-width:700px){.grid2{grid-template-columns:1fr;}.card{padding:1.3rem;}html{font-size:18px;}header h1{font-size:1.8rem;}}
+</style>
+</head>
+<body>
+<header>
+  <h1>二次型化简 f = xᵀ A x 的工程意义</h1>
+  <p>大一友好 · 正交变换 x=Qy 把交叉项消掉 · 标准形 = 主轴方向 · 无乱码符号</p>
+</header>
+<main>
+
+<section class="card">
+  <h2><span class="num">★</span>一句话本质</h2>
+  <div class="golden">
+    二次型 <code>f(x)=xᵀ A x</code>（A 实对称）描述"能量/惯性/应力/损失"这类<b>二次项</b>。<br>
+    关键定理（主轴定理 / 谱定理）：存在<b>正交变换 x = Q y</b>（QᵀQ=I），把 f 化成<br>
+    <code>f = λ₁ y₁² + λ₂ y₂² + ... + λₙ yₙ²</code><br>
+    λᵢ = A 的特征值（实数），Q 的列 = 对应特征向量 = <b>"主轴"方向</b>。<br>
+    <b>工程意义</b>：找到一组互不耦合的主轴，让"交叉干扰"全部消失，λᵢ 告诉每个主轴是"硬/软/稳定/不稳定"。
+  </div>
+</section>
+
+<section class="card">
+  <h2><span class="num">1</span>交互①：正交标准形（对角化 A）</h2>
+  <p>拖 a、b、c 构造 2×2 实对称矩阵 A=[[a,c],[c,b]]，实时算特征值 λ₁≥λ₂ 与主轴方向，并验证 QᵀAQ = diag(λ)。</p>
+  <div class="ctrl">
+    <label>a</label><input id="qa" type="range" min="-3" max="3" step="0.1" value="2"><span class="val" id="qav">2.0</span>
+    <label>b</label><input id="qb" type="range" min="-3" max="3" step="0.1" value="1"><span class="val" id="qbv">1.0</span>
+    <label>c(交叉项)</label><input id="qc" type="range" min="-2" max="2" step="0.1" value="0.8"><span class="val" id="qcv">0.8</span>
+  </div>
+  <div class="grid2">
+    <div><canvas id="qcloud" height="220"></canvas><p class="sub" id="qcloudMsg"></p></div>
+    <div><canvas id="qdiag" height="220"></canvas><p class="sub" id="qdiagMsg"></p></div>
+  </div>
+  <div class="formula" id="qFormu">f = λ₁ y₁² + λ₂ y₂²</div>
+  <div class="tip" id="qVerify">Qᵀ A Q 验证…</div>
+</section>
+
+<section class="card">
+  <h2><span class="num">2</span>交互②：正定判定（优化 / 极小点）</h2>
+  <p>对能量/损失函数 f(x)，A 正定(λ₁,λ₂>0) ⇔ f 在原点取严格极小（碗形）；不定 ⇔ 鞍点。</p>
+  <div class="ctrl">
+    <label>a</label><input id="pa" type="range" min="-2" max="4" step="0.1" value="2"><span class="val" id="pav">2.0</span>
+    <label>b</label><input id="pb" type="range" min="-2" max="4" step="0.1" value="1.5"><span class="val" id="pbv">1.5</span>
+    <label>c</label><input id="pc" type="range" min="-2" max="2" step="0.1" value="0.5"><span class="val" id="pcv">0.5</span>
+  </div>
+  <div class="grid2">
+    <div><canvas id="pbowl" height="220"></canvas><p class="sub">f(x₁,x₂) 的等高线 + 曲面形状</p></div>
+    <div><canvas id="pjudge" height="220"></canvas><p class="sub" id="pjudgeMsg"></p></div>
+  </div>
+  <div class="tip" id="pResult">判定…</div>
+</section>
+
+<section class="card">
+  <h2><span class="num">3</span>交互③：主轴变换 · 应力椭圆（力学）</h2>
+  <p>平面应力状态 σ=[[σx,τ],[τ,σy]]。主轴方向 = 正应力极值方向（主应力），切应力在这两个方向上为 0。</p>
+  <div class="ctrl">
+    <label>σx</label><input id="sx" type="range" min="-3" max="3" step="0.1" value="2"><span class="val" id="sxv">2.0</span>
+    <label>σy</label><input id="sy" type="range" min="-3" max="3" step="0.1" value="0.5"><span class="val" id="syv">0.5</span>
+    <label>τ</label><input id="txy" type="range" min="-2" max="2" step="0.1" value="1"><span class="val" id="txyv">1.0</span>
+  </div>
+  <div class="grid2">
+    <div><canvas id="ellipse" height="240"></canvas><p class="sub" id="ellipseMsg"></p></div>
+    <div><canvas id="stress" height="240"></canvas><p class="sub" id="stressMsg"></p></div>
+  </div>
+  <div class="tip" id="stressOut">主应力 σ1, σ2…</div>
+</section>
+
+<section class="card">
+  <h2><span class="num">4</span>工程应用速览</h2>
+  <table>
+    <tr><th>工程场景</th><th>二次型在描述什么</th><th>正交化简得到</th></tr>
+    <tr><td>结构惯性矩</td><td>I = xᵀ M x（惯性张量）</td><td>主轴惯性矩(λ)·无惯性积</td></tr>
+    <tr><td>平面应力分析</td><td>应力张量 σ (实对称)</td><td>主应力 σ1,σ2·主方向(切应力=0)</td></tr>
+    <tr><td>优化 / 损失函数</td><td>f=xᵀAx+bᵀx</td><td>A 正定↔严格凸↔唯一极小</td></tr>
+    <tr><td>PCA(协方差)</td><td>马氏距离 xᵀC⁻¹x</td><td>主轴=特征向量·方差=λ</td></tr>
+    <tr><td>振动模态</td><td>势能=1/2 xᵀKx,动能=1/2 xᵀMx</td><td>同时对角化→简正模·ω²=λ</td></tr>
+  </table>
+  <div class="golden" style="margin-top:1rem;">
+    💡 记忆：二次型化简 = 给"能量/应力/损失"这团乱麻找一组<b>互不干扰的主轴</b>。正交变换 x=Qy 就是"换到主轴坐标系"，标准形系数 λᵢ 决定每个主轴的性质(硬/软/稳定/极值)。
+  </div>
+</section>
+
+</main>
+
+<script>
+// ---------- 工具 ----------
+function fit(cv,h){
+  const dpr=window.devicePixelRatio||1,rect=cv.getBoundingClientRect();
+  let w=rect.width||cv.clientWidth||(cv.parentElement?cv.parentElement.clientWidth:0)||320;
+  if(w<10) w=320;
+  cv.width=w*dpr; cv.height=(h||cv.height)*dpr;
+  const ctx=cv.getContext('2d');
+  ctx.setTransform(1,0,0,1,0,0); ctx.scale(dpr,dpr);
+  ctx.font='15px "Cambria Math","Noto Sans Math","STIX Two Math",sans-serif';
+  return {ctx,w,h:h||cv.height/dpr};
+}
+function matMul(A,B){const n=A.length,m=B[0].length,p=B.length;const C=Array.from({length:n},()=>Array(m).fill(0));
+  for(let i=0;i<n;i++)for(let j=0;j<m;j++)for(let k=0;k<p;k++)C[i][j]+=A[i][k]*B[k][j];return C;}
+function transpose(M){const n=M.length,m=M[0].length;const T=Array.from({length:m},()=>Array(n).fill(0));
+  for(let i=0;i<n;i++)for(let j=0;j<m;j++)T[j][i]=M[i][j];return T;}
+function eig2(A){ // 2x2 实对称解析求解
+  const a=A[0][0],b=A[0][1],c=A[1][1];
+  const tr=a+c,det=a*c-b*b;
+  const d=Math.sqrt(Math.max(tr*tr/4-det,0));
+  const lam1=tr/2+d,lam2=tr/2-d;
+  let v1,v2;
+  if(Math.abs(b)>1e-9){v1=[b,lam1-a];v2=[b,lam2-a];}
+  else{if(Math.abs(a-c)>1e-9){v1=[1,0];v2=[0,1];}else{v1=[1,0];v2=[0,1];}}
+  function nrm(v){const l=Math.hypot(v[0],v[1]);return l<1e-12?[1,0]:[v[0]/l,v[1]/l];}
+  v1=nrm(v1); v2=nrm(v2);
+  // 保证正交(符号调整)
+  if(Math.abs(v1[0]*v2[0]+v1[1]*v2[1])>1e-6){v2=[-v1[1],v1[0]];}
+  return {lam:[lam1,lam2],vec:[v1,v2]};
+}
+function arrow(ctx,ox,oy,dx,dy,col){
+  ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=3;
+  ctx.beginPath();ctx.moveTo(ox,oy);ctx.lineTo(ox+dx,oy+dy);ctx.stroke();
+  const L=Math.hypot(dx,dy);if(L<1e-3)return;
+  const ux=dx/L,uy=dy/L;const al=10;
+  ctx.beginPath();ctx.moveTo(ox+dx,oy+dy);ctx.lineTo(ox+dx-al*(ux+uy*0.5),oy+dy-al*(uy-ux*0.5));ctx.lineTo(ox+dx-al*(ux-uy*0.5),oy+dy-al*(uy+ux*0.5));ctx.closePath();ctx.fill();
+}
+
+// ---------- ① 正交标准形 ----------
+const qa=document.getElementById('qa'),qb=document.getElementById('qb'),qc=document.getElementById('qc');
+function drawQ(){
+  const a=+qa.value,b=+qb.value,c=+qc.value;
+  document.getElementById('qav').textContent=a.toFixed(1);
+  document.getElementById('qbv').textContent=b.toFixed(1);
+  document.getElementById('qcv').textContent=c.toFixed(1);
+  const A=[[a,c],[c,b]];
+  const {lam,vec}=eig2(A);
+  // 画数据云(由 A 决定椭圆形状 xᵀAx=const)
+  let {ctx,w,h}=fit(document.getElementById('qcloud'),220);
+  ctx.clearRect(0,0,w,h);
+  const cx=w/2,cy=h/2,sc=Math.min(w,h)*0.32;
+  ctx.strokeStyle='#cbd5e1';ctx.beginPath();ctx.moveTo(0,cy);ctx.lineTo(w,cy);ctx.moveTo(cx,0);ctx.lineTo(cx,h);ctx.stroke();
+  // 椭圆 xᵀAx=1
+  ctx.strokeStyle='#2563eb';ctx.lineWidth=2;ctx.beginPath();
+  const N=120,constL=1;
+  for(let i=0;i<=N;i++){const t=-Math.PI+i/N*2*Math.PI;
+    // 沿主轴采样再旋转
+    const r1=Math.sqrt(Math.abs(constL/lam[0])),r2=Math.sqrt(Math.abs(constL/lam[1]));
+    const p1=r1*Math.cos(t),p2=r2*Math.sin(t);
+    const x=vec[0][0]*p1+vec[1][0]*p2, y=vec[0][1]*p1+vec[1][1]*p2;
+    const px=cx+x*sc,py=cy-y*sc;
+    i?ctx.lineTo(px,py):ctx.moveTo(px,py);
+  }
+  ctx.closePath();ctx.stroke();
+  // 主轴
+  const ax1=vec[0],ax2=vec[1];
+  const ml=sc*0.9;
+  arrow(ctx,cx,cy,ax1[0]*ml,ax1[1]*-ml,'#ea580c');
+  arrow(ctx,cx,cy,ax2[0]*ml,ax2[1]*-ml,'#10b981');
+  ctx.fillStyle='#5b6b7b';ctx.fillText('主轴1(λ1='+lam[0].toFixed(2)+')',cx+ax1[0]*ml-30,cy-ax1[1]*ml-6);
+  ctx.fillText('主轴2(λ2='+lam[1].toFixed(2)+')',cx+ax2[0]*ml-30,cy-ax2[1]*ml+14);
+  document.getElementById('qcloudMsg').textContent='A=[['+a+','+c+'],['+c+','+b+']]，沿主轴方向椭圆轴长=1/sqrt(|λ|)';
+
+  // 右图：QᵀAQ 验证
+  const Q=[[vec[0][0],vec[1][0]],[vec[0][1],vec[1][1]]];
+  const Qt=transpose(Q);
+  const QA=matMul(Qt,A),QDAQ=matMul(QA,Q);
+  ({ctx,w,h}=fit(document.getElementById('qdiag'),220));
+  ctx.clearRect(0,0,w,h);
+  ctx.fillStyle='#1a202c';ctx.font='15px monospace';
+  const off=20;
+  ctx.fillText('Qᵀ A Q =',off,30);
+  function matM(M,ox,oy){const sz=34;
+    ctx.strokeStyle='#94a3b8';ctx.lineWidth=1;
+    for(let i=0;i<2;i++)for(let j=0;j<2;j++){ctx.fillStyle='#1a202c';ctx.fillText(M[i][j].toFixed(3),ox+j*sz,oy+i*sz+12);}}
+  matM(QDAQ,off+110,18);
+  // 对角性判定
+  const d01=Math.abs(QDAQ[0][1]),d10=Math.abs(QDAQ[1][0]);
+  const ok=(d01<1e-3&&d10<1e-3);
+  ctx.fillStyle=ok?'#10b981':'#ea580c';ctx.font='15px sans-serif';
+  ctx.fillText(ok?'对角化成功 ✓ (非对角≈0)':'非对角未消为0',off,90);
+  ctx.fillStyle='#5b6b7b';ctx.font='13px monospace';
+  ctx.fillText('diag = [ '+QDAQ[0][0].toFixed(3)+' , '+QDAQ[1][1].toFixed(3)+' ]',off,120);
+  ctx.fillText('off-diag = '+d01.toExponential(1),off,145);
+  document.getElementById('qdiagMsg').textContent='Q 的列=特征向量(主轴)';
+
+  document.getElementById('qFormu').innerHTML='f = '+lam[0].toFixed(2)+' y₁² + '+lam[1].toFixed(2)+' y₂²';
+  document.getElementById('qVerify').innerHTML=
+    'QᵀQ = I 验证：|QᵀQ₀₀-1|='+Math.abs(Qt[0][0]*Q[0][0]+Qt[0][1]*Q[1][0]-1).toExponential(1)
+    +' ，非对角='+Math.abs(Qt[0][0]*Q[0][1]+Qt[0][1]*Q[1][1]).toExponential(1)
+    +'　→　正交变换 x=Qy 消去了交叉项';
+}
+[qa,qb,qc].forEach(x=>x.oninput=drawQ);
+
+// ---------- ② 正定判定 ----------
+const pa=document.getElementById('pa'),pb=document.getElementById('pb'),pc=document.getElementById('pc');
+function drawP(){
+  const a=+pa.value,b=+pb.value,c=+pc.value;
+  document.getElementById('pav').textContent=a.toFixed(1);
+  document.getElementById('pbv').textContent=b.toFixed(1);
+  document.getElementById('pcv').textContent=c.toFixed(1);
+  const A=[[a,c],[c,b]];
+  const {lam}=eig2(A);
+  // 等高线(椭圆) + 分类
+  let {ctx,w,h}=fit(document.getElementById('pbowl'),220);
+  ctx.clearRect(0,0,w,h);
+  const cx=w/2,cy=h/2,sc=Math.min(w,h)*0.3;
+  // 等高线 xᵀAx = k
+  const levels=[0.5,1,1.6,2.4];
+  const palette=['#dbeafe','#bfdbfe','#93c5fd','#60a5fa'];
+  for(let li=0;li<levels.length;li++){if(lam[0]<=0||lam[1]<=0)break;
+    const k=levels[li];const r1=Math.sqrt(k/lam[0]),r2=Math.sqrt(k/lam[1]);
+    ctx.beginPath();
+    for(let i=0;i<=100;i++){const t=-Math.PI+i/100*2*Math.PI;
+      const p1=r1*Math.cos(t),p2=r2*Math.sin(t);
+      const x=A[0][0]?p1:p2,y=p2;
+      const px=cx+x*sc,py=cy-y*sc;i?ctx.lineTo(px,py):ctx.moveTo(px,py);}
+    ctx.closePath();ctx.strokeStyle=palette[li];ctx.lineWidth=2;ctx.stroke();
+  }
+  ctx.strokeStyle='#cbd5e1';ctx.beginPath();ctx.moveTo(0,cy);ctx.lineTo(w,cy);ctx.moveTo(cx,0);ctx.lineTo(cx,h);ctx.stroke();
+  ctx.fillStyle='#1a202c';ctx.fillText('f=xᵀAx 等高线',20,20);
+
+  // 判定
+  const pos=(lam[0]>0&&lam[1]>0);
+  const neg=(lam[0]<0&&lam[1]<0);
+  let kind,col;
+  if(pos){kind='正定 (λ₁,λ₂>0) → 严格凸碗，原点唯一极小';col='#10b981';}
+  else if(neg){kind='负定 (λ₁,λ₂<0) → 严格凹，原点唯一极大';col='#2563eb';}
+  else if(lam[0]>0&&lam[1]<0||lam[0]<0&&lam[1]>0){kind='不定 (λ 异号) → 鞍点';col='#ea580c';}
+  else{kind='半定 (含 λ=0) → 沿某方向平坦';col='#8b5cf6';}
+  ({ctx,w,h}=fit(document.getElementById('pjudge'),220));
+  ctx.clearRect(0,0,w,h);
+  ctx.fillStyle=col;ctx.font='17px sans-serif';ctx.fillText('判定结果',20,30);
+  ctx.fillStyle='#1a202c';ctx.font='15px sans-serif';
+  ctx.fillText(kind,20,60);
+  ctx.fillStyle='#5b6b7b';ctx.font='14px monospace';
+  ctx.fillText('λ₁='+lam[0].toFixed(3),20,100);
+  ctx.fillText('λ₂='+lam[1].toFixed(3),20,125);
+  ctx.fillText('det(A)='+(a*b-c*c).toFixed(3),20,160);
+  ctx.fillText('tr(A)='+(a+b).toFixed(3),20,185);
+  document.getElementById('pjudgeMsg').textContent='顺序主子式: a='+a.toFixed(1)+', det='+(a*b-c*c).toFixed(2);
+  document.getElementById('pResult').innerHTML=
+    '<b>正定判定</b>：a='+a.toFixed(1)+'>0 且 det(A)='+(a*b-c*c).toFixed(2)+'>0 ?　→　'
+    +((a>0&&(a*b-c*c)>0)?'满足 → 正定 ✓（损失函数有唯一极小）':'不满足 → 非正定');
+}
+[pa,pb,pc].forEach(x=>x.oninput=drawP);
+
+// ---------- ③ 应力椭圆 / 主轴 ----------
+const sx=document.getElementById('sx'),sy=document.getElementById('sy'),txy=document.getElementById('txy');
+function drawS(){
+  const sxv=+sx.value,syv=+sy.value,tv=+txy.value;
+  document.getElementById('sxv').textContent=sxv.toFixed(1);
+  document.getElementById('syv').textContent=syv.toFixed(1);
+  document.getElementById('txyv').textContent=tv.toFixed(1);
+  const S=[[sxv,tv],[tv,syv]];
+  const {lam,vec}=eig2(S);
+  // 应力椭圆(截面正应力随方向变化，用莫尔圆思想：正应力极值=λ)
+  let {ctx,w,h}=fit(document.getElementById('ellipse'),240);
+  ctx.clearRect(0,0,w,h);
+  const cx=w/2,cy=h/2,sc=Math.min(w,h)*0.34;
+  ctx.strokeStyle='#cbd5e1';ctx.beginPath();ctx.moveTo(0,cy);ctx.lineTo(w,cy);ctx.moveTo(cx,0);ctx.lineTo(cx,h);ctx.stroke();
+  // 莫尔圆: (σ-(σx+σy)/2)^2 + τ^2 = R^2, R=sqrt(((σx-σy)/2)^2+τ^2)
+  const Cm=(sxv+syv)/2,R=Math.sqrt(((sxv-syv)/2)*((sxv-syv)/2)+tv*tv);
+  ctx.strokeStyle='#8b5cf6';ctx.lineWidth=2;ctx.beginPath();
+  for(let i=0;i<=120;i++){const t=-Math.PI+i/120*2*Math.PI;
+    const sig=Cm+R*Math.cos(t),tau=R*Math.sin(t);
+    const px=cx+sig*sc*0.5,py=cy-tau*sc;
+    i?ctx.lineTo(px,py):ctx.moveTo(px,py);}
+  ctx.closePath();ctx.stroke();
+  ctx.fillStyle='#8b5cf6';ctx.fillText('莫尔圆: 正应力σ范围['+(Cm-R).toFixed(2)+','+(Cm+R).toFixed(2)+']',20,20);
+  ctx.fillStyle='#1a202c';ctx.fillText('σmax='+lam[0].toFixed(2)+' , σmin='+lam[1].toFixed(2),20,h-16);
+  document.getElementById('ellipseMsg').textContent='莫尔圆：主应力=圆上σ的极值=特征值λ';
+
+  // 右图: 主轴方向(单元体)
+  ({ctx,w,h}=fit(document.getElementById('stress'),240));
+  ctx.clearRect(0,0,w,h);
+  const ccx=w/2,ccy=h/2,box=Math.min(w,h)*0.34;
+  ctx.strokeStyle='#1a202c';ctx.lineWidth=2;
+  ctx.strokeRect(ccx-box,ccy-box,box*2,box*2);
+  // 主轴
+  const ax1=vec[0],ax2=vec[1];
+  arrow(ctx,ccx,ccy,ax1[0]*box*1.15,ax1[1]*-box*1.15,'#ea580c');
+  arrow(ctx,ccx,ccy,ax2[0]*box*1.15,ax2[1]*-box*1.15,'#10b981');
+  ctx.fillStyle='#ea580c';ctx.fillText('主方向1 θ='+(Math.atan2(ax1[1],ax1[0])*180/Math.PI).toFixed(0)+'°',ccx+ax1[0]*box*1.2-20,ccy-ax1[1]*box*1.2);
+  ctx.fillStyle='#10b981';ctx.fillText('主方向2 θ='+(Math.atan2(ax2[1],ax2[0])*180/Math.PI).toFixed(0)+'°',ccx+ax2[0]*box*1.2-20,ccy-ax2[1]*box*1.2+16);
+  document.getElementById('stressMsg').textContent='主轴方向(切应力=0的截面)';
+  document.getElementById('stressOut').innerHTML=
+    '主应力 σ₁='+lam[0].toFixed(3)+' ，σ₂='+lam[1].toFixed(3)
+    +'　|　主轴正交性 v₁·v₂='+(ax1[0]*ax2[0]+ax1[1]*ax2[1]).toExponential(1)
+    +'　→　沿主轴截面只有正应力(主应力)，切应力恰为 0';
+}
+[sx,sy,txy].forEach(x=>x.oninput=drawS);
+
+window.addEventListener('DOMContentLoaded',()=>{drawQ();drawP();drawS();});
+window.addEventListener('resize',()=>{drawQ();drawP();drawS();});
+</script>
+</body>
+</html>

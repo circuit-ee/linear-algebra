@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>千里江山图·双连茅屋矩阵变换演示</title>
+<style>
+body{margin:0;padding:20px;font-family:Arial,Helvetica,sans-serif;background:linear-gradient(135deg,#a1c4fd,#c2e9fb);min-height:100vh;}
+.container{max-width:1200px;margin:0 auto;background:rgba(255,255,255,.85);padding:30px;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.15);backdrop-filter:blur(6px);}
+h1{text-align:center;color:#1976d2;margin-bottom:20px;}
+.controls{text-align:center;margin:20px 0;}
+button{padding:12px 24px;margin:0 8px;font-size:16px;cursor:pointer;background:#42a5f5;color:#fff;border:none;border-radius:30px;box-shadow:0 4px 12px rgba(0,0,0,.15);transition:background .3s,transform .2s;}
+button:hover{background:#1e88e5;transform:translateY(-2px);}
+.canvas-container{display:flex;justify-content:space-around;flex-wrap:wrap;gap:20px;margin-top:20px;}
+.canvas-wrapper{text-align:center;background:rgba(255,255,255,.7);padding:15px;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.1);}
+canvas{border:1px solid #90caf9;background:#fff;border-radius:8px;}
+.legend{margin:15px 0 0;font-size:14px;color:#424242;}
+.legend span{display:inline-block;width:14px;height:14px;border-radius:50%;vertical-align:middle;margin-right:6px;}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>千里江山图·双连茅屋矩阵变换对比</h1>
+<div class="controls">
+<button onclick="start()">播放</button>
+<button onclick="stop()">暂停</button>
+<button onclick="reset()">重置</button>
+</div>
+<div class="canvas-container">
+<div class="canvas-wrapper">
+<h3>原始双连茅屋</h3>
+<canvas id="orig" width="320" height="320"></canvas>
+<div class="legend">
+<span style="background:#3a3a3a"></span>黑灰屋檐
+<span style="background:#d2b48c"></span>茅草墙体
+</div>
+</div>
+<div class="canvas-wrapper">
+<h3>正交矩阵（旋转）</h3>
+<canvas id="ortho" width="320" height="320"></canvas>
+<div class="legend">
+<span style="background:#42a5f5"></span>变换后屋檐
+<span style="background:#81c784"></span>变换后墙体
+</div>
+</div>
+<div class="canvas-wrapper">
+<h3>非正交矩阵（剪切+缩放）</h3>
+<canvas id="nonortho" width="320" height="320"></canvas>
+<div class="legend">
+<span style="background:#ab47bc"></span>变换后屋檐
+<span style="background:#dce775"></span>变换后墙体
+</div>
+</div>
+</div>
+</div>
+
+<script>
+/* ---------- 数据定义 ---------- */
+const house = [
+// 左侧屋顶
+{x:-50,y:-30},{x:-40,y:-40},{x:-20,y:-40},{x:-10,y:-30},{x:-15,y:-25},
+// 右侧屋顶
+{x:-5,y:-25},{x:10,y:-45},{x:30,y:-45},{x:40,y:-30},{x:35,y:-25},
+// 中间连接屋檐
+{x:-15,y:-25},{x:15,y:-25},{x:15,y:-15},{x:-15,y:-15},
+// 左侧墙体
+{x:-40,y:-15},{x:-40,y:20},{x:-15,y:20},{x:-15,y:-15},
+// 右侧墙体
+{x:15,y:-15},{x:15,y:20},{x:40,y:20},{x:40,y:-15},
+// 左侧门
+{x:-30,y:20},{x:-30,y:8},{x:-20,y:8},{x:-20,y:20},
+// 右侧门
+{x:20,y:20},{x:20,y:8},{x:30,y:8},{x:30,y:20},
+// 左侧窗
+{x:-35,y:0},{x:-25,y:0},{x:-25,y:8},{x:-35,y:8},
+// 右侧窗
+{x:25,y:0},{x:35,y:0},{x:35,y:8},{x:25,y:8}
+];
+
+const features = [
+{x:-30,y:-40},  // 左屋顶脊
+{x:20,y:-45},   // 右屋顶脊
+{x:-25,y:14},   // 左门把手
+{x:25,y:14}     // 右门把手
+];
+
+/* ---------- 工具函数 ---------- */
+function mul(p,M){
+return {x:p.x*M[0][0]+p.y*M[0][1],y:p.x*M[1][0]+p.y*M[1][1]};
+}
+function orthoMatrix(a){
+const c=Math.cos(a),s=Math.sin(a);
+return [[c,-s],[s,c]];
+}
+function nonOrthoMatrix(){
+return [[1.3,0.4],[0.2,0.9]];
+}
+
+/* ---------- 绘制函数 ---------- */
+function draw(ctx,pts,feat,roofColor='#3a3a3a',wallColor='#d2b48c'){
+ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
+ctx.save();
+ctx.translate(ctx.canvas.width/2,ctx.canvas.height/2);
+ctx.scale(2.2,2.2);
+
+/* 屋顶 */
+ctx.beginPath();
+ctx.moveTo(pts[0].x,pts[0].y);
+for(let i=1;i<11;i++) ctx.lineTo(pts[i].x,pts[i].y);
+ctx.closePath();
+ctx.fillStyle=roofColor;
+ctx.fill();
+ctx.strokeStyle='#000';
+ctx.lineWidth=1.2;
+ctx.stroke();
+
+/* 墙体 */
+ctx.beginPath();
+ctx.moveTo(pts[11].x,pts[11].y);
+for(let i=12;i<pts.length;i++) ctx.lineTo(pts[i].x,pts[i].y);
+ctx.closePath();
+ctx.fillStyle=wallColor;
+ctx.fill();
+ctx.strokeStyle='#8b7355';
+ctx.lineWidth=1;
+ctx.stroke();
+
+/* 特征点 */
+ctx.fillStyle='#ff6f61';
+feat.forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,2.5,0,Math.PI*2);ctx.fill();});
+ctx.restore();
+}
+
+/* ---------- 动画控制 ---------- */
+let rid=null,a=0;
+function animate(){
+a+=0.025;
+draw(ctx1,house,features);
+const oPts=house.map(p=>mul(p,orthoMatrix(a)));
+const oFeat=features.map(p=>mul(p,orthoMatrix(a)));
+draw(ctx2,oPts,oFeat,'#42a5f5','#81c784');
+const nPts=house.map(p=>mul(p,nonOrthoMatrix()));
+const nFeat=features.map(p=>mul(p,nonOrthoMatrix()));
+draw(ctx3,nPts,nFeat,'#ab47bc','#dce775');
+rid=requestAnimationFrame(animate);
+}
+function start(){if(!rid)animate();}
+function stop(){if(rid){cancelAnimationFrame(rid);rid=null;}}
+function reset(){stop();a=0;draw(ctx1,house,features);draw(ctx2,house,features);draw(ctx3,house,features);}
+
+/* ---------- 初始化 ---------- */
+const ctx1=document.getElementById('orig').getContext('2d');
+const ctx2=document.getElementById('ortho').getContext('2d');
+const ctx3=document.getElementById('nonortho').getContext('2d');
+reset();
+</script>
+</body>
+</html>

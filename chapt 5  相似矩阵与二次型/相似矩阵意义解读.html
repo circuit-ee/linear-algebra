@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>相似变换：同一变换，两套尺子（全整数·双色网格叠加）</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: #f4f6f8;
+    font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+    color: #1a1a2e;
+  }
+  .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+  h1 { font-size: 32px; text-align: center; margin: 0 0 6px; }
+  .sub { text-align: center; font-size: 16px; color: #64748b; margin-bottom: 16px; }
+
+  .formula-bar {
+    background: white; border-radius: 14px; padding: 16px 20px;
+    font-size: 25px; text-align: center; margin-bottom: 16px;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.05); line-height: 1.9;
+  }
+  .formula-bar .P { color: #c2410c; font-weight: bold; }
+  .formula-bar .A { color: #dc2626; font-weight: bold; }
+  .formula-bar .eq { color: #7c3aed; font-weight: bold; }
+
+  .stage-card {
+    background: white; border-radius: 16px; padding: 18px;
+    margin-bottom: 16px; box-shadow: 0 4px 18px rgba(0,0,0,0.05);
+  }
+  .stage-title { font-size: 22px; font-weight: bold; margin-bottom: 10px; }
+  .view { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+  .view > div { text-align: center; }
+  canvas { display: block; background: #fafbfc; border-radius: 10px; border: 1px solid #eef1f4; }
+  .legend { font-size: 15px; margin-top: 6px; }
+  .l-alpha { color: #c2410c; font-weight: bold; }
+  .l-beta  { color: #1d4ed8; font-weight: bold; }
+
+  .explain {
+    background: #fffbe8; border-left: 6px solid #f59e0b;
+    border-radius: 10px; padding: 14px 18px; font-size: 19px;
+    line-height: 1.8; margin-top: 12px;
+  }
+  .matrix {
+    display: inline-block; font-family: "SF Mono", monospace;
+    font-size: 19px; background: #f1f5f9; padding: 6px 12px;
+    border-radius: 8px; vertical-align: middle; margin: 0 4px;
+  }
+  .steps { display: flex; gap: 10px; margin-top: 16px; }
+  .steps button {
+    flex: 1; font-size: 17px; padding: 13px; border: none;
+    border-radius: 12px; background: #3b82f6; color: white; cursor: pointer;
+  }
+  .steps button:hover { background: #1d4ed8; }
+  .steps button.active { background: #16a34a; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>同一个线性变换，两套基（全整数·双色网格叠加）</h1>
+  <div class="sub">所有坐标均为整数，直接数格子；每张图同时叠加橙(α)蓝(β)两色网格对比（冷暖强对比，更易区分）</div>
+
+  <div class="formula-bar" id="formula">β = α · <span class="P">P</span></div>
+
+  <div class="stage-card">
+    <div class="view">
+      <div>
+        <canvas id="c1" width="400" height="400"></canvas>
+        <div class="legend"><span class="l-alpha">— α格(橙·实线主格)</span> &nbsp; <span class="l-beta">- - β格(蓝·虚线对比)</span></div>
+      </div>
+      <div>
+        <canvas id="c2" width="400" height="400"></canvas>
+        <div class="legend"><span class="l-beta">— β格(蓝·实线主格)</span> &nbsp; <span class="l-alpha">- - α格(橙·虚线对比)</span></div>
+      </div>
+    </div>
+    <div class="explain" id="text">点击「下一步」开始：两张图均同时画出 α(蓝) 与 β(绿) 两套坐标格，直观对比两套"尺子"。</div>
+  </div>
+
+  <div class="steps">
+    <button id="btnPrev" onclick="prev()">上一步</button>
+    <button id="btnNext" onclick="next()">下一步</button>
+    <button onclick="play()">自动播放</button>
+  </div>
+</div>
+
+<script>
+/* ============ 数学参数（全整数） ============ */
+const alpha = [[1,0],[0,1]];          // 旧基 α（标准直角基）
+const P     = [[1,1],[0,1]];          // β = α·P  → 过渡矩阵
+const beta  = [[1,1],[0,1]];          // 新基 β：β₁=(1,0), β₂=(1,1)
+const Pinv  = [[1,-1],[0,1]];         // P⁻¹
+const Aa    = [[2,0],[0,1]];          // 旧基下线性变换：x 方向拉伸 2 倍
+const Ab    = [[2,1],[0,1]];          // 新基下同一变换：Aβ = P⁻¹·Aa·P
+
+const v  = [3, 2];                    // v 在 α 下坐标 (3,2)
+const vb = [1, 2];                    // v 在 β 下坐标 (1,2)
+const w  = [6, 2];                    // w=Aa·v 在 α 下 (6,2)
+const wb = [4, 2];                    // w 在 β 下：Ab·vb = (4,2)
+
+/* ============ 画布 ============ */
+const c1 = document.getElementById('c1'), ctx1 = c1.getContext('2d');
+const c2 = document.getElementById('c2'), ctx2 = c2.getContext('2d');
+const CX = 185, CY = 210, S = 32;     // 原点位置 & 格子缩放（保证不超限）
+
+function matMul(A,B){return [[A[0][0]*B[0][0]+A[0][1]*B[1][0], A[0][0]*B[0][1]+A[0][1]*B[1][1]],
+                               [A[1][0]*B[0][0]+A[1][1]*B[1][0], A[1][0]*B[0][1]+A[1][1]*B[1][1]]];}
+
+/* 画基网格（两族平行线，沿基向量方向延伸）
+   dash: 虚线样式数组，传入则在辅基(对比基)时使用虚线，明显区分主基实线 */
+function gridLine(ctx, B, col, alphaG, dash){
+  ctx.save(); ctx.globalAlpha = alphaG; ctx.strokeStyle = col; ctx.lineWidth = 1;
+  if(dash) ctx.setLineDash(dash);
+  const range = 8;
+  for(let k=-4; k<=6; k++){
+    // 族A：方向 B0，起点 k*B1
+    let x0 = k*B[0][1], y0 = k*B[1][1];
+    let dx = B[0][0], dy = B[1][0];
+    ctx.beginPath();
+    ctx.moveTo(CX + (x0 - range*dx)*S, CY - (y0 - range*dy)*S);
+    ctx.lineTo(CX + (x0 + range*dx)*S, CY - (y0 + range*dy)*S);
+    ctx.stroke();
+    // 族B：方向 B1，起点 k*B0
+    x0 = k*B[0][0]; y0 = k*B[1][0];
+    dx = B[0][1]; dy = B[1][1];
+    ctx.beginPath();
+    ctx.moveTo(CX + (x0 - range*dx)*S, CY - (y0 - range*dy)*S);
+    ctx.lineTo(CX + (x0 + range*dx)*S, CY - (y0 + range*dy)*S);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+/* 画向量箭头 */
+function drawVec(ctx, x, y, col, lw, lab, off){
+  ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = lw;
+  ctx.beginPath(); ctx.moveTo(CX, CY); ctx.lineTo(CX+x*S, CY-y*S); ctx.stroke();
+  // 箭头
+  let ang = Math.atan2(-y*S, x*S), al = 10;
+  ctx.beginPath();
+  ctx.moveTo(CX+x*S, CY-y*S);
+  ctx.lineTo(CX+x*S - al*Math.cos(ang-Math.PI/7), CY-y*S - al*Math.sin(ang-Math.PI/7));
+  ctx.lineTo(CX+x*S - al*Math.cos(ang+Math.PI/7), CY-y*S - al*Math.sin(ang+Math.PI/7));
+  ctx.closePath(); ctx.fill();
+  ctx.font = "17px sans-serif";
+  let o = off || [6,-6];
+  ctx.fillText(lab, CX+x*S+o[0], CY-y*S+o[1]);
+}
+
+/* 平行四边形（单位方格经矩阵变换后的像） */
+function parallelogram(ctx, M, col, dash){
+  ctx.save(); ctx.strokeStyle = col; ctx.lineWidth = 2.5;
+  if(dash) ctx.setLineDash(dash);
+  let a=[M[0][0],M[1][0]], b=[M[0][1],M[1][1]];
+  ctx.beginPath(); ctx.moveTo(CX, CY);
+  ctx.lineTo(CX+a[0]*S, CY-a[1]*S);
+  ctx.lineTo(CX+(a[0]+b[0])*S, CY-(a[1]+b[1])*S);
+  ctx.lineTo(CX+b[0]*S, CY-b[1]*S); ctx.closePath(); ctx.stroke();
+  ctx.restore();
+}
+
+/* ============ 阶段文本 ============ */
+const texts = [
+  "① 两套基对比：左图画 α(蓝) 与 β(绿) 两套坐标格叠加；右图同样叠加。β₁=(1,0) 与 α₁ 重合，β₂=(1,1) 为斜对角线。公式 β = α·P，P = [[1,1],[0,1]]（整数）。",
+  "② 同一向量 v：在 α 蓝格上数→向右3格、向上2格，xₐ=(3,2)；在 β 绿格上数→先1步β₁再2步β₂，xᵦ=(1,2)。验证 α·xₐ = β·xᵦ = (3,2)。公式 xₐ = P·xᵦ。",
+  "③ 旧基 α 中执行线性变换 Aa（x方向拉伸2倍）：黄色单位方格(α) 被拉成蓝色平行四边形；v=(3,2)→w=(6,2)。Aa = [[2,0],[0,1]]。",
+  "④ 新基 β 中同一几何变换：黄色 β-单位方格 被拉成绿色平行四边形；w 在 β 下坐标 wb=(4,2)。β 下变换矩阵 Aβ = [[2,1],[0,1]]（全整数）。",
+  "⑤ 推导相似关系：由 v=α(P·xᵦ)=(αP)xᵦ=βxᵦ（结合律），对变换后 w 同理：w=α(Aa·xₐ)=α(Aa·P·xᵦ)，又 w=β(Ab·xᵦ)=αP(Ab·xᵦ)，故 Aa·P = P·Ab ⇒ Ab = P⁻¹·Aa·P。",
+  "⑥ 结合律记忆：P 在右把 β-坐标翻译成 α-坐标，Aa 在中间做变换，P⁻¹ 在左翻译回 β-坐标 → 左逆·A·右正。"
+];
+
+let step = 0;
+const N = texts.length;
+
+function draw(){
+  document.getElementById('text').innerText = texts[step];
+  ctx1.clearRect(0,0,400,400); ctx2.clearRect(0,0,400,400);
+
+  /* 两张图都同时画两套网格（双色叠加，主基实线、辅基浅色虚线对比）
+     配色改为 橙(α) + 蓝(β) 冷暖强对比，浅色背景下辨识度更高 */
+  // 图1：α 视角 —— α 橙格实线为主，β 蓝格用浅色虚线叠加对比
+  gridLine(ctx1, alpha, '#fb923c', 0.75);          // α 橙格（主，实线）
+  gridLine(ctx1, beta,  '#93c5fd', 0.75, [6,5]);  // β 蓝格（辅，虚线）
+  // 图2：β 视角 —— β 蓝格实线为主，α 橙格用浅色虚线叠加对比
+  gridLine(ctx2, beta,  '#60a5fa', 0.75);          // β 蓝格（主，实线）
+  gridLine(ctx2, alpha, '#fdba74', 0.75, [6,5]);  // α 橙格（辅，虚线）
+
+  // 画基向量
+  drawVec(ctx1, alpha[0][0], alpha[1][0], '#c2410c', 3, 'α₁', [6,12]);
+  drawVec(ctx1, alpha[0][1], alpha[1][1], '#c2410c', 3, 'α₂', [-26,-6]);
+  drawVec(ctx1, beta[0][0],  beta[1][0],  '#1d4ed8', 3, 'β₁', [6,24]);
+  drawVec(ctx1, beta[0][1],  beta[1][1],  '#1d4ed8', 3, 'β₂', [8,-8]);
+
+  drawVec(ctx2, beta[0][0],  beta[1][0],  '#1d4ed8', 3, 'β₁', [6,12]);
+  drawVec(ctx2, beta[0][1],  beta[1][1],  '#1d4ed8', 3, 'β₂', [8,-8]);
+  drawVec(ctx2, alpha[0][0], alpha[1][0], '#c2410c', 3, 'α₁', [6,24]);
+  drawVec(ctx2, alpha[0][1], alpha[1][1], '#c2410c', 3, 'α₂', [-26,-6]);
+
+  /* 阶段 2：向量 v */
+  if(step>=1){
+    drawVec(ctx1, v[0], v[1], '#8b5cf6', 4, 'v=(3,2)', [8,-8]);
+    drawVec(ctx2, v[0], v[1], '#8b5cf6', 4, 'v', [8,-8]);
+    // 右图：β 分解（1步β₁ + 2步β₂）
+    ctx2.strokeStyle='#f59e0b'; ctx2.lineWidth=2; ctx2.setLineDash([5,3]);
+    ctx2.beginPath(); ctx2.moveTo(CX, CY); ctx2.lineTo(CX+vb[0]*beta[0][0]*S, CY-vb[0]*beta[1][0]*S); ctx2.stroke();
+    let x1=vb[0]*beta[0][0], y1=vb[0]*beta[1][0];
+    ctx2.beginPath(); ctx2.moveTo(CX+x1*S, CY-y1*S);
+    ctx2.lineTo(CX+(x1+vb[1]*beta[0][1])*S, CY-(y1+vb[1]*beta[1][1])*S); ctx2.stroke();
+    ctx2.setLineDash([]);
+    ctx2.fillStyle='#b45309'; ctx2.font='16px sans-serif';
+    ctx2.fillText('xᵦ=(1,2)', CX+50, CY-90);
+  }
+
+  /* 阶段 3：旧基 α 中线性变换 */
+  if(step>=2){
+    parallelogram(ctx1, alpha, '#fde047', [4,3]);   // 单位方格(黄虚线)
+    parallelogram(ctx1, Aa,    '#3b82f6', null);    // Aa 后(蓝实线)
+    ctx1.fillStyle='#1e40af'; ctx1.font='16px sans-serif';
+    ctx1.fillText('Aa·α-方格', CX+60, CY-30);
+  }
+
+  /* 阶段 4：新基 β 中同一变换 */
+  if(step>=3){
+    drawVec(ctx1, w[0], w[1], '#ef4444', 4, 'w=(6,2)', [8,-8]);
+    drawVec(ctx2, w[0], w[1], '#ef4444', 4, 'w', [8,-8]);
+    parallelogram(ctx2, beta, '#fde047', [4,3]);            // β-单位方格
+    parallelogram(ctx2, matMul(beta, Ab), '#059669', null); // Aβ 后(绿)
+    ctx2.fillStyle='#065f46'; ctx2.font='16px sans-serif';
+    ctx2.fillText('Ab·β-方格', CX+70, CY-40);
+  }
+
+  /* 阶段 5/6：公式栏更新 */
+  const fb = document.getElementById('formula');
+  if(step===4) fb.innerHTML = '<span class="eq">Aβ</span> = <span class="P">P⁻¹</span> · <span class="A">Aa</span> · <span class="P">P</span>';
+  else if(step===5) fb.innerHTML = '结合律：<span class="P">P</span>在右翻译坐标，<span class="P">P⁻¹</span>在左翻回 → <span class="eq">左逆·A·右正</span>';
+  else if(step===3) fb.innerHTML = 'w = <span class="A">Aa</span>·v ， wb = <span class="A">Ab</span>·vb ； Aβ = <span class="P">P⁻¹</span><span class="A">Aa</span><span class="P">P</span>';
+  else if(step===2) fb.innerHTML = 'w = <span class="A">Aa</span> · v ； Aa = <span class="matrix">[[2,0],[0,1]]</span>';
+  else if(step===1) fb.innerHTML = 'xₐ = <span class="P">P</span> · xᵦ ； v: α下(3,2)，β下(1,2)';
+  else fb.innerHTML = 'β = α · <span class="P">P</span> ； P = <span class="matrix">[[1,1],[0,1]]</span>';
+
+  document.getElementById('btnPrev').className = step===0 ? '' : 'active';
+  document.getElementById('btnNext').className = step===N-1 ? '' : 'active';
+}
+
+function next(){ if(step<N-1){ step++; draw(); window.scrollTo({top:0,behavior:'smooth'}); } }
+function prev(){ if(step>0){ step--; draw(); window.scrollTo({top:0,behavior:'smooth'}); } }
+function play(){ step=0; const f=()=>{draw(); step++; if(step<N) setTimeout(f,2400);}; f(); }
+
+draw();
+</script>
+</body>
+</html>

@@ -1,0 +1,1305 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>二次型的矩阵表示 - 交互式动画演示</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', system-ui, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e7f1 100%);
+            min-height: 100vh;
+            padding: 30px;
+            color: #2d3748;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            border-radius: 25px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4a6fa5 0%, #6b5b95 100%);
+            color: white;
+            padding: 60px 40px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            transform: rotate(30deg);
+        }
+
+        .header h1 {
+            font-size: 4.5em;
+            margin-bottom: 25px;
+            position: relative;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            line-height: 1.2;
+        }
+
+        .header p {
+            font-size: 2em;
+            opacity: 0.85;
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+            font-weight: 500;
+        }
+
+        .content {
+            padding: 60px 40px;
+        }
+
+        .section {
+            margin-bottom: 100px;
+            opacity: 0;
+            transform: translateY(60px);
+            transition: all 0.7s cubic-bezier(0.22, 0.61, 0.36, 1);
+        }
+
+        .section.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .section-title {
+            font-size: 3.5em;
+            color: #2d3748;
+            margin-bottom: 50px;
+            text-align: center;
+            position: relative;
+            font-weight: 700;
+            line-height: 1.3;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -18px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 6px;
+            background: linear-gradient(to right, #4a6fa5, #6b5b95);
+            border-radius: 3px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 30px;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+        }
+
+        .warning {
+            background: linear-gradient(to right, rgba(255, 245, 230, 0.9), rgba(255, 240, 220, 0.9));
+            border: 2px solid rgba(255, 183, 77, 0.4);
+            border-radius: 18px;
+            padding: 30px;
+            position: relative;
+            transition: all 0.4s ease;
+            flex: 1;
+            min-width: 400px;
+            margin: 0;
+            font-size: 1.2em;
+            font-weight: 600;
+            line-height: 1.6;
+        }
+
+        .warning:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(255, 183, 77, 0.15);
+        }
+
+        .warning::before {
+            content: '💡';
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 2em;
+            opacity: 0.7;
+        }
+
+        .step-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: center;
+            min-width: 180px;
+        }
+
+        .step-counter {
+            text-align: center;
+            font-size: 1.4em;
+            color: #4a5568;
+            font-weight: 700;
+            background: rgba(237, 242, 247, 0.8);
+            padding: 15px 20px;
+            border-radius: 30px;
+            white-space: nowrap;
+        }
+
+        .step-counter strong {
+            color: #4a6fa5;
+            font-size: 1.2em;
+        }
+
+        .comparison-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            margin-bottom: 60px;
+            align-items: start;
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.85);
+            border-radius: 25px;
+            padding: 45px;
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.08);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s ease;
+            border: 2px solid rgba(0, 0, 0, 0.03);
+        }
+
+        .panel:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.12);
+        }
+
+        .panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 8px;
+            background: linear-gradient(to right, #4a6fa5, #6b5b95);
+        }
+
+        .panel-title {
+            font-size: 2.5em;
+            font-weight: 700;
+            margin-bottom: 35px;
+            color: #2d3748;
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            justify-content: center;
+        }
+
+        .panel-icon {
+            width: 55px;
+            height: 55px;
+            background: linear-gradient(135deg, #4a6fa5, #6b5b95);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 28px;
+            flex-shrink: 0;
+        }
+
+        .matrix-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 25px;
+            margin: 45px 0;
+            font-size: 1.8em;
+            font-weight: 700;
+        }
+
+        .matrix {
+            position: relative;
+            display: inline-block;
+            padding: 0 12px;
+        }
+
+        .matrix::before,
+        .matrix::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 6px;
+            border: 3px solid #4a6fa5;
+            border-radius: 3px;
+        }
+
+        .matrix::before {
+            left: 0;
+            border-right: none;
+            border-radius: 12px 0 0 12px;
+        }
+
+        .matrix::after {
+            right: 0;
+            border-left: none;
+            border-radius: 0 12px 12px 0;
+        }
+
+        .matrix-content {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px;
+            padding: 25px;
+            text-align: center;
+            font-family: 'Cambria Math', 'Times New Roman', serif;
+            font-weight: 700;
+        }
+
+        .matrix-element {
+            padding: 15px 20px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            position: relative;
+            min-width: 70px;
+            font-size: 1.1em;
+            font-weight: 700;
+        }
+
+        .matrix-element:hover {
+            transform: scale(1.15);
+            background: rgba(74, 111, 165, 0.15);
+        }
+
+        .quadratic-form {
+            font-size: 2em;
+            text-align: center;
+            padding: 35px;
+            background: rgba(245, 247, 250, 0.85);
+            border-radius: 18px;
+            margin: 30px 0;
+            font-family: 'Cambria Math', 'Times New Roman', serif;
+            font-weight: 700;
+            line-height: 1.8;
+        }
+
+        .term {
+            display: inline-block;
+            margin: 0 12px;
+            padding: 10px 18px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            position: relative;
+            font-weight: 700;
+            font-size: 1.1em;
+        }
+
+        .term:hover {
+            transform: scale(1.15);
+        }
+
+        .color-a11 { background: rgba(239, 83, 80, 0.2); color: #c62828; border: 2px solid rgba(239, 83, 80, 0.3); }
+        .color-a22 { background: rgba(38, 166, 154, 0.2); color: #00695c; border: 2px solid rgba(38, 166, 154, 0.3); }
+        .color-a33 { background: rgba(66, 133, 244, 0.2); color: #0d47a1; border: 2px solid rgba(66, 133, 244, 0.3); }
+        .color-a12 { background: rgba(171, 71, 188, 0.2); color: #4a148c; border: 2px solid rgba(171, 71, 188, 0.3); }
+        .color-a13 { background: rgba(255, 160, 0, 0.2); color: #e65100; border: 2px solid rgba(255, 160, 0, 0.3); }
+        .color-a23 { background: rgba(102, 187, 106, 0.2); color: #1b5e20; border: 2px solid rgba(102, 187, 106, 0.3); }
+
+        .highlight {
+            animation: pulse-highlight 1s infinite;
+            box-shadow: 0 0 25px currentColor;
+            transform: scale(1.1);
+            z-index: 10;
+        }
+
+        @keyframes pulse-highlight {
+            0% { transform: scale(1.1); box-shadow: 0 0 10px currentColor; }
+            50% { transform: scale(1.2); box-shadow: 0 0 35px currentColor; }
+            100% { transform: scale(1.1); box-shadow: 0 0 10px currentColor; }
+        }
+
+        .connection-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3em;
+            color: #4a6fa5;
+            margin: 35px 0;
+        }
+
+        .arrow-animated {
+            animation: bounce 1.5s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(15px); }
+        }
+
+        .step-details {
+            background: rgba(237, 242, 247, 0.8);
+            border-radius: 18px;
+            padding: 35px;
+            margin-top: 40px;
+        }
+
+        .step-item {
+            display: flex;
+            align-items: flex-start;
+            margin: 25px 0;
+            padding: 25px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            opacity: 0;
+            transform: translateX(-30px);
+            transition: all 0.4s ease;
+            font-size: 1.2em;
+            font-weight: 600;
+            line-height: 1.6;
+        }
+
+        .step-item.visible {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .step-item.active {
+            border-left: 6px solid #ffb74d;
+            background: rgba(255, 245, 230, 0.85);
+        }
+
+        .step-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, #4a6fa5, #6b5b95);
+            color: white;
+            border-radius: 50%;
+            font-weight: 800;
+            margin-right: 25px;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .step-content {
+            flex: 1;
+        }
+
+        .step-formula {
+            background: rgba(245, 247, 250, 0.9);
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            font-family: 'Cambria Math', 'Times New Roman', serif;
+            text-align: center;
+            font-size: 1.3em;
+            font-weight: 700;
+            overflow-x: auto;
+        }
+
+        .variable-info {
+            font-size: 1.3em;
+            font-weight: 600;
+            line-height: 1.7;
+            padding: 25px;
+            background: rgba(237, 242, 247, 0.6);
+            border-radius: 15px;
+            margin: 25px 0;
+        }
+
+        .formula-box {
+            font-size: 1.5em;
+            font-weight: 700;
+            text-align: center;
+            margin: 25px 0;
+            padding: 20px;
+            background: rgba(245, 247, 250, 0.7);
+            border-radius: 15px;
+            font-family: 'Cambria Math', 'Times New Roman', serif;
+        }
+
+        .btn-container {
+            text-align: center;
+            margin: 50px 0;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 25px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #4a6fa5, #6b5b95);
+            color: white;
+            border: none;
+            padding: 20px 40px;
+            border-radius: 35px;
+            cursor: pointer;
+            font-size: 1.4em;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            box-shadow: 0 6px 20px rgba(74, 111, 165, 0.35);
+            min-width: 160px;
+        }
+
+        .btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(74, 111, 165, 0.5);
+        }
+
+        .btn:disabled {
+            background: #cbd5e0;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn.secondary {
+            background: linear-gradient(135deg, #ffb74d, #ff9800);
+        }
+
+        .btn.success {
+            background: linear-gradient(135deg, #4caf50, #2e7d32);
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 25px;
+            margin: 40px 0;
+            padding: 25px;
+            background: rgba(237, 242, 247, 0.8);
+            border-radius: 18px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.3em;
+            font-weight: 600;
+        }
+
+        .legend-color {
+            width: 30px;
+            height: 30px;
+            border-radius: 6px;
+            border: 3px solid;
+        }
+
+        .final-result {
+            font-size: 1.8em;
+            font-weight: 700;
+            text-align: center;
+            padding: 45px;
+            background: linear-gradient(135deg, #e3f2fd, #e8f5e9);
+            border-radius: 20px;
+            margin: 50px auto;
+            max-width: 95%;
+            line-height: 1.7;
+            border: 3px solid rgba(66, 133, 244, 0.2);
+        }
+
+        /* 公式文本样式 */
+        .formula-text {
+            font-family: 'Cambria Math', 'Times New Roman', serif;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .sup {
+            vertical-align: super;
+            font-size: 0.7em;
+        }
+
+        .sub {
+            vertical-align: sub;
+            font-size: 0.7em;
+        }
+
+        /* 快捷键提示样式 */
+        .keyboard-hint {
+            display: inline-block;
+            background: rgba(74, 111, 165, 0.15);
+            color: #4a6fa5;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            margin-left: 15px;
+            border: 2px solid rgba(74, 111, 165, 0.3);
+            font-weight: 700;
+        }
+
+        @media (max-width: 768px) {
+            .comparison-container {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
+            
+            .matrix-container {
+                font-size: 1.4em;
+            }
+            
+            .section-header {
+                flex-direction: column;
+            }
+            
+            .step-controls {
+                width: 100%;
+                flex-direction: row;
+                justify-content: center;
+            }
+
+            .header h1 {
+                font-size: 3.5em;
+            }
+
+            .section-title {
+                font-size: 2.8em;
+            }
+
+            .keyboard-hint {
+                display: block;
+                margin: 15px 0 0 0;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>二次型的矩阵表示</h1>
+            <p>通过颜色编码和动画，直观理解矩阵元素与二次型项的对应关系</p>
+        </div>
+
+        <div class="content">
+            <!-- 主演示区域 -->
+            <div class="section" id="main-demo">
+                <h2 class="section-title">矩阵表示与二次型展开</h2>
+                
+                <div class="section-header">
+                    <div class="warning">
+                        <strong>核心概念：</strong>二次型 <span class="formula-text">f(x) = x<span class="sup">T</span> A x</span> 中，矩阵 <span class="formula-text">A</span> 的对称元素与交叉项系数有对应关系，对角线元素对应平方项系数。
+                        <span class="keyboard-hint">快捷键：按 1 下一步</span>
+                    </div>
+                    <div class="step-controls">
+                        <button class="btn secondary" onclick="stepAnimation()" id="step-btn">⏭️ 下一步</button>
+                        <div class="step-counter" id="step-counter">准备就绪</div>
+                    </div>
+                </div>
+
+                <!-- 颜色图例 -->
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color color-a11" style="border-color: #c62828;"></div>
+                        <span>a<span class="sub">11</span> ↔ x<span class="sub">1</span><span class="sup">2</span> 项</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color color-a22" style="border-color: #00695c;"></div>
+                        <span>a<span class="sub">22</span> ↔ x<span class="sub">2</span><span class="sup">2</span> 项</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color color-a33" style="border-color: #0d47a1;"></div>
+                        <span>a<span class="sub">33</span> ↔ x<span class="sub">3</span><span class="sup">2</span> 项</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color color-a12" style="border-color: #4a148c;"></div>
+                        <span>a<span class="sub">12</span> ↔ x<span class="sub">1</span>x<span class="sub">2</span> 项</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color color-a13" style="border-color: #e65100;"></div>
+                        <span>a<span class="sub">13</span> ↔ x<span class="sub">1</span>x<span class="sub">3</span> 项</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color color-a23" style="border-color: #1b5e20;"></div>
+                        <span>a<span class="sub">23</span> ↔ x<span class="sub">2</span>x<span class="sub">3</span> 项</span>
+                    </div>
+                </div>
+
+                <!-- 左右对比区域 -->
+                <div class="comparison-container">
+                    <!-- 左侧：矩阵表示 -->
+                    <div class="panel">
+                        <div class="panel-title">
+                            <div class="panel-icon">📐</div>
+                            矩阵表示
+                        </div>
+                        
+                        <div class="formula-box">
+                            <span class="formula-text">f(x) = x<span class="sup">T</span> A x</span>
+                        </div>
+
+                        <div class="matrix-container">
+                            <div class="matrix">
+                                <div class="matrix-content">
+                                    <div class="matrix-element color-a11" data-term="x1^2">a<span class="sub">11</span></div>
+                                    <div class="matrix-element color-a12" data-term="x1x2">a<span class="sub">12</span></div>
+                                    <div class="matrix-element color-a13" data-term="x1x3">a<span class="sub">13</span></div>
+                                    <div class="matrix-element color-a12" data-term="x1x2">a<span class="sub">12</span></div>
+                                    <div class="matrix-element color-a22" data-term="x2^2">a<span class="sub">22</span></div>
+                                    <div class="matrix-element color-a23" data-term="x2x3">a<span class="sub">23</span></div>
+                                    <div class="matrix-element color-a13" data-term="x1x3">a<span class="sub">13</span></div>
+                                    <div class="matrix-element color-a23" data-term="x2x3">a<span class="sub">23</span></div>
+                                    <div class="matrix-element color-a33" data-term="x3^2">a<span class="sub">33</span></div>
+                                </div>
+                            </div>
+                            
+                            <div style="margin: 0 15px;">
+                                <div style="font-size: 1.2em; color: #666;">对称矩阵 A</div>
+                            </div>
+                        </div>
+
+                        <div class="variable-info">
+                            <strong>变量向量：</strong><br>
+                            <span class="formula-text">x = [x<span class="sub">1</span>, x<span class="sub">2</span>, x<span class="sub">3</span>]<span class="sup">T</span></span>
+                        </div>
+
+                        <div class="formula-box" id="matrix-multiplication">
+                            <span class="formula-text">x<span class="sup">T</span> A x = [x<span class="sub">1</span>, x<span class="sub">2</span>, x<span class="sub">3</span>] × A × [x<span class="sub">1</span>; x<span class="sub">2</span>; x<span class="sub">3</span>]</span>
+                        </div>
+                    </div>
+
+                    <!-- 右侧：二次型展开 -->
+                    <div class="panel">
+                        <div class="panel-title">
+                            <div class="panel-icon">📊</div>
+                            二次型展开
+                        </div>
+                        
+                        <div class="formula-box">
+                            <span class="formula-text">f(x<span class="sub">1</span>, x<span class="sub">2</span>, x<span class="sub">3</span>) = </span>
+                        </div>
+
+                        <div class="quadratic-form" id="expanded-form">
+                            <div class="term color-a11" data-element="a11">a<span class="sub">11</span>x<span class="sub">1</span><span class="sup">2</span></div>
+                            <span>+</span>
+                            <div class="term color-a22" data-element="a22">a<span class="sub">22</span>x<span class="sub">2</span><span class="sup">2</span></div>
+                            <span>+</span>
+                            <div class="term color-a33" data-element="a33">a<span class="sub">33</span>x<span class="sub">3</span><span class="sup">2</span></div>
+                            <br><br>
+                            <div class="term color-a12" data-element="a12">+2a<span class="sub">12</span>x<span class="sub">1</span>x<span class="sub">2</span></div>
+                            <div class="term color-a13" data-element="a13">+2a<span class="sub">13</span>x<span class="sub">1</span>x<span class="sub">3</span></div>
+                            <div class="term color-a23" data-element="a23">+2a<span class="sub">23</span>x<span class="sub">2</span>x<span class="sub">3</span></div>
+                        </div>
+
+                        <div class="variable-info">
+                            <strong>关键性质：</strong><br>
+                            ✓ 矩阵 A 是对称矩阵<br>
+                            ✓ 对角线元素 a<span class="sub">ii</span> 对应 x<span class="sub">i</span><span class="sup">2</span> 的系数<br>
+                            ✓ 非对角线元素 a<span class="sub">ij</span> 对应 x<span class="sub">i</span>x<span class="sub">j</span> 系数的一半
+                        </div>
+
+                        <div class="formula-box" id="coefficient-relation">
+                            交叉项系数关系：<br>
+                            <span class="formula-text">x<span class="sub">i</span>x<span class="sub">j</span> 的系数 = 2a<span class="sub">ij</span></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 计算步骤详情 -->
+                <div class="step-details" id="step-details">
+                    <div class="step-item" id="step-1">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <strong>矩阵乘法第一步：</strong>计算 A x<br>
+                            <div class="step-formula">
+                                A x = [a<span class="sub">11</span>x<span class="sub">1</span> + a<span class="sub">12</span>x<span class="sub">2</span> + a<span class="sub">13</span>x<span class="sub">3</span>;<br>
+                                a<span class="sub">12</span>x<span class="sub">1</span> + a<span class="sub">22</span>x<span class="sub">2</span> + a<span class="sub">23</span>x<span class="sub">3</span>;<br>
+                                a<span class="sub">13</span>x<span class="sub">1</span> + a<span class="sub">23</span>x<span class="sub">2</span> + a<span class="sub">33</span>x<span class="sub">3</span>]
+                            </div>
+                            每个方程对应二次型中的一个变量关系
+                        </div>
+                    </div>
+
+                    <div class="step-item" id="step-2">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <strong>矩阵乘法第二步：</strong>计算 x<span class="sup">T</span>(A x)<br>
+                            <div class="step-formula">
+                                x<span class="sup">T</span>(A x) = x<span class="sub">1</span>(a<span class="sub">11</span>x<span class="sub">1</span> + a<span class="sub">12</span>x<span class="sub">2</span> + a<span class="sub">13</span>x<span class="sub">3</span>) +<br>
+                                x<span class="sub">2</span>(a<span class="sub">12</span>x<span class="sub">1</span> + a<span class="sub">22</span>x<span class="sub">2</span> + a<span class="sub">23</span>x<span class="sub">3</span>) +<br>
+                                x<span class="sub">3</span>(a<span class="sub">13</span>x<span class="sub">1</span> + a<span class="sub">23</span>x<span class="sub">2</span> + a<span class="sub">33</span>x<span class="sub">3</span>)
+                            </div>
+                            展开后得到完整的二次型表达式
+                        </div>
+                    </div>
+
+                    <div class="step-item" id="step-3">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <strong>展开并合并同类项：</strong><br>
+                            <div class="step-formula">
+                                = a<span class="sub">11</span>x<span class="sub">1</span><span class="sup">2</span> + a<span class="sub">22</span>x<span class="sub">2</span><span class="sup">2</span> + a<span class="sub">33</span>x<span class="sub">3</span><span class="sup">2</span> +<br>
+                                2a<span class="sub">12</span>x<span class="sub">1</span>x<span class="sub">2</span> + 2a<span class="sub">13</span>x<span class="sub">1</span>x<span class="sub">3</span> + 2a<span class="sub">23</span>x<span class="sub">2</span>x<span class="sub">3</span>
+                            </div>
+                            每个矩阵元素都对应二次型中的特定项
+                        </div>
+                    </div>
+                </div>
+
+                <div class="btn-container">
+                    <button class="btn primary" onclick="startDemo()">🎬 开始演示</button>
+                    <button class="btn secondary" onclick="stepDemo()" id="step-btn">⏭️ 下一步</button>
+                    <button class="btn" onclick="resetDemo()">🔄 重置</button>
+                    <button class="btn success" onclick="autoPlay()" id="autoplay-btn">▶️ 自动播放</button>
+                </div>
+            </div>
+
+            <!-- 具体例子演示 -->
+            <div class="section" id="example-section">
+                <h2 class="section-title">具体例子演示</h2>
+                
+                <div class="section-header">
+                    <div class="warning">
+                        <strong>实例：</strong>设 A = [[2, 1, 0], [1, 3, -1], [0, -1, 4]]，对应的二次型为 f(x) = 2x<span class="sub">1</span><span class="sup">2</span> + 3x<span class="sub">2</span><span class="sup">2</span> + 4x<span class="sub">3</span><span class="sup">2</span> + 2x<span class="sub">1</span>x<span class="sub">2</span> - 2x<span class="sub">2</span>x<span class="sub">3</span>
+                    </div>
+                    <div class="step-controls">
+                        <button class="btn secondary" onclick="stepExample()" id="example-step-btn">⏭️ 下一步</button>
+                        <div class="step-counter" id="example-counter">准备就绪</div>
+                    </div>
+                </div>
+
+                <div class="comparison-container">
+                    <!-- 具体矩阵 -->
+                    <div class="panel">
+                        <div class="panel-title">
+                            <div class="panel-icon">🔢</div>
+                            具体矩阵
+                        </div>
+                        
+                        <div class="matrix-container">
+                            <div class="matrix">
+                                <div class="matrix-content">
+                                    <div class="matrix-element color-a11" data-term="2x1^2">2</div>
+                                    <div class="matrix-element color-a12" data-term="1x1x2">1</div>
+                                    <div class="matrix-element color-a13" data-term="0x1x3">0</div>
+                                    <div class="matrix-element color-a12" data-term="1x1x2">1</div>
+                                    <div class="matrix-element color-a22" data-term="3x2^2">3</div>
+                                    <div class="matrix-element color-a23" data-term="-1x2x3">-1</div>
+                                    <div class="matrix-element color-a13" data-term="0x1x3">0</div>
+                                    <div class="matrix-element color-a23" data-term="-1x2x3">-1</div>
+                                    <div class="matrix-element color-a33" data-term="4x3^2">4</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="variable-info">
+                            <strong>矩阵特征：</strong><br>
+                            ✓ 对角线元素：2, 3, 4<br>
+                            ✓ 对称元素相等：a<span class="sub">12</span>=a<span class="sub">21</span>=1<br>
+                            ✓ a<span class="sub">13</span>=a<span class="sub">31</span>=0<br>
+                            ✓ a<span class="sub">23</span>=a<span class="sub">32</span>=-1
+                        </div>
+                    </div>
+
+                    <!-- 具体二次型 -->
+                    <div class="panel">
+                        <div class="panel-title">
+                            <div class="panel-icon">📈</div>
+                            具体二次型
+                        </div>
+                        
+                        <div class="quadratic-form" id="example-form">
+                            <div class="term color-a11" data-element="2">2x<span class="sub">1</span><span class="sup">2</span></div>
+                            <span>+</span>
+                            <div class="term color-a22" data-element="3">3x<span class="sub">2</span><span class="sup">2</span></div>
+                            <span>+</span>
+                            <div class="term color-a33" data-element="4">4x<span class="sub">3</span><span class="sup">2</span></div>
+                            <br><br>
+                            <div class="term color-a12" data-element="1">+2x<span class="sub">1</span>x<span class="sub">2</span></div>
+                            <div class="term color-a13" data-element="0">+0x<span class="sub">1</span>x<span class="sub">3</span></div>
+                            <div class="term color-a23" data-element="-1">-2x<span class="sub">2</span>x<span class="sub">3</span></div>
+                        </div>
+
+                        <div class="variable-info">
+                            <strong>系数对应关系：</strong><br>
+                            ✓ x<span class="sub">1</span><span class="sup">2</span> 系数 = a<span class="sub">11</span> = 2<br>
+                            ✓ x<span class="sub">2</span><span class="sup">2</span> 系数 = a<span class="sub">22</span> = 3<br>
+                            ✓ x<span class="sub">3</span><span class="sup">2</span> 系数 = a<span class="sub">33</span> = 4<br>
+                            ✓ x<span class="sub">1</span>x<span class="sub">2</span> 系数 = 2a<span class="sub">12</span> = 2<br>
+                            ✓ x<span class="sub">1</span>x<span class="sub">3</span> 系数 = 2a<span class="sub">13</span> = 0<br>
+                            ✓ x<span class="sub">2</span>x<span class="sub">3</span> 系数 = 2a<span class="sub">23</span> = -2
+                        </div>
+                    </div>
+                </div>
+
+                <div class="step-details" id="example-steps">
+                    <div class="step-item" id="example-step-1">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <strong>对角线元素对应平方项：</strong><br>
+                            <div class="step-formula">
+                                a<span class="sub">11</span>=2 → 2x<span class="sub">1</span><span class="sup">2</span><br>
+                                a<span class="sub">22</span>=3 → 3x<span class="sub">2</span><span class="sup">2</span><br>
+                                a<span class="sub">33</span>=4 → 4x<span class="sub">3</span><span class="sup">2</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="step-item" id="example-step-2">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <strong>非对角线元素生成交叉项：</strong><br>
+                            <div class="step-formula">
+                                a<span class="sub">12</span>=1 → 2a<span class="sub">12</span>x<span class="sub">1</span>x<span class="sub">2</span> = 2x<span class="sub">1</span>x<span class="sub">2</span><br>
+                                a<span class="sub">13</span>=0 → 2a<span class="sub">13</span>x<span class="sub">1</span>x<span class="sub">3</span> = 0<br>
+                                a<span class="sub">23</span>=-1 → 2a<span class="sub">23</span>x<span class="sub">2</span>x<span class="sub">3</span> = -2x<span class="sub">2</span>x<span class="sub">3</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="btn-container">
+                    <button class="btn primary" onclick="startExample()">🎬 开始例子演示</button>
+                    <button class="btn" onclick="resetExample()">🔄 重置</button>
+                </div>
+            </div>
+
+            <!-- 总结 -->
+            <div class="section" id="summary-section">
+                <h2 class="section-title">核心要点总结</h2>
+                
+                <div class="comparison-container">
+                    <div class="panel">
+                        <div class="panel-title">
+                            <div class="panel-icon">📋</div>
+                            矩阵表示规则
+                        </div>
+                        
+                        <div class="variable-info">
+                            <ol style="margin-left: 30px; line-height: 2; font-size: 1.1em;">
+                                <li><strong>对称性：</strong>A 必须是对称矩阵</li>
+                                <li><strong>对角线：</strong>a<span class="sub">ii</span> 对应 x<span class="sub">i</span><span class="sup">2</span> 系数</li>
+                                <li><strong>非对角线：</strong>a<span class="sub">ij</span> 对应 x<span class="sub">i</span>x<span class="sub">j</span> 系数的一半</li>
+                                <li><strong>唯一性：</strong>给定二次型，矩阵表示唯一</li>
+                            </ol>
+                        </div>
+                    </div>
+
+                    <div class="panel">
+                        <div class="panel-title">
+                            <div class="panel-icon">🎯</div>
+                            快速记忆法
+                        </div>
+                        
+                        <div class="quadratic-form">
+                            <div style="background: rgba(239, 83, 80, 0.15); padding: 20px; border-radius: 10px; margin: 10px;">
+                                a<span class="sub">11</span> → x<span class="sub">1</span><span class="sup">2</span>
+                            </div>
+                            <div style="background: rgba(38, 166, 154, 0.15); padding: 20px; border-radius: 10px; margin: 10px;">
+                                a<span class="sub">22</span> → x<span class="sub">2</span><span class="sup">2</span>
+                            </div>
+                            <div style="background: rgba(66, 133, 244, 0.15); padding: 20px; border-radius: 10px; margin: 10px;">
+                                a<span class="sub">33</span> → x<span class="sub">3</span><span class="sup">2</span>
+                            </div>
+                            <div style="background: rgba(171, 71, 188, 0.15); padding: 20px; border-radius: 10px; margin: 10px;">
+                                a<span class="sub">12</span> → x<span class="sub">1</span>x<span class="sub">2</span> 系数的一半
+                            </div>
+                            <div style="background: rgba(255, 160, 0, 0.15); padding: 20px; border-radius: 10px; margin: 10px;">
+                                a<span class="sub">13</span> → x<span class="sub">1</span>x<span class="sub">3</span> 系数的一半
+                            </div>
+                            <div style="background: rgba(102, 187, 106, 0.15); padding: 20px; border-radius: 10px; margin: 10px;">
+                                a<span class="sub">23</span> → x<span class="sub">2</span>x<span class="sub">3</span> 系数的一半
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="final-result" style="max-width: 100%;">
+                    <strong>核心结论：</strong><br>
+                    二次型的矩阵表示建立了对称矩阵与二次齐次多项式之间的一一对应关系，<br>
+                    每个矩阵元素都有明确的代数意义，这是二次型理论的基础！
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 动画状态管理
+        let currentStep = 0;
+        let exampleStep = 0;
+        let isAutoPlaying = false;
+        let autoPlayInterval = null;
+
+        const totalSteps = 3;
+        const totalExampleSteps = 2;
+
+        // 步骤定义 - 一般演示
+        const demoSteps = [
+            {
+                title: "矩阵与向量的乘法",
+                action: () => {
+                    highlightElements('matrix-multiplication', ['a11', 'a12', 'a13']);
+                    updateCounter(1);
+                }
+            },
+            {
+                title: "展开计算过程",
+                action: () => {
+                    showStep('step-1');
+                    highlightElements('expanded-form', ['x1^2']);
+                    updateCounter(2);
+                }
+            },
+            {
+                title: "合并同类项",
+                action: () => {
+                    showStep('step-2');
+                    showStep('step-3');
+                    highlightAllCorrespondence();
+                    updateCounter(3);
+                    completeDemo();
+                }
+            }
+        ];
+
+        // 步骤定义 - 具体例子
+        const exampleSteps = [
+            {
+                title: "对角线元素对应平方项",
+                action: () => {
+                    highlightExampleElements(['2', '3', '4'], ['2x_1^2', '3x_2^2', '4x_3^2']);
+                    updateExampleCounter(1);
+                }
+            },
+            {
+                title: "非对角线元素生成交叉项",
+                action: () => {
+                    highlightExampleElements(['1', '0', '-1'], ['2x_1x_2', '0x_1x_3', '-2x_2x_3']);
+                    updateExampleCounter(2);
+                    completeExample();
+                }
+            }
+        ];
+
+        // 高亮矩阵元素和对应的二次型项
+        function highlightCorrespondence(matrixElement, quadraticTerm) {
+            // 高亮矩阵元素
+            const matrixElements = document.querySelectorAll(`[data-term="${matrixElement}"]`);
+            matrixElements.forEach(el => {
+                el.classList.add('highlight');
+            });
+
+            // 高亮二次型项
+            const quadraticElements = document.querySelectorAll(`[data-element="${quadraticTerm}"]`);
+            quadraticElements.forEach(el => {
+                el.classList.add('highlight');
+            });
+        }
+
+        // 高亮特定元素
+        function highlightElements(containerId, elements) {
+            // 先清除所有高亮
+            document.querySelectorAll('.highlight').forEach(el => {
+                el.classList.remove('highlight');
+            });
+
+            elements.forEach(elem => {
+                const matrixEl = document.querySelectorAll(`[data-term="${elem}"]`);
+                const quadEl = document.querySelectorAll(`[data-element="${elem}"]`);
+                
+                matrixEl.forEach(el => el.classList.add('highlight'));
+                quadEl.forEach(el => el.classList.add('highlight'));
+            });
+        }
+
+        // 高亮所有对应关系
+        function highlightAllCorrespondence() {
+            const pairs = [
+                ['x1^2', 'a11'],
+                ['x2^2', 'a22'],
+                ['x3^2', 'a33'],
+                ['x1x2', 'a12'],
+                ['x1x3', 'a13'],
+                ['x2x3', 'a23']
+            ];
+
+            pairs.forEach(([term, element]) => {
+                setTimeout(() => {
+                    highlightCorrespondence(element, term);
+                }, Math.random() * 500);
+            });
+        }
+
+        // 具体例子高亮
+        function highlightExampleElements(matrixElements, quadraticElements) {
+            // 清除之前的高亮
+            document.querySelectorAll('.highlight').forEach(el => {
+                el.classList.remove('highlight');
+            });
+
+            // 高亮矩阵元素
+            matrixElements.forEach(elem => {
+                const elements = document.querySelectorAll(`[data-term="${elem}"]`);
+                elements.forEach(el => el.classList.add('highlight'));
+            });
+
+            // 高亮二次型项
+            quadraticElements.forEach(elem => {
+                const elements = document.querySelectorAll(`[data-element="${elem}"]`);
+                elements.forEach(el => el.classList.add('highlight'));
+            });
+        }
+
+        // 显示步骤
+        function showStep(stepId) {
+            const step = document.getElementById(stepId);
+            if (step) {
+                step.classList.add('visible');
+                step.classList.add('active');
+            }
+        }
+
+        // 更新计数器
+        function updateCounter(step) {
+            const counter = document.getElementById('step-counter');
+            counter.innerHTML = `当前步骤：<strong>${step}</strong> / ${totalSteps}`;
+        }
+
+        function updateExampleCounter(step) {
+            const counter = document.getElementById('example-counter');
+            counter.innerHTML = `当前步骤：<strong>${step}</strong> / ${totalExampleSteps}`;
+        }
+
+        // 完成演示
+        function completeDemo() {
+            const btn = document.getElementById('step-btn');
+            btn.textContent = '✅ 完成';
+            btn.disabled = true;
+            btn.style.background = 'linear-gradient(135deg, #4caf50, #2e7d32)';
+        }
+
+        function completeExample() {
+            const btn = document.getElementById('example-step-btn');
+            btn.textContent = '✅ 完成';
+            btn.disabled = true;
+            btn.style.background = 'linear-gradient(135deg, #4caf50, #2e7d32)';
+        }
+
+        // 逐步演示
+        function stepDemo() {
+            if (currentStep < totalSteps) {
+                currentStep++;
+                demoSteps[currentStep - 1].action();
+            } else {
+                alert('演示已完成！');
+            }
+        }
+
+        function stepExample() {
+            if (exampleStep < totalExampleSteps) {
+                exampleStep++;
+                exampleSteps[exampleStep - 1].action();
+            } else {
+                alert('例子演示已完成！');
+            }
+        }
+
+        // 开始演示
+        function startDemo() {
+            resetDemo();
+            let step = 0;
+            const interval = setInterval(() => {
+                step++;
+                if (step <= totalSteps) {
+                    demoSteps[step - 1].action();
+                } else {
+                    clearInterval(interval);
+                }
+            }, 2000);
+        }
+
+        function startExample() {
+            resetExample();
+            let step = 0;
+            const interval = setInterval(() => {
+                step++;
+                if (step <= totalExampleSteps) {
+                    exampleSteps[step - 1].action();
+                } else {
+                    clearInterval(interval);
+                }
+            }, 2500);
+        }
+
+        // 自动播放
+        function autoPlay() {
+            if (isAutoPlaying) {
+                clearInterval(autoPlayInterval);
+                isAutoPlaying = false;
+                document.getElementById('autoplay-btn').textContent = '▶️ 自动播放';
+                document.getElementById('autoplay-btn').style.background = 'linear-gradient(135deg, #4caf50, #2e7d32)';
+                return;
+            }
+
+            isAutoPlaying = true;
+            const btn = document.getElementById('autoplay-btn');
+            btn.textContent = '⏸️ 暂停播放';
+            btn.style.background = 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)';
+
+            resetDemo();
+            let step = 0;
+            autoPlayInterval = setInterval(() => {
+                step++;
+                if (step <= totalSteps) {
+                    demoSteps[step - 1].action();
+                } else {
+                    clearInterval(autoPlayInterval);
+                    isAutoPlaying = false;
+                    btn.textContent = '▶️ 自动播放';
+                    btn.style.background = 'linear-gradient(135deg, #4caf50, #2e7d32)';
+                }
+            }, 2500);
+        }
+
+        // 重置演示
+        function resetDemo() {
+            currentStep = 0;
+            document.querySelectorAll('.highlight').forEach(el => {
+                el.classList.remove('highlight');
+            });
+            document.querySelectorAll('.step-item.visible').forEach(el => {
+                el.classList.remove('visible', 'active');
+            });
+            updateCounter(0);
+            document.getElementById('step-counter').innerHTML = '准备就绪';
+
+            const btn = document.getElementById('step-btn');
+            btn.textContent = '⏭️ 下一步';
+            btn.disabled = false;
+            btn.style.background = 'linear-gradient(135deg, #ffb74d, #ff9800)';
+
+            if (autoPlayInterval) {
+                clearInterval(autoPlayInterval);
+                isAutoPlaying = false;
+                const autoplayBtn = document.getElementById('autoplay-btn');
+                autoplayBtn.textContent = '▶️ 自动播放';
+                autoplayBtn.style.background = 'linear-gradient(135deg, #4caf50, #2e7d32)';
+            }
+        }
+
+        function resetExample() {
+            exampleStep = 0;
+            document.querySelectorAll('#example-section .highlight').forEach(el => {
+                el.classList.remove('highlight');
+            });
+            document.querySelectorAll('#example-section .step-item.visible').forEach(el => {
+                el.classList.remove('visible', 'active');
+            });
+            updateExampleCounter(0);
+            document.getElementById('example-counter').innerHTML = '准备就绪';
+
+            const btn = document.getElementById('example-step-btn');
+            btn.textContent = '⏭️ 下一步';
+            btn.disabled = false;
+            btn.style.background = 'linear-gradient(135deg, #ffb74d, #ff9800)';
+        }
+
+        // 页面加载动画
+        window.addEventListener('load', () => {
+            const sections = document.querySelectorAll('.section');
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, { threshold: 0.1 });
+
+            sections.forEach(section => {
+                observer.observe(section);
+            });
+
+            // 显示第一个部分
+            setTimeout(() => {
+                document.getElementById('main-demo').classList.add('visible');
+            }, 300);
+
+            // 添加鼠标悬停交互
+            document.querySelectorAll('.matrix-element').forEach(element => {
+                element.addEventListener('mouseenter', function() {
+                    const term = this.dataset.term;
+                    if (term) {
+                        highlightElements('expanded-form', [term]);
+                    }
+                });
+            });
+
+            document.querySelectorAll('.term').forEach(term => {
+                term.addEventListener('mouseenter', function() {
+                    const element = this.dataset.element;
+                    if (element) {
+                        const mainDemo = document.getElementById('main-demo');
+                        const exampleSection = document.getElementById('example-section');
+                        if (mainDemo.contains(this)) {
+                            highlightElements('main-demo', [element]);
+                        } else if (exampleSection.contains(this)) {
+                            highlightExampleElements([element], [term.textContent]);
+                        }
+                    }
+                });
+            });
+        });
+
+        // 添加交互效果
+        document.querySelectorAll('.btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                this.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    this.style.transform = '';
+                }, 150);
+            });
+        });
+
+        // 键盘快捷键 - 数字键1执行下一步，其他保持不变
+        document.addEventListener('keydown', (e) => {
+            // 数字键1：执行主演示的下一步
+            if (e.key === '1') {
+                stepDemo();
+            }
+            // 数字键2：执行例子演示的下一步
+            else if (e.key === '2') {
+                stepExample();
+            }
+            // R键：重置所有演示
+            else if (e.key === 'r' || e.key === 'R') {
+                resetDemo();
+                resetExample();
+            }
+            // 空格键：也执行主演示的下一步（保持原有功能）
+            else if (e.key === ' ') {
+                e.preventDefault();
+                stepDemo();
+            }
+        });
+    </script>
+</body>
+</html>
