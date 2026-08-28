@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+<title>线性变换 · 3D 交互演示</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    width: 100%; height: 100%; overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #f0f9ff; color: #1e293b;
+    user-select: none; -webkit-user-select: none;
+  }
+  #app { position: relative; width: 100vw; height: 100vh; }
+  #scene { width: 100%; height: 100%; display: block; touch-action: none; position: absolute; top: 0; left: 0; z-index: 1; }
+
+  .panel {
+    position: relative;
+    background: rgba(255, 255, 255, 0.93);
+    border: 1px solid rgba(59, 130, 246, 0.22);
+    border-radius: 16px;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    padding: 16px 18px;
+    box-shadow: 0 8px 32px rgba(59, 130, 246, 0.1);
+  }
+  .panel-title { font-size: 14px; font-weight: 700; color: #1e3a5f; margin-bottom: 10px; }
+
+  #left-sidebar {
+    top: 14px; left: 14px;
+    width: 340px; max-height: calc(100vh - 120px);
+    overflow-y: auto;
+    display: flex; flex-direction: column; gap: 10px;
+    position: absolute; z-index: 10;
+  }
+  #left-sidebar::-webkit-scrollbar { width: 5px; }
+  #left-sidebar::-webkit-scrollbar-thumb { background: rgba(59,130,246,0.3); border-radius: 3px; }
+
+  #right-sidebar {
+    top: 14px; right: 14px;
+    width: 310px; max-height: calc(100vh - 120px);
+    overflow-y: auto;
+    display: flex; flex-direction: column; gap: 10px;
+    position: absolute; z-index: 10;
+  }
+  #right-sidebar::-webkit-scrollbar { width: 5px; }
+  #right-sidebar::-webkit-scrollbar-thumb { background: rgba(59,130,246,0.3); border-radius: 3px; }
+
+  #title-bar { padding: 14px 18px; }
+  #title-bar h1 { font-size: 19px; color: #1e3a5f; margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: #64748b; margin-bottom: 10px; }
+  .desc { font-size: 13px; line-height: 1.65; color: #334155; }
+  .desc b { color: #1e3a5f; }
+  .formula { color: #7c3aed; font-family: "Cambria Math", serif; }
+
+  .step-card {
+    background: rgba(241, 245, 249, 0.6);
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 10px 12px; margin-bottom: 8px;
+  }
+  .step-num {
+    display: inline-block; font-size: 11px; font-weight: 700;
+    color: #3b82f6; background: #dbeafe;
+    padding: 2px 8px; border-radius: 10px; margin-bottom: 6px;
+  }
+  .step-title { font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 4px; }
+  .step-detail { font-size: 12px; line-height: 1.6; color: #475569; }
+  .step-detail b { color: #1e3a5f; }
+  .pos { color: #16a34a; font-weight: 600; }
+  .neg { color: #dc2626; font-weight: 600; }
+  .hi { background: #fef3c7; padding: 1px 4px; border-radius: 3px; font-weight: 600; }
+
+  .slider-row {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
+  }
+  .slider-row label {
+    font-size: 13px; color: #475569; width: 50px; flex-shrink: 0;
+    font-family: "Cambria Math", serif;
+  }
+  .slider-row input[type=range] {
+    flex: 1; height: 6px; -webkit-appearance: none; appearance: none;
+    background: #e2e8f0; border-radius: 3px; outline: none;
+  }
+  .slider-row input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: #3b82f6; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
+  .slider-row input[type=range]::-moz-range-thumb {
+    width: 16px; height: 16px; border-radius: 50%;
+    background: #3b82f6; cursor: pointer; border: none;
+  }
+  .val {
+    font-size: 12px; color: #1e3a5f; font-weight: 600;
+    width: 40px; text-align: right; flex-shrink: 0;
+    font-family: "Cambria Math", serif;
+  }
+
+  .matrix-display {
+    display: flex; align-items: center; justify-content: center;
+    gap: 6px; margin: 8px 0;
+  }
+  .bracket {
+    font-size: 56px; font-weight: 200; color: #3b82f6;
+    line-height: 0.8; font-family: serif;
+  }
+  .mgrid {
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    gap: 4px 10px;
+  }
+  .mcell {
+    font-size: 14px; font-weight: 600; color: #1e3a5f;
+    text-align: center; min-width: 40px; padding: 4px 0;
+    font-family: "Cambria Math", serif;
+  }
+  .mcell.zero { color: #94a3b8; }
+  .mcell.neg { color: #dc2626; }
+  .mcell.pos { color: #16a34a; }
+
+  .toggle-row {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; color: #475569; margin-bottom: 5px; cursor: pointer;
+  }
+  .toggle-row input[type=checkbox] { width: 16px; height: 16px; accent-color: #3b82f6; }
+
+  .presets {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 5px;
+    margin-top: 8px;
+  }
+  .preset-cat {
+    grid-column: 1 / -1; font-size: 11px; font-weight: 700;
+    color: #64748b; margin-top: 4px; padding-bottom: 2px;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .preset-cat:first-child { margin-top: 0; }
+  .preset-btn {
+    padding: 8px 6px; font-size: 12px;
+    background: #fff; border: 1.5px solid #c7d2fe;
+    border-radius: 8px; color: #1e293b; cursor: pointer;
+    transition: all 0.15s; text-align: center;
+  }
+  .preset-btn:hover { border-color: #6366f1; background: #e0e7ff; }
+  .preset-btn.active { background: #4f46e5; color: #fff; border-color: #4338ca; font-weight: 600; }
+  .preset-btn small { font-size: 10px; opacity: 0.7; }
+
+  .info-row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
+  .info-label { color: #64748b; }
+  .info-val { color: #1e3a5f; font-weight: 600; font-family: "Cambria Math", serif; }
+
+  #toolbar {
+    bottom: 58px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 10px; z-index: 10; position: absolute;
+  }
+  .btn {
+    padding: 8px 18px; font-size: 13px; font-weight: 600;
+    background: rgba(255,255,255,0.95); border: 1.5px solid #c7d2fe;
+    border-radius: 10px; color: #1e3a5f; cursor: pointer;
+    transition: all 0.15s; box-shadow: 0 4px 16px rgba(59,130,246,0.1);
+    white-space: nowrap;
+  }
+  .btn:hover { border-color: #7c3aed; background: #f5f3ff; }
+  .btn.active { background: #7c3aed; color: #fff; border-color: #7c3aed; }
+
+  #preset-bar {
+    bottom: 8px; left: 8px; right: 8px;
+    display: flex; align-items: center; gap: 8px;
+    position: absolute; z-index: 10;
+    background: rgba(255,255,255,0.95);
+    border: 1px solid rgba(59,130,246,0.2);
+    border-radius: 12px; padding: 5px 10px;
+    box-shadow: 0 4px 20px rgba(59,130,246,0.15);
+    backdrop-filter: blur(12px);
+  }
+  .preset-bar-label { font-size: 13px; font-weight: 700; color: #1e3a5f; white-space: nowrap; flex-shrink: 0; }
+  .preset-bar-scroll {
+    display: flex; gap: 5px; overflow-x: auto; flex: 1; padding: 2px 0;
+    -webkit-overflow-scrolling: touch; scrollbar-width: thin;
+  }
+  .preset-bar-scroll::-webkit-scrollbar { height: 4px; }
+  .preset-bar-scroll::-webkit-scrollbar-thumb { background: rgba(59,130,246,0.3); border-radius: 2px; }
+  .pbar-btn {
+    padding: 6px 12px; font-size: 13px;
+    background: #f1f5f9; border: 1.5px solid #cbd5e1;
+    border-radius: 16px; color: #334155; cursor: pointer;
+    white-space: nowrap; transition: all 0.2s; flex-shrink: 0;
+  }
+  .pbar-btn:hover { background: #e0e7ff; border-color: #818cf8; }
+  .pbar-btn.active { background: #4f46e5; color: #fff; border-color: #4338ca; font-weight: 600; }
+
+  .legend-row { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #475569; margin-bottom: 4px; }
+  .legend-dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; border: 1.5px solid rgba(0,0,0,0.1); }
+  .legend-line { width: 18px; height: 3px; border-radius: 2px; flex-shrink: 0; }
+
+  #loading {
+    top: 0; left: 0; width: 100%; height: 100%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: #f0f9ff; z-index: 100; position: absolute;
+  }
+  .spinner {
+    width: 40px; height: 40px; border: 4px solid #dbeafe;
+    border-top-color: #3b82f6; border-radius: 50%;
+    animation: spin 0.8s linear infinite; margin-bottom: 12px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 900px) {
+    #left-sidebar { width: 200px; font-size: 12px; max-height: calc(100vh - 130px); }
+    #right-sidebar { width: 240px; max-height: calc(100vh - 130px); display: none; }
+    #right-sidebar.show { display: flex; }
+    .pbar-btn { font-size: 12px; padding: 5px 10px; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <canvas id="scene"></canvas>
+
+  <div id="left-sidebar">
+    <div class="panel" id="title-bar">
+      <h1>🔄 线性变换 T: R³→R³</h1>
+      <div class="subtitle">矩阵描述 · 基向量映射 · 工程意义</div>
+      <div class="desc">
+        <b>线性变换</b>满足：<br>
+        ① T(u+v) = T(u)+T(v) <span class="pos">加法性</span><br>
+        ② T(αu) = αT(u) <span class="pos">齐次性</span><br>
+        核心定理：<b>T 完全由</b><br>
+        T(e₁), T(e₂), T(e₃) <b>决定</b>
+      </div>
+    </div>
+
+    <div class="panel" id="legend-panel">
+      <div class="panel-title">图例</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#94a3b8"></div>原始网格/向量 (灰)</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#3b82f6"></div>变换后网格/向量 (蓝)</div>
+      <div class="legend-row"><div class="legend-line" style="background:#ef4444"></div>T(e₁) 第1列</div>
+      <div class="legend-row"><div class="legend-line" style="background:#16a34a"></div>T(e₂) 第2列</div>
+      <div class="legend-row"><div class="legend-line" style="background:#7c3aed"></div>T(e₃) 第3列</div>
+      <div class="legend-row"><div class="legend-line" style="background:#f59e0b"></div>变换前向量 v</div>
+      <div class="legend-row"><div class="legend-line" style="background:#0ea5e9"></div>变换后 T(v)</div>
+    </div>
+
+    <div class="panel" id="analysis-panel">
+      <div class="panel-title">变换分析</div>
+      <div id="analysis-content"></div>
+    </div>
+  </div>
+
+  <div id="right-sidebar">
+    <div class="panel" id="matrix-panel">
+      <div class="panel-title">变换矩阵 A</div>
+      <div class="desc" style="margin-bottom:8px">
+        A = [T(e₁) | T(e₂) | T(e₃)]<br>
+        <span style="font-size:11px;color:#64748b">列向量 = 基向量的像</span>
+      </div>
+      <div class="matrix-display">
+        <span class="bracket">[</span>
+        <div class="mgrid">
+          <div class="mcell" id="m-a11">1.0</div><div class="mcell" id="m-a12">0.0</div><div class="mcell" id="m-a13">0.0</div>
+          <div class="mcell" id="m-a21">0.0</div><div class="mcell" id="m-a22">1.0</div><div class="mcell" id="m-a23">0.0</div>
+          <div class="mcell" id="m-a31">0.0</div><div class="mcell" id="m-a32">0.0</div><div class="mcell" id="m-a33">1.0</div>
+        </div>
+        <span class="bracket">]</span>
+      </div>
+      <div class="info-row"><span class="info-label">行列式 det(A)</span><span class="info-val" id="det-val">1.000</span></div>
+      <div class="info-row"><span class="info-label">秩 rank(A)</span><span class="info-val" id="rank-val">3</span></div>
+      <div class="info-row"><span class="info-label">体积缩放</span><span class="info-val" id="vol-val">1.000x</span></div>
+      <div class="info-row"><span class="info-label">变换类型</span><span class="info-val" id="type-val" style="font-size:11px">恒等</span></div>
+    </div>
+
+    <div class="panel" id="control-panel">
+      <div class="panel-title">矩阵元素</div>
+      <div id="matrix-sliders"></div>
+    </div>
+
+    <div class="panel" id="preset-panel">
+      <div class="panel-title">典型变换</div>
+      <div class="presets" id="presets">
+        <div class="preset-cat">基本</div>
+        <button class="preset-btn active" data-preset="identity">恒等<br><small>I</small></button>
+        <button class="preset-btn" data-preset="scale">缩放<br><small>2x</small></button>
+        <div class="preset-cat">旋转</div>
+        <button class="preset-btn" data-preset="rotZ">绕Z轴45°</button>
+        <button class="preset-btn" data-preset="rotX">绕X轴45°</button>
+        <div class="preset-cat">投影</div>
+        <button class="preset-btn" data-preset="projXY">投影到XY面</button>
+        <button class="preset-btn" data-preset="projLine">投影到直线</button>
+        <div class="preset-cat">反射</div>
+        <button class="preset-btn" data-preset="reflXY">关于XY面反射</button>
+        <button class="preset-btn" data-preset="reflPlane">关于平面反射</button>
+        <div class="preset-cat">剪切</div>
+        <button class="preset-btn" data-preset="shearX">X方向剪切</button>
+        <button class="preset-btn" data-preset="shearXY">XY剪切</button>
+        <div class="preset-cat">工程</div>
+        <button class="preset-btn" data-preset="deform">应变变形</button>
+        <button class="preset-btn" data-preset="rot90z">Z轴90°旋转</button>
+      </div>
+    </div>
+
+    <div class="panel" id="vector-panel">
+      <div class="panel-title">测试向量 v</div>
+      <div class="slider-row">
+        <label>v₁</label>
+        <input type="range" id="s-v1" min="-2" max="2" step="0.1" value="1.0">
+        <span class="val" id="v-v1">1.0</span>
+      </div>
+      <div class="slider-row">
+        <label>v₂</label>
+        <input type="range" id="s-v2" min="-2" max="2" step="0.1" value="0.5">
+        <span class="val" id="v-v2">0.5</span>
+      </div>
+      <div class="slider-row">
+        <label>v₃</label>
+        <input type="range" id="s-v3" min="-2" max="2" step="0.1" value="0.8">
+        <span class="val" id="v-v3">0.8</span>
+      </div>
+      <div style="font-size:12px;color:#475569;margin-top:6px">
+        v = (<span id="v-text">1.0, 0.5, 0.8</span>)<br>
+        T(v) = (<span id="tv-text">1.0, 0.5, 0.8</span>)
+      </div>
+    </div>
+
+    <div class="panel" id="toggle-panel">
+      <div class="panel-title">显示选项</div>
+      <label class="toggle-row"><input type="checkbox" id="show-grid" checked> 网格变形</label>
+      <label class="toggle-row"><input type="checkbox" id="show-axes" checked> 基向量映射</label>
+      <label class="toggle-row"><input type="checkbox" id="show-vector" checked> 测试向量 v→T(v)</label>
+      <label class="toggle-row"><input type="checkbox" id="show-unit-cube" checked> 单位立方体</label>
+    </div>
+  </div>
+
+  <div id="toolbar">
+    <button class="btn" id="btn-play">▶ 动画演示</button>
+    <button class="btn" id="btn-reset">重置</button>
+    <button class="btn" id="btn-toggle-right">📋 参数</button>
+  </div>
+
+  <div id="preset-bar">
+    <div class="preset-bar-label">变换类型 ▸</div>
+    <div class="preset-bar-scroll" id="preset-bar-list">
+      <button class="pbar-btn active" data-preset="identity">恒等</button>
+      <button class="pbar-btn" data-preset="scale">缩放2x</button>
+      <button class="pbar-btn" data-preset="rotZ">绕Z轴45°</button>
+      <button class="pbar-btn" data-preset="rotX">绕X轴45°</button>
+      <button class="pbar-btn" data-preset="projXY">投影到XY面</button>
+      <button class="pbar-btn" data-preset="projLine">投影到直线</button>
+      <button class="pbar-btn" data-preset="reflXY">XY面反射</button>
+      <button class="pbar-btn" data-preset="reflPlane">平面反射</button>
+      <button class="pbar-btn" data-preset="shearX">X方向剪切</button>
+      <button class="pbar-btn" data-preset="shearXY">XY剪切</button>
+      <button class="pbar-btn" data-preset="deform">应变变形</button>
+      <button class="pbar-btn" data-preset="rot90z">Z轴90°</button>
+    </div>
+  </div>
+
+  <div id="loading"><div class="spinner"></div><div>加载 3D 引擎...</div></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function() {
+  'use strict';
+
+  // ====== State ======
+  var A = [[1,0,0],[0,1,0],[0,0,1]]; // Transform matrix
+  var vVec = [1.0, 0.5, 0.8]; // Test vector
+  var animProgress = 0; // 0=identity, 1=full transform
+  var isPlaying = false;
+  var playDir = 1;
+
+  var showGrid = true, showAxes = true, showVector = true, showUnitCube = true;
+  var camTheta = 0.7, camPhi = 0.5, camRadius = 11;
+  var sceneGroup, gridGroup, axesGroup, vectorGroup, cubeGroup;
+
+  // ====== Presets ======
+  var PRESETS = {
+    identity: { name: '恒等变换', desc: 'T = I, 不改变任何向量', m: [[1,0,0],[0,1,0],[0,0,1]], app: '参考基准' },
+    scale: { name: '均匀缩放', desc: 'T = 2I, 所有方向放大2倍', m: [[2,0,0],[0,2,0],[0,0,2]], app: '图像缩放、模型放缩' },
+    rotZ: { name: '绕Z轴旋转45°', desc: 'XY面内旋转, Z不变', m: [[0.707,-0.707,0],[0.707,0.707,0],[0,0,1]], app: '2D旋转、刚体运动' },
+    rotX: { name: '绕X轴旋转45°', desc: 'YZ面内旋转, X不变', m: [[1,0,0],[0,0.707,-0.707],[0,0.707,0.707]], app: '3D旋转、相机控制' },
+    projXY: { name: '投影到XY面', desc: 'z分量→0, 降维投影', m: [[1,0,0],[0,1,0],[0,0,0]], app: '三视图、工程制图' },
+    projLine: { name: '投影到直线', desc: '投影到(1,1,1)方向', m: [[0.333,0.333,0.333],[0.333,0.333,0.333],[0.333,0.333,0.333]], app: 'PCA降维、数据压缩' },
+    reflXY: { name: '关于XY面反射', desc: 'z→-z, 镜面反射', m: [[1,0,0],[0,1,0],[0,0,-1]], app: '对称操作、光学反射' },
+    reflPlane: { name: '关于x=y平面反射', desc: 'x↔y互换', m: [[0,1,0],[1,0,0],[0,0,1]], app: '坐标变换、对称分析' },
+    shearX: { name: 'X方向剪切', desc: 'y和z引起x偏移', m: [[1,0.5,0.3],[0,1,0],[0,0,1]], app: '材料剪切变形' },
+    shearXY: { name: 'XY面剪切', desc: '同时剪切X和Y方向', m: [[1,0.5,0],[0.5,1,0],[0,0,1]], app: '平面应变分析' },
+    deform: { name: '应变变形', desc: '非对称矩阵, 含旋转+变形', m: [[1.2,0.3,0.1],[0.1,0.8,-0.2],[0.05,0.1,1.1]], app: '弹性力学、有限元分析' },
+    rot90z: { name: 'Z轴旋转90°', desc: '正交矩阵 det=1, 刚体旋转', m: [[0,-1,0],[1,0,0],[0,0,1]], app: '机器人关节、方向变换' }
+  };
+
+  // ====== Three.js setup ======
+  var scene, camera, renderer, canvas;
+
+  function init() {
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf0f9ff);
+    scene.fog = new THREE.FogExp2(0xf0f9ff, 0.03);
+
+    camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+    updateCam();
+
+    renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('scene'), antialias: true });
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    canvas = renderer.domElement;
+
+    // Lights
+    scene.add(new THREE.AmbientLight(0xffffff, 0.65));
+    var dl = new THREE.DirectionalLight(0xffffff, 0.4);
+    dl.position.set(5, 8, 5); scene.add(dl);
+    var fl = new THREE.DirectionalLight(0xbfdbfe, 0.25);
+    fl.position.set(-5, 3, -5); scene.add(fl);
+
+    // Floor
+    var floor = new THREE.Mesh(
+      new THREE.PlaneGeometry(30, 30),
+      new THREE.MeshStandardMaterial({ color: 0xe0e7ff, transparent: true, opacity: 0.15 })
+    );
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.y = -3;
+    scene.add(floor);
+
+    sceneGroup = new THREE.Group();
+    gridGroup = new THREE.Group();
+    axesGroup = new THREE.Group();
+    vectorGroup = new THREE.Group();
+    cubeGroup = new THREE.Group();
+    sceneGroup.add(gridGroup);
+    sceneGroup.add(axesGroup);
+    sceneGroup.add(vectorGroup);
+    sceneGroup.add(cubeGroup);
+    scene.add(sceneGroup);
+
+    setupControls();
+    window.addEventListener('resize', function() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    document.getElementById('loading').style.display = 'none';
+    refresh();
+    animate();
+  }
+
+  function updateCam() {
+    camera.position.set(
+      camRadius * Math.cos(camPhi) * Math.sin(camTheta),
+      camRadius * Math.sin(camPhi),
+      camRadius * Math.cos(camPhi) * Math.cos(camTheta)
+    );
+    camera.lookAt(0, 0, 0);
+  }
+
+  // ====== Matrix operations ======
+  function matVec(m, v) {
+    return [
+      m[0][0]*v[0] + m[0][1]*v[1] + m[0][2]*v[2],
+      m[1][0]*v[0] + m[1][1]*v[1] + m[1][2]*v[2],
+      m[2][0]*v[0] + m[2][1]*v[1] + m[2][2]*v[2]
+    ];
+  }
+
+  function matLerp(m1, m2, t) {
+    var r = [[0,0,0],[0,0,0],[0,0,0]];
+    for (var i = 0; i < 3; i++)
+      for (var j = 0; j < 3; j++)
+        r[i][j] = m1[i][j] * (1-t) + m2[i][j] * t;
+    return r;
+  }
+
+  function matDet(m) {
+    return m[0][0]*(m[1][1]*m[2][2]-m[1][2]*m[2][1])
+         - m[0][1]*(m[1][0]*m[2][2]-m[1][2]*m[2][0])
+         + m[0][2]*(m[1][0]*m[2][1]-m[1][1]*m[2][0]);
+  }
+
+  function matRank(m) {
+    // Simplified rank by checking linear independence
+    var eps = 0.001;
+    var v1 = [m[0][0], m[1][0], m[2][0]];
+    var v2 = [m[0][1], m[1][1], m[2][1]];
+    var v3 = [m[0][2], m[1][2], m[2][2]];
+    var r = 0;
+    if (Math.abs(v1[0])+Math.abs(v1[1])+Math.abs(v1[2]) > eps) r++;
+    // Check if v2 is independent from v1
+    var cross = [v1[1]*v2[2]-v1[2]*v2[1], v1[2]*v2[0]-v1[0]*v2[2], v1[0]*v2[1]-v1[1]*v2[0]];
+    if (Math.abs(cross[0])+Math.abs(cross[1])+Math.abs(cross[2]) > eps) r++;
+    else if (r === 0) r++;
+    // Check if v3 is independent from {v1, v2}
+    if (r === 2) {
+      var dot = cross[0]*v3[0] + cross[1]*v3[1] + cross[2]*v3[2];
+      if (Math.abs(dot) > eps) r++;
+    } else {
+      // If rank < 2, check v3 independently
+      if (Math.abs(v3[0])+Math.abs(v3[1])+Math.abs(v3[2]) > eps) r++;
+    }
+    return r;
+  }
+
+  function getTransformType(m) {
+    var det = matDet(m);
+    var rank = matRank(m);
+    var eps = 0.01;
+
+    if (rank === 3 && Math.abs(det - 1) < 0.01) {
+      // Check if orthogonal (columns are orthonormal)
+      var c1 = [m[0][0],m[1][0],m[2][0]];
+      var c2 = [m[0][1],m[1][1],m[2][1]];
+      var c3 = [m[0][2],m[1][2],m[2][2]];
+      var d12 = c1[0]*c2[0]+c1[1]*c2[1]+c1[2]*c2[2];
+      var d13 = c1[0]*c3[0]+c1[1]*c3[1]+c1[2]*c3[2];
+      var d23 = c2[0]*c3[0]+c2[1]*c3[1]+c2[2]*c3[2];
+      var n1 = Math.sqrt(c1[0]*c1[0]+c1[1]*c1[1]+c1[2]*c1[2]);
+      var n2 = Math.sqrt(c2[0]*c2[0]+c2[1]*c2[1]+c2[2]*c2[2]);
+      var n3 = Math.sqrt(c3[0]*c3[0]+c3[1]*c3[1]+c3[2]*c3[2]);
+      if (Math.abs(d12) < 0.05 && Math.abs(d13) < 0.05 && Math.abs(d23) < 0.05 &&
+          Math.abs(n1-1) < 0.05 && Math.abs(n2-1) < 0.05 && Math.abs(n3-1) < 0.05) {
+        return '正交变换(旋转)';
+      }
+      return '保体积变换 det=1';
+    }
+    if (rank === 3 && Math.abs(det + 1) < 0.01) return '反射(det=-1)';
+    if (rank === 3 && det > 1.01) return '缩放+变形 det=' + det.toFixed(2);
+    if (rank === 3 && det > 0) return '可逆变换 det=' + det.toFixed(2);
+    if (rank === 3 && det < 0) return '反向变换 det=' + det.toFixed(2);
+    if (rank === 2) return '投影(降维) rank=2';
+    if (rank === 1) return '投影到直线 rank=1';
+    if (rank === 0) return '零变换';
+    return 'rank=' + rank;
+  }
+
+  // ====== 3D Object builders ======
+  function createArrow(from, to, color, radius) {
+    var group = new THREE.Group();
+    var start = new THREE.Vector3(from[0], from[1], from[2]);
+    var end = new THREE.Vector3(to[0], to[1], to[2]);
+    var dir = new THREE.Vector3().subVectors(end, start);
+    var len = dir.length();
+    if (len < 0.01) {
+      // Draw a small sphere for zero-length
+      var sphereGeo = new THREE.SphereGeometry(0.06, 12, 8);
+      var sphereMat = new THREE.MeshStandardMaterial({ color: color, emissive: color, emissiveIntensity: 0.3 });
+      group.add(new THREE.Mesh(sphereGeo, sphereMat));
+      return group;
+    }
+
+    var mat = new THREE.MeshStandardMaterial({
+      color: color, emissive: color, emissiveIntensity: 0.2,
+      metalness: 0.3, roughness: 0.5
+    });
+
+    var shaftLen = Math.max(0.01, len * 0.82);
+    var shaftGeo = new THREE.CylinderGeometry(radius, radius, shaftLen, 10);
+    var shaft = new THREE.Mesh(shaftGeo, mat);
+    var mid = new THREE.Vector3().addVectors(start, dir.clone().multiplyScalar(0.41));
+    shaft.position.copy(mid);
+    shaft.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.clone().normalize());
+    group.add(shaft);
+
+    var tipLen = Math.max(0.01, len * 0.18);
+    var tipGeo = new THREE.ConeGeometry(radius * 2.2, tipLen, 10);
+    var tip = new THREE.Mesh(tipGeo, mat);
+    var tipMid = new THREE.Vector3().addVectors(start, dir.clone().multiplyScalar(0.91));
+    tip.position.copy(tipMid);
+    tip.quaternion.copy(shaft.quaternion);
+    group.add(tip);
+
+    return group;
+  }
+
+  function createPointMarker(pos, color, radius) {
+    var geo = new THREE.SphereGeometry(radius, 12, 8);
+    var mat = new THREE.MeshStandardMaterial({
+      color: color, emissive: color, emissiveIntensity: 0.4,
+      metalness: 0.3, roughness: 0.4
+    });
+    var mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(pos[0], pos[1], pos[2]);
+    return mesh;
+  }
+
+  function createTextSprite(text, color, fontSize) {
+    var canvas = document.createElement('canvas');
+    canvas.width = 256; canvas.height = 64;
+    var ctx = canvas.getContext('2d');
+    ctx.fillStyle = color;
+    ctx.font = 'bold ' + (fontSize || 32) + 'px sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(text, 128, 32);
+    var tex = new THREE.CanvasTexture(canvas);
+    var mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+    var sprite = new THREE.Sprite(mat);
+    sprite.scale.set(1.5, 0.375, 1);
+    return sprite;
+  }
+
+  function createLine(from, to, color, opacity, dashed) {
+    var geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(
+      [from[0],from[1],from[2], to[0],to[1],to[2]], 3));
+    var mat;
+    if (dashed) {
+      mat = new THREE.LineDashedMaterial({ color: color, transparent: true, opacity: opacity || 0.6, dashSize: 0.1, gapSize: 0.06 });
+    } else {
+      mat = new THREE.LineBasicMaterial({ color: color, transparent: true, opacity: opacity || 0.6 });
+    }
+    var line = new THREE.Line(geo, mat);
+    if (dashed) line.computeLineDistances();
+    return line;
+  }
+
+  // ====== Build scene ======
+  function clearGroup(g) {
+    while (g && g.children.length > 0) {
+      var c = g.children[0];
+      g.remove(c);
+      if (c.geometry) c.geometry.dispose();
+      if (c.material) c.material.dispose();
+    }
+  }
+
+  function buildScene() {
+    var identity = [[1,0,0],[0,1,0],[0,0,1]];
+    var M = matLerp(identity, A, animProgress);
+
+    // ===== Grid =====
+    clearGroup(gridGroup);
+    if (showGrid) {
+      var gridSize = 3, step = 0.5;
+      for (var i = -gridSize; i <= gridSize; i += step) {
+        // Original grid (gray, faint)
+        gridGroup.add(createLine([-gridSize, i, 0], [gridSize, i, 0], 0xcbd5e1, 0.15));
+        gridGroup.add(createLine([i, -gridSize, 0], [i, gridSize, 0], 0xcbd5e1, 0.15));
+
+        // Transformed grid (blue)
+        var p1 = matVec(M, [-gridSize, i, 0]);
+        var p2 = matVec(M, [gridSize, i, 0]);
+        gridGroup.add(createLine(p1, p2, 0x3b82f6, 0.25));
+
+        var p3 = matVec(M, [i, -gridSize, 0]);
+        var p4 = matVec(M, [i, gridSize, 0]);
+        gridGroup.add(createLine(p3, p4, 0x3b82f6, 0.25));
+      }
+    }
+
+    // ===== Axes (basis vectors) =====
+    clearGroup(axesGroup);
+    if (showAxes) {
+      var e1 = [1,0,0], e2 = [0,1,0], e3 = [0,0,1];
+      var te1 = matVec(M, e1);
+      var te2 = matVec(M, e2);
+      var te3 = matVec(M, e3);
+
+      // Original axes (gray, dashed)
+      axesGroup.add(createArrow([0,0,0], [2.5,0,0], 0x94a3b8, 0.02));
+      axesGroup.add(createArrow([0,0,0], [0,2.5,0], 0x94a3b8, 0.02));
+      axesGroup.add(createArrow([0,0,0], [0,0,2.5], 0x94a3b8, 0.02));
+
+      // Transformed basis vectors
+      var len1 = Math.sqrt(te1[0]*te1[0]+te1[1]*te1[1]+te1[2]*te1[2]);
+      var len2 = Math.sqrt(te2[0]*te2[0]+te2[1]*te2[1]+te2[2]*te2[2]);
+      var len3 = Math.sqrt(te3[0]*te3[0]+te3[1]*te3[1]+te3[2]*te3[2]);
+
+      if (len1 > 0.02) axesGroup.add(createArrow([0,0,0], te1, 0xef4444, 0.035));
+      if (len2 > 0.02) axesGroup.add(createArrow([0,0,0], te2, 0x16a34a, 0.035));
+      if (len3 > 0.02) axesGroup.add(createArrow([0,0,0], te3, 0x7c3aed, 0.035));
+
+      // Tips
+      if (len1 > 0.02) axesGroup.add(createPointMarker(te1, 0xef4444, 0.06));
+      if (len2 > 0.02) axesGroup.add(createPointMarker(te2, 0x16a34a, 0.06));
+      if (len3 > 0.02) axesGroup.add(createPointMarker(te3, 0x7c3aed, 0.06));
+
+      // Labels for transformed basis
+      if (len1 > 0.02) {
+        var s1 = createTextSprite('T(e1)', '#dc2626', 24);
+        s1.position.set(te1[0]*1.2, te1[1]*1.2, te1[2]*1.2);
+        axesGroup.add(s1);
+      }
+      if (len2 > 0.02) {
+        var s2 = createTextSprite('T(e2)', '#16a34a', 24);
+        s2.position.set(te2[0]*1.2, te2[1]*1.2, te2[2]*1.2);
+        axesGroup.add(s2);
+      }
+      if (len3 > 0.02) {
+        var s3 = createTextSprite('T(e3)', '#7c3aed', 24);
+        s3.position.set(te3[0]*1.2, te3[1]*1.2, te3[2]*1.2);
+        axesGroup.add(s3);
+      }
+    }
+
+    // ===== Test vector =====
+    clearGroup(vectorGroup);
+    if (showVector) {
+      var tv = matVec(M, vVec);
+
+      // Original v (amber)
+      vectorGroup.add(createArrow([0,0,0], vVec, 0xf59e0b, 0.03));
+      vectorGroup.add(createPointMarker(vVec, 0xf59e0b, 0.05));
+
+      // Transformed T(v) (cyan)
+      if (Math.sqrt(tv[0]*tv[0]+tv[1]*tv[1]+tv[2]*tv[2]) > 0.02) {
+        vectorGroup.add(createArrow([0,0,0], tv, 0x0ea5e9, 0.03));
+        vectorGroup.add(createPointMarker(tv, 0x0ea5e9, 0.05));
+      }
+
+      // Dashed line from v to T(v)
+      vectorGroup.add(createLine(vVec, tv, 0x64748b, 0.3, true));
+
+      // Labels
+      var sV = createTextSprite('v', '#d97706', 28);
+      sV.position.set(vVec[0]*1.15, vVec[1]*1.15, vVec[2]*1.15);
+      vectorGroup.add(sV);
+
+      var sTV = createTextSprite('T(v)', '#0284c7', 24);
+      sTV.position.set(tv[0]*1.15, tv[1]*1.15, tv[2]*1.15);
+      vectorGroup.add(sTV);
+    }
+
+    // ===== Unit cube =====
+    clearGroup(cubeGroup);
+    if (showUnitCube) {
+      // Original unit cube (gray wireframe)
+      var cubeVerts = [
+        [0,0,0],[1,0,0],[1,1,0],[0,1,0],
+        [0,0,1],[1,0,1],[1,1,1],[0,1,1]
+      ];
+      var cubeEdges = [[0,1],[1,2],[2,3],[3,0], [4,5],[5,6],[6,7],[7,4], [0,4],[1,5],[2,6],[3,7]];
+      cubeEdges.forEach(function(e) {
+        cubeGroup.add(createLine(cubeVerts[e[0]], cubeVerts[e[1]], 0xcbd5e1, 0.3, true));
+      });
+
+      // Transformed cube (blue/colored mesh)
+      var tvCube = cubeVerts.map(function(p) { return matVec(M, p); });
+      cubeEdges.forEach(function(e) {
+        cubeGroup.add(createLine(tvCube[e[0]], tvCube[e[1]], 0x6366f1, 0.5));
+      });
+
+      // Fill faces of transformed cube (semi-transparent)
+      var faces = [
+        [0,1,2,3], [4,5,6,7], [0,1,5,4], [2,3,7,6], [1,2,6,5], [0,3,7,4]
+      ];
+      faces.forEach(function(f) {
+        var verts = [];
+        for (var k = 0; k < f.length; k++) {
+          verts.push(tvCube[f[k]][0], tvCube[f[k]][1], tvCube[f[k]][2]);
+        }
+        // Two triangles: 0,1,2,3 → 0,1,2 and 0,2,3
+        var geo = new THREE.BufferGeometry();
+        geo.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+        geo.setIndex([0,1,2, 0,2,3]);
+        geo.computeVertexNormals();
+        var mat = new THREE.MeshStandardMaterial({
+          color: 0x6366f1, transparent: true, opacity: 0.08,
+          side: THREE.DoubleSide, depthWrite: false
+        });
+        cubeGroup.add(new THREE.Mesh(geo, mat));
+      });
+    }
+  }
+
+  // ====== UI updates ======
+  function refresh() {
+    buildScene();
+    updateMatrixDisplay();
+    updateInfoPanel();
+    updateVectorDisplay();
+    updateAnalysis();
+  }
+
+  function updateMatrixDisplay() {
+    var cells = document.querySelectorAll('.mcell');
+    var idx = 0;
+    for (var i = 0; i < 3; i++) {
+      for (var j = 0; j < 3; j++) {
+        var v = A[i][j];
+        var el = cells[idx];
+        el.textContent = v.toFixed(2);
+        el.className = 'mcell';
+        if (Math.abs(v) < 0.01) el.classList.add('zero');
+        else if (v < 0) el.classList.add('neg');
+        else if (v > 0) el.classList.add('pos');
+        idx++;
+      }
+    }
+  }
+
+  function updateInfoPanel() {
+    var det = matDet(A);
+    var rank = matRank(A);
+    document.getElementById('det-val').textContent = det.toFixed(3);
+    document.getElementById('rank-val').textContent = rank;
+    document.getElementById('vol-val').textContent = Math.abs(det).toFixed(3) + 'x';
+    document.getElementById('type-val').textContent = getTransformType(A);
+  }
+
+  function updateVectorDisplay() {
+    var tv = matVec(A, vVec);
+    document.getElementById('v-text').textContent = vVec[0].toFixed(1) + ', ' + vVec[1].toFixed(1) + ', ' + vVec[2].toFixed(1);
+    document.getElementById('tv-text').textContent = tv[0].toFixed(2) + ', ' + tv[1].toFixed(2) + ', ' + tv[2].toFixed(2);
+
+    document.getElementById('s-v1').value = vVec[0]; document.getElementById('v-v1').textContent = vVec[0].toFixed(1);
+    document.getElementById('s-v2').value = vVec[1]; document.getElementById('v-v2').textContent = vVec[1].toFixed(1);
+    document.getElementById('s-v3').value = vVec[2]; document.getElementById('v-v3').textContent = vVec[2].toFixed(1);
+  }
+
+  function updateAnalysis() {
+    var det = matDet(A);
+    var rank = matRank(A);
+    var tv = matVec(A, vVec);
+
+    var te1 = matVec(A, [1,0,0]);
+    var te2 = matVec(A, [0,1,0]);
+    var te3 = matVec(A, [0,0,1]);
+
+    var html = '';
+
+    // Step 1: Definition
+    html += '<div class="step-card">' +
+      '<span class="step-num">定义</span>' +
+      '<div class="step-title">线性变换 T: R³ → R³</div>' +
+      '<div class="step-detail">' +
+        'T 满足 <b>加法性</b>: T(u+v) = T(u) + T(v)<br>' +
+        'T 满足 <b>齐次性</b>: T(αu) = αT(u)<br>' +
+        '<span class="pos">核心定理:</span> T 由 <b>T(e₁), T(e₂), T(e₃)</b> 完全确定' +
+      '</div>' +
+    '</div>';
+
+    // Step 2: Matrix from basis images
+    html += '<div class="step-card">' +
+      '<span class="step-num">建矩</span>' +
+      '<div class="step-title">从基向量像到矩阵 A</div>' +
+      '<div class="step-detail">' +
+        'T(e₁) = (' + te1[0].toFixed(2) + ', ' + te1[1].toFixed(2) + ', ' + te1[2].toFixed(2) + ') → A第1列<br>' +
+        'T(e₂) = (' + te2[0].toFixed(2) + ', ' + te2[1].toFixed(2) + ', ' + te2[2].toFixed(2) + ') → A第2列<br>' +
+        'T(e₃) = (' + te3[0].toFixed(2) + ', ' + te3[1].toFixed(2) + ', ' + te3[2].toFixed(2) + ') → A第3列<br>' +
+        '<b>A = [T(e₁) | T(e₂) | T(e₃)]</b><br>' +
+        '<span class="hi">列向量 = 基向量的像</span>' +
+      '</div>' +
+    '</div>';
+
+    // Step 3: Apply to vector
+    html += '<div class="step-card">' +
+      '<span class="step-num">求像</span>' +
+      '<div class="step-title">T(v) = A · v (矩阵乘法)</div>' +
+      '<div class="step-detail">' +
+        'v = (' + vVec[0].toFixed(1) + ', ' + vVec[1].toFixed(1) + ', ' + vVec[2].toFixed(1) + ')<br>' +
+        'v = ' + vVec[0].toFixed(1) + 'e₁ + ' + vVec[1].toFixed(1) + 'e₂ + ' + vVec[2].toFixed(1) + 'e₃<br>' +
+        'T(v) = ' + vVec[0].toFixed(1) + 'T(e₁) + ' + vVec[1].toFixed(1) + 'T(e₂) + ' + vVec[2].toFixed(1) + 'T(e₃)<br>' +
+        'T(v) = (' + tv[0].toFixed(2) + ', ' + tv[1].toFixed(2) + ', ' + tv[2].toFixed(2) + ')<br>' +
+        '<span class="pos">矩阵乘法 = 线性组合</span>' +
+      '</div>' +
+    '</div>';
+
+    // Step 4: Properties
+    html += '<div class="step-card">' +
+      '<span class="step-num">性质</span>' +
+      '<div class="step-title">变换的几何性质</div>' +
+      '<div class="step-detail">' +
+        'det(A) = ' + det.toFixed(3) + (Math.abs(det) < 0.01 ? ' <span class="neg">(退化!)</span>' : '') + '<br>' +
+        'rank(A) = ' + rank + (rank < 3 ? ' <span class="neg">(降维)</span>' : ' (满秩)') + '<br>' +
+        '|det| = ' + Math.abs(det).toFixed(3) + ' (体积缩放因子)<br>' +
+        '类型: <b>' + getTransformType(A) + '</b>' +
+      '</div>' +
+    '</div>';
+
+    // Step 5: Engineering meaning
+    html += '<div class="step-card">' +
+      '<span class="step-num">工程</span>' +
+      '<div class="step-title">实际工程意义</div>' +
+      '<div class="step-detail" id="eng-detail">' +
+        getEngineeringMeaning() +
+      '</div>' +
+    '</div>';
+
+    document.getElementById('analysis-content').innerHTML = html;
+  }
+
+  function getEngineeringMeaning() {
+    var det = matDet(A);
+    var rank = matRank(A);
+
+    if (Math.abs(det - 1) < 0.01 && rank === 3) {
+      return '<b>刚体运动/保体积变换</b><br>' +
+        '① 机器人关节运动: 正运动学<br>' +
+        '② 计算机图形学: 相机旋转<br>' +
+        '③ 量子力学: 幺正算符<br>' +
+        '④ 守恒律: 面积/体积不变';
+    }
+    if (Math.abs(det + 1) < 0.01 && rank === 3) {
+      return '<b>反射变换</b><br>' +
+        '① 晶体对称操作<br>' +
+        '② 光学镜面反射<br>' +
+        '③ 分子点群对称性<br>' +
+        '④ 手性判定: det<0 → 改变手性';
+    }
+    if (Math.abs(det) > 1.5 && rank === 3) {
+      return '<b>缩放/膨胀变换</b><br>' +
+        '① 图像处理: 放大缩小<br>' +
+        '② 热膨胀: 各方向不同比例<br>' +
+        '③ 数据归一化: 特征缩放<br>' +
+        '④ 模型变换: CAD建模';
+    }
+    if (rank === 2) {
+      return '<b>投影变换(降维)</b><br>' +
+        '① 三视图: 3D→2D投影<br>' +
+        '② PCA: 高维数据降维<br>' +
+        '③ 阴影计算: 光源投影<br>' +
+        '④ 特征提取: 信息压缩';
+    }
+    if (rank === 1) {
+      return '<b>投影到直线</b><br>' +
+        '① 数据压缩到1维<br>' +
+        '② 射线投影<br>' +
+        '③ 信号检测: 匹配滤波';
+    }
+    return '<b>一般线性变换</b><br>' +
+      '① 力学: 应变张量描述变形<br>' +
+      '② 信号处理: 滤波器=线性算子<br>' +
+      '③ 机器学习: 全连接层 W·x<br>' +
+      '④ 控制理论: 状态空间 x\'=Ax';
+  }
+
+  // ====== Controls ======
+  function setupControls() {
+    // Build matrix sliders
+    var labels = ['a₁₁','a₁₂','a₁₃','a₂₁','a₂₂','a₂₃','a₃₁','a₃₂','a₃₃'];
+    var sliderHtml = '';
+    for (var i = 0; i < 3; i++) {
+      for (var j = 0; j < 3; j++) {
+        sliderHtml += '<div class="slider-row">' +
+          '<label>' + labels[i*3+j] + '</label>' +
+          '<input type="range" id="s-m' + i + j + '" min="-2" max="2" step="0.1" value="' + A[i][j] + '">' +
+          '<span class="val" id="v-m' + i + j + '">' + A[i][j].toFixed(1) + '</span>' +
+        '</div>';
+      }
+    }
+    document.getElementById('matrix-sliders').innerHTML = sliderHtml;
+
+    // Bind matrix sliders
+    for (var mi = 0; mi < 3; mi++) {
+      for (var mj = 0; mj < 3; mj++) {
+        (function(i, j) {
+          var el = document.getElementById('s-m' + i + j);
+          el.addEventListener('input', function(e) {
+            var val = parseFloat(e.target.value);
+            A[i][j] = val;
+            document.getElementById('v-m' + i + j).textContent = val.toFixed(1);
+            clearActivePreset();
+            refresh();
+          });
+        })(mi, mj);
+      }
+    }
+
+    // Vector sliders
+    function bindV(id, vid, idx) {
+      document.getElementById(id).addEventListener('input', function(e) {
+        vVec[idx] = parseFloat(e.target.value);
+        document.getElementById(vid).textContent = vVec[idx].toFixed(1);
+        refresh();
+      });
+    }
+    bindV('s-v1', 'v-v1', 0);
+    bindV('s-v2', 'v-v2', 1);
+    bindV('s-v3', 'v-v3', 2);
+
+    // Toggles
+    document.getElementById('show-grid').addEventListener('change', function(e) { showGrid = e.target.checked; refresh(); });
+    document.getElementById('show-axes').addEventListener('change', function(e) { showAxes = e.target.checked; refresh(); });
+    document.getElementById('show-vector').addEventListener('change', function(e) { showVector = e.target.checked; refresh(); });
+    document.getElementById('show-unit-cube').addEventListener('change', function(e) { showUnitCube = e.target.checked; refresh(); });
+
+    // Presets (sidebar)
+    document.querySelectorAll('.preset-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        applyPreset(btn.getAttribute('data-preset'));
+        document.querySelectorAll('.preset-btn').forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+      });
+    });
+
+    // Presets (bottom bar)
+    document.querySelectorAll('.pbar-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        applyPreset(btn.getAttribute('data-preset'));
+        document.querySelectorAll('.pbar-btn').forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+      });
+    });
+
+    // Toggle right sidebar on mobile
+    var toggleBtn = document.getElementById('btn-toggle-right');
+    if (toggleBtn) {
+      toggleBtn.addEventListener('click', function() {
+        document.getElementById('right-sidebar').classList.toggle('show');
+      });
+    }
+
+    // Play button
+    document.getElementById('btn-play').addEventListener('click', function() {
+      isPlaying = !isPlaying;
+      document.getElementById('btn-play').textContent = isPlaying ? '⏸ 暂停' : '▶ 动画演示';
+    });
+
+    // Reset button
+    document.getElementById('btn-reset').addEventListener('click', function() {
+      A = [[1,0,0],[0,1,0],[0,0,1]];
+      vVec = [1.0, 0.5, 0.8];
+      animProgress = 0;
+      isPlaying = false;
+      document.getElementById('btn-play').textContent = '▶ 动画演示';
+      // Update sliders
+      for (var i = 0; i < 3; i++) {
+        for (var j = 0; j < 3; j++) {
+          document.getElementById('s-m' + i + j).value = A[i][j];
+          document.getElementById('v-m' + i + j).textContent = A[i][j].toFixed(1);
+        }
+      }
+      clearActivePreset();
+      document.querySelector('.preset-btn[data-preset="identity"]').classList.add('active');
+      document.querySelector('.pbar-btn[data-preset="identity"]').classList.add('active');
+      camTheta = 0.7; camPhi = 0.5; camRadius = 11;
+      updateCam();
+      refresh();
+    });
+
+    // Camera drag
+    var drag = false, lx = 0, ly = 0, pinch = 0;
+    canvas.addEventListener('mousedown', function(e) { drag = true; lx = e.clientX; ly = e.clientY; });
+    window.addEventListener('mousemove', function(e) {
+      if (!drag) return;
+      camTheta -= (e.clientX - lx) * 0.007;
+      camPhi += (e.clientY - ly) * 0.007;
+      camPhi = Math.max(-1.4, Math.min(1.4, camPhi));
+      lx = e.clientX; ly = e.clientY;
+      updateCam();
+    });
+    window.addEventListener('mouseup', function() { drag = false; });
+    canvas.addEventListener('wheel', function(e) {
+      e.preventDefault();
+      camRadius += e.deltaY * 0.01;
+      camRadius = Math.max(4, Math.min(25, camRadius));
+      updateCam();
+    }, { passive: false });
+
+    // Touch
+    canvas.addEventListener('touchstart', function(e) {
+      if (e.touches.length === 1) { drag = true; lx = e.touches[0].clientX; ly = e.touches[0].clientY; }
+      else if (e.touches.length === 2) {
+        var dx = e.touches[0].clientX - e.touches[1].clientX;
+        var dy = e.touches[0].clientY - e.touches[1].clientY;
+        pinch = Math.sqrt(dx*dx + dy*dy);
+      }
+    }, { passive: false });
+    canvas.addEventListener('touchmove', function(e) {
+      e.preventDefault();
+      if (e.touches.length === 1 && drag) {
+        camTheta -= (e.touches[0].clientX - lx) * 0.007;
+        camPhi += (e.touches[0].clientY - ly) * 0.007;
+        camPhi = Math.max(-1.4, Math.min(1.4, camPhi));
+        lx = e.touches[0].clientX; ly = e.touches[0].clientY;
+        updateCam();
+      } else if (e.touches.length === 2) {
+        var dx = e.touches[0].clientX - e.touches[1].clientX;
+        var dy = e.touches[0].clientY - e.touches[1].clientY;
+        var d = Math.sqrt(dx*dx + dy*dy);
+        if (pinch > 0) camRadius += (pinch - d) * 0.03;
+        camRadius = Math.max(4, Math.min(25, camRadius));
+        pinch = d; updateCam();
+      }
+    }, { passive: false });
+    canvas.addEventListener('touchend', function() { drag = false; pinch = 0; });
+  }
+
+  function clearActivePreset() {
+    document.querySelectorAll('.preset-btn').forEach(function(b) { b.classList.remove('active'); });
+    document.querySelectorAll('.pbar-btn').forEach(function(b) { b.classList.remove('active'); });
+  }
+
+  function applyPreset(name) {
+    var p = PRESETS[name];
+    if (!p) return;
+    A = p.m.map(function(r) { return r.slice(); });
+    animProgress = 0;
+    // Update sliders
+    for (var i = 0; i < 3; i++) {
+      for (var j = 0; j < 3; j++) {
+        document.getElementById('s-m' + i + j).value = A[i][j];
+        document.getElementById('v-m' + i + j).textContent = A[i][j].toFixed(1);
+      }
+    }
+    refresh();
+  }
+
+  // ====== Animate ======
+  function animate() {
+    requestAnimationFrame(animate);
+    if (isPlaying) {
+      animProgress += 0.015 * playDir;
+      if (animProgress > 1) { animProgress = 1; playDir = -1; }
+      if (animProgress < 0) { animProgress = 0; playDir = 1; }
+      buildScene();
+    }
+    renderer.render(scene, camera);
+  }
+
+  function tryStart() {
+    if (typeof THREE === 'undefined') { setTimeout(tryStart, 50); return; }
+    try { init(); } catch(e) {
+      document.getElementById('loading').innerHTML =
+        '<div style="color:#dc2626">加载失败<br><span style="font-size:12px;color:#64748b">' + e.message + '</span></div>';
+      console.error(e);
+    }
+  }
+  tryStart();
+})();
+</script>
+</body>
+</html>

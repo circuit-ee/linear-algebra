@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<title>初等变换 3D 动画演示</title>
+<style>
+  body{margin:0;font-family:Arial;display:flex;height:100vh;overflow:hidden;background:#f2f2f2}
+  #panel{width:220px;background:#fff;border-right:1px solid #ccc;padding:15px;box-sizing:border-box}
+  #panel h3{margin-top:0}
+  #panel button{width:100%;margin:6px 0;padding:8px}
+  #canvas-container{flex:1;position:relative}
+  #info{position:absolute;top:10px;left:10px;background:rgba(255,255,255,.9);padding:10px;border-radius:4px}
+  #matrixPanel{width:260px;background:#fff;border-left:1px solid #ccc;padding:15px;box-sizing:border-box}
+  #matrixPre{background:#f8f8f8;padding:10px;border-radius:4px;font-family:Consolas,monospace;font-size:13px}
+  .highlight{color:#e91e63;font-weight:bold}
+</style>
+</head>
+<body>
+
+<!-- 左侧控制 -->
+<div id="panel">
+  <h3>初等变换</h3>
+  <select id="transformSel">
+    <option value="swap12">交换向量1↔2</option>
+    <option value="scale2">向量2×2</option>
+    <option value="add12">向量1+=2×向量2</option>
+  </select>
+  <button id="playBtn">▶ 播放</button>
+  <button id="resetBtn">复位</button>
+</div>
+
+<!-- 中央 3D 画布 -->
+<div id="canvas-container">
+  <div id="info">拖动鼠标旋转视角</div>
+</div>
+
+<!-- 右侧矩阵/坐标 -->
+<div id="matrixPanel">
+  <h4>当前矩阵</h4>
+  <pre id="matrixPre">单位矩阵</pre>
+  <h4>向量坐标</h4>
+  <div id="vecInfo"></div>
+</div>
+
+<!-- Three.js -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script>
+/********************************************************************
+ * 全局状态
+ ********************************************************************/
+const EPS = 1e-6;
+let a = new THREE.Vector3(1,0,0);
+let b = new THREE.Vector3(0,1,0);
+let c = new THREE.Vector3(0,0,1);
+let targetMatrix = new THREE.Matrix3().identity();  // 当前生效矩阵
+let anim = {t:0, playing:false, srcMatrix:new THREE.Matrix3(), dstMatrix:new THREE.Matrix3()};
+
+/********************************************************************
+ * Three 场景初始化
+ ********************************************************************/
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xf2f2f2);
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 100);
+camera.position.set(4,4,4);
+const renderer = new THREE.WebGLRenderer({antialias:true});
+document.getElementById('canvas-container').appendChild(renderer.domElement);
+renderer.setSize(renderer.domElement.parentElement.clientWidth,
+                 renderer.domElement.parentElement.clientHeight);
+// 轨道控制（极简版）
+let mouseDown = false, mouseX = 0, mouseY = 0;
+renderer.domElement.addEventListener('mousedown', e=>{mouseDown=true;mouseX=e.clientX;mouseY=e.clientY});
+window.addEventListener('mousemove', e=>{
+  if(!mouseDown)return;
+  const dx = e.clientX-mouseX, dy = e.clientY-mouseY;
+  mouseX = e.clientX; mouseY = e.clientY;
+  const spherical = new THREE.Spherical().setFromVector3(camera.position);
+  spherical.theta -= dx*0.01;
+  spherical.phi += dy*0.01;
+  spherical.phi = Math.max(0.1, Math.min(Math.PI-0.1, spherical.phi));
+  camera.position.setFromSpherical(spherical);
+  camera.lookAt(0,0,0);
+});
+window.addEventListener('mouseup', ()=>mouseDown=false);
+
+// 灯光
+scene.add(new THREE.AmbientLight(0xffffff,0.7));
+const dirLight = new THREE.DirectionalLight(0xffffff,0.5);
+dirLight.position.set(5,5,5);
+scene.add(dirLight);
+
+// 网格
+scene.add(new THREE.GridHelper(10,10,0xcccccc,0xeeeeee));
+
+/********************************************************************
+ * 平行六面体绘制
+ ********************************************************************/
+const vertOf = (aa,bb,cc)=>[
+  new THREE.Vector3(0,0,0),aa,bb,cc,
+  aa.clone().add(bb),aa.clone().add(cc),bb.clone().add(cc),
+  aa.clone().add(bb).add(cc)
+];
+const edgeIdx = [
+  [0,1],[0,2],[0,3],
+  [1,4],[1,5],[2,4],[2,6],[3,5],[3,6],
+  [4,7],[5,7],[6,7]
+];
+let lineGroup = new THREE.Group();
+scene.add(lineGroup);
+
+function rebuildShape(aa,bb,cc){
+  // 清除旧线
+  lineGroup.clear();
+  const V = vertOf(aa,bb,cc);
+  const mat = new THREE.LineBasicMaterial({color:0x2196f3, linewidth:2});
+  edgeIdx.forEach(idxs=>{
+    const geom = new THREE.BufferGeometry().setFromPoints([V[idxs[0]], V[idxs[1]]]);
+    lineGroup.add(new THREE.Line(geom, mat));
+  });
+  // 向量箭头
+  const arrowMat = new THREE.MeshBasicMaterial({color:0xff5722});
+  [aa,bb,cc].forEach((vec,i)=>{
+    const origin = new THREE.Vector3(0,0,0);
+    const arrow = new THREE.ArrowHelper(vec.clone().normalize(), origin,
+                                        vec.length(), 0xff5722, vec.length()*0.2, vec.length()*0.1);
+    arrow.line.material.linewidth = 3;
+    lineGroup.add(arrow);
+  });
+}
+rebuildShape(a,b,c);
+
+/********************************************************************
+ * 矩阵/向量面板更新
+ ********************************************************************/
+function fmtVec(v){return `(${v.x.toFixed(2)}, ${v.y.toFixed(2)}, ${v.z.toFixed(2)})`;}
+function fmtMatrix(m){
+  const e = m.elements;
+  return `[[${e[0].toFixed(2)}, ${e[3].toFixed(2)}, ${e[6].toFixed(2)}],
+          [${e[1].toFixed(2)}, ${e[4].toFixed(2)}, ${e[7].toFixed(2)}],
+          [${e[2].toFixed(2)}, ${e[5].toFixed(2)}, ${e[8].toFixed(2)}]]`;
+}
+function updatePanel(){
+  document.getElementById('matrixPre').textContent = fmtMatrix(targetMatrix);
+  document.getElementById('vecInfo').innerHTML =
+    `a = ${fmtVec(a)}<br>b = ${fmtVec(b)}<br>c = ${fmtVec(c)}`;
+}
+updatePanel();
+
+/********************************************************************
+ * 初等变换矩阵生成
+ ********************************************************************/
+function getTransformMatrix(type){
+  const m = new THREE.Matrix3().identity();
+  switch(type){
+    case 'swap12': /* 交换行1↔2 */ 
+      m.set(0,1,0, 1,0,0, 0,0,1); break;
+    case 'scale2': /* 行2×2 */ 
+      m.set(1,0,0, 0,2,0, 0,0,1); break;
+    case 'add12': /* 行1+=2*行2 */ 
+      m.set(1,2,0, 0,1,0, 0,0,1); break;
+  }
+  return m;
+}
+
+/********************************************************************
+ * 动画循环
+ ********************************************************************/
+let clock = new THREE.Clock();
+function animate(){
+  requestAnimationFrame(animate);
+  if(anim.playing){
+    anim.t += clock.getDelta() / 0.5;  // 0.5 s 完成
+    if(anim.t >=1){anim.t=1; anim.playing=false;}
+    // 矩阵插值（简单线性）
+    const tmpMatrix = new THREE.Matrix3();
+    for(let i=0;i<9;i++){
+      tmpMatrix.elements[i] = (1-anim.t)*anim.srcMatrix.elements[i] + anim.t*anim.dstMatrix.elements[i];
+    }
+    applyMatrixToVectors(tmpMatrix);
+  }
+  renderer.render(scene,camera);
+}
+animate();
+
+/********************************************************************
+ * 应用矩阵到向量并重建图形
+ ********************************************************************/
+function applyMatrixToVectors(mat){
+  const aa = a.clone().applyMatrix3(mat);
+  const bb = b.clone().applyMatrix3(mat);
+  const cc = c.clone().applyMatrix3(mat);
+  rebuildShape(aa,bb,cc);
+  updatePanel();
+}
+
+/********************************************************************
+ * 按钮事件
+ ********************************************************************/
+document.getElementById('playBtn').onclick = ()=>{
+  if(anim.playing)return;
+  const type = document.getElementById('transformSel').value;
+  anim.srcMatrix.copy(targetMatrix);
+  const extra = getTransformMatrix(type);
+  anim.dstMatrix.copy(extra).multiply(targetMatrix); // 左乘
+  anim.t = 0;
+  anim.playing = true;
+  clock.start();
+};
+document.getElementById('resetBtn').onclick = ()=>{
+  anim.playing = false;
+  targetMatrix.identity();
+  applyMatrixToVectors(targetMatrix);
+};
+
+/********************************************************************
+ * 窗口大小调整
+ ********************************************************************/
+window.addEventListener('resize', ()=>{
+  const w = renderer.domElement.parentElement.clientWidth;
+  const h = renderer.domElement.parentElement.clientHeight;
+  camera.aspect = w/h;
+  camera.updateProjectionMatrix();
+  renderer.setSize(w,h);
+});
+</script>
+</body>
+</html>

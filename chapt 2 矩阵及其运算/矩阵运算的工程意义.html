@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>矩阵运算的工程意义</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--ink:#1a202c;--sub:#5b6b7b;--brand:#2563eb;--green:#10b981;--warn:#ea580c;--line:#e4e9f2;}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:20px;}
+body{background:var(--bg);color:var(--ink);
+  font-family:-apple-system,"PingFang SC","Microsoft YaHei","Cambria Math","Noto Sans Math","STIX Two Math",sans-serif;
+  line-height:1.8;}
+header{background:linear-gradient(135deg,#2563eb,#10b981);color:#fff;padding:2.6rem 1.5rem 2.2rem;text-align:center;}
+header h1{font-size:2.2rem;margin-bottom:.6rem;}
+header p{font-size:1.08rem;opacity:.95;max-width:900px;margin:0 auto;}
+main{max-width:1100px;margin:0 auto;padding:2rem 1.2rem 4rem;}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:2rem;box-shadow:0 6px 24px rgba(30,50,90,.07);margin:1.8rem 0;}
+h2{font-size:1.55rem;color:var(--brand);margin-bottom:.8rem;display:flex;align-items:center;gap:.6rem;}
+h2 .num{background:var(--brand);color:#fff;border-radius:10px;padding:.2rem .8rem;font-size:1.05rem;}
+code{background:#eef4ff;border-radius:6px;padding:.1rem .5rem;font-family:"Cambria Math","STIX Two Math",serif;font-size:1.05em;}
+.formula{background:#eef4ff;border-left:5px solid var(--brand);padding:1rem 1.2rem;margin:1rem 0;border-radius:8px;
+  font-family:"Cambria Math","STIX Two Math",serif;font-size:1.25rem;text-align:center;}
+.ctrl{display:flex;flex-wrap:wrap;gap:.8rem;align-items:center;margin:.8rem 0;}
+.ctrl label{font-size:1rem;font-weight:600;}
+input[type=range]{flex:1;min-width:140px;accent-color:var(--brand);}
+.val{font-size:1.1rem;font-weight:800;color:var(--brand);min-width:54px;text-align:center;}
+canvas{display:block;background:#f8fafc;border-radius:10px;width:100%;}
+.golden{background:linear-gradient(135deg,#fff7e6,#eaf2ff);border:2px solid #f2c94c;border-radius:14px;padding:1.1rem 1.3rem;margin:1rem 0;font-size:1.08rem;}
+.tip{background:#eef4ff;border-left:4px solid var(--brand);padding:1rem;border-radius:8px;margin:.8rem 0;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.grid2>div{min-width:0;}
+table{width:100%;border-collapse:collapse;font-size:1rem;}
+td,th{border:1px solid var(--line);padding:.6rem;text-align:center;}
+th{background:#e8f4fd;}
+.mtx{display:inline-block;border:2px solid var(--brand);border-radius:8px;padding:.4rem .8rem;margin:.3rem;font-family:"Cambria Math","STIX Two Math",serif;font-size:1.1rem;vertical-align:middle;}
+.mtx b{color:var(--brand);}
+.sub{color:var(--sub);font-size:.95rem;}
+@media(max-width:700px){.grid2{grid-template-columns:1fr;}html{font-size:18px;}header h1{font-size:1.8rem;}.card{padding:1.3rem;}}
+</style>
+</head>
+<body>
+<header>
+  <h1>矩阵运算的工程意义</h1>
+  <p>大一友好 · 加法 / 数乘 / 乘法 / 转置 / 逆矩阵 / 伴随矩阵 · 从"为什么这么算"到"工程里拿来干什么"</p>
+</header>
+<main>
+
+<section class="card">
+  <h2><span class="num">★</span>一句话统摄</h2>
+  <div class="golden">
+    矩阵 = <b>线性变换 / 数据表 / 方程组的系数</b>。<br>
+    矩阵运算 = 对"多路信号 / 多组变量 / 多个对象"做<b>批量、结构化</b>的处理：<br>
+    加法=叠加 · 数乘=整体缩放 · 乘法=复合/接力 · 转置=对偶/交换两下标 · 逆=反解/还原。<br>
+    <b>一条主线</b>：矩阵运算把"对一个个变量分别算"升级为"对整个系统一次算清"。
+  </div>
+</section>
+
+<!-- 1 矩阵加法 -->
+<section class="card">
+  <h2><span class="num">1</span>矩阵加法：信号的叠加</h2>
+  <p>工程里两个传感器 / 两路信号 / 两组力，<b>对应位置相加</b>就是"叠加"。拖滑块改变两路信号幅值，看叠加结果。</p>
+  <div class="ctrl">
+    <label>信号 A 幅值</label><input id="aA" type="range" min="-2" max="2" step="0.1" value="1.2"><span class="val" id="aAv">1.2</span>
+    <label>信号 B 幅值</label><input id="aB" type="range" min="-2" max="2" step="0.1" value="0.7"><span class="val" id="aBv">0.7</span>
+  </div>
+  <div class="grid2">
+    <div><canvas id="addAB" height="180"></canvas><p class="sub">A、B 两路信号</p></div>
+    <div><canvas id="addSum" height="180"></canvas><p class="sub">C = A + B（叠加）</p></div>
+  </div>
+  <div class="tip">📌 记忆：<code>(A+B)_ij = A_ij + B_ij</code>。要求同型（行列数相同）。工程：电路叠加定理、力/位移矢量合成、图像通道混合（RGB 加色）。</div>
+</section>
+
+<!-- 2 数乘 -->
+<section class="card">
+  <h2><span class="num">2</span>数乘：整体缩放</h2>
+  <p>一个数 k 乘矩阵 = 每个元素都乘 k。拖 k 看向量/整个图形被"等比例拉伸或翻转"。</p>
+  <div class="ctrl">
+    <label>缩放系数 k</label><input id="kSc" type="range" min="-2" max="2" step="0.1" value="1.4"><span class="val" id="kScv">1.4</span>
+  </div>
+  <div class="grid2">
+    <div><canvas id="scOrig" height="200"></canvas><p class="sub">原向量 v=(2,1.2)</p></div>
+    <div><canvas id="scMul" height="200"></canvas><p class="sub">k·v（k 为负则反向）</p></div>
+  </div>
+  <div class="tip">📌 记忆：<code>(kA)_ij = k·A_ij</code>。工程：增益/放大倍数、单位换算（米→厘米全体乘 100）、批量折扣。</div>
+</section>
+
+<!-- 3 矩阵乘法 -->
+<section class="card">
+  <h2><span class="num">3</span>矩阵乘法：线性变换 / 接力</h2>
+  <p><b>最核心也最容易误解</b>：<code>C=AB</code> 中 C 的第 i 行第 j 列 = A 的第 i 行与 B 的第 j 列对应相乘再求和（内积）。</p>
+  <div class="formula">C_ij = 第 i 行(A) · 第 j 列(B) = Σ_k A_ik · B_kj</div>
+  <p>拖转角 φ 构造旋转矩阵 R(φ)，看它如何把向量 v 旋转——矩阵乘法 = 对向量施加一个线性变换。</p>
+  <div class="ctrl">
+    <label>旋转角 φ</label><input id="phi" type="range" min="0" max="360" step="1" value="45"><span class="val" id="phiv">45°</span>
+  </div>
+  <div class="grid2">
+    <div><canvas id="mulTrans" height="220"></canvas><p class="sub">v → R(φ)·v（向量被旋转）</p></div>
+    <div><canvas id="mulComp" height="220"></canvas><p class="sub">复合变换：先 R(φ) 再 R(30°) = R(φ)·R(30°)</p></div>
+  </div>
+  <div class="tip">📌 工程意义：<b>矩阵乘法 = 变换的复合 / 系统的串联 / 接力赛</b>。相机投影、机器人位姿链乘、马尔可夫一步转移（状态×转移矩阵）、神经网络一层全连接 <code>y=Wx+b</code>。注意 <b>AB≠BA</b>（先旋转再投影 ≠ 先投影再旋转）。</div>
+</section>
+
+<!-- 4 转置 -->
+<section class="card">
+  <h2><span class="num">4</span>转置：行列互换 / 对偶</h2>
+  <p>把矩阵"行列下标交换"：Aᵀ 的 (i,j) 元 = A 的 (j,i) 元。几何上：行空间 ↔ 列空间互换。</p>
+  <div class="grid2">
+    <div><canvas id="tpA" height="200"></canvas><p class="sub">原矩阵 A（行=样本，列=指标）</p></div>
+    <div><canvas id="tpAT" height="200"></canvas><p class="sub">Aᵀ（行列互换：指标变行，样本变列）</p></div>
+  </div>
+  <div class="tip">📌 性质：<code>(Aᵀ)ᵀ=A</code>、<code>(AB)ᵀ=BᵀAᵀ</code>（顺序反转！）。工程：协方差矩阵 C=XᵀX（数据矩阵转置相乘）、最小二乘正规方程、内积可写成 <code>xᵀy</code>。</div>
+</section>
+
+<!-- 5 逆矩阵 -->
+<section class="card">
+  <h2><span class="num">5</span>逆矩阵：反解 / 还原</h2>
+  <p>A 可逆 ⇔ 存在 A⁻¹ 使 <code>AA⁻¹=A⁻¹A=I</code>。几何上：A 是一个线性变换，A⁻¹ 是它的"撤销/倒放"。拖缩放系数 k，看 kI 与其逆 (1/k)I。</p>
+  <div class="ctrl">
+    <label>缩放 k（避免 0）</label><input id="kInv" type="range" min="-2" max="2" step="0.1" value="1.5"><span class="val" id="kInvv">1.5</span>
+  </div>
+  <div class="grid2">
+    <div><canvas id="invA" height="200"></canvas><p class="sub">A = k·I 对 v 的作用</p></div>
+    <div><canvas id="invAinv" height="200"></canvas><p class="sub">A⁻¹ = (1/k)·I 把 A·v 还原回 v</p></div>
+  </div>
+  <p id="invMsg" class="sub"></p>
+  <div class="tip">📌 判定：方阵 A 可逆 ⇔ det(A)≠0 ⇔ 满秩 ⇔ 列向量线性无关。工程：解线性方程组 <code>Ax=b → x=A⁻¹b</code>（GPS/电路/结构求解）、密码学（可逆变换加解密）、控制系统的状态反解。不可逆=信息丢失/压扁（det=0）。</div>
+</section>
+
+<!-- 6 伴随矩阵 -->
+<section class="card">
+  <h2><span class="num">6</span>伴随矩阵：求逆的"母公式"工具</h2>
+  <p>对 n 阶方阵 A，把每个元素 aᵢⱼ 换成它的<b>代数余子式</b> Aᵢⱼ=(−1)ⁱ⁺ʲ·Mᵢⱼ（Mᵢⱼ=删去第 i 行第 j 列后的行列式），再把得到的余子矩阵<b>转置</b>，即得<b>伴随矩阵 adj(A)</b>（也记作 A*）。</p>
+  <div class="formula">A · adj(A) = adj(A) · A = det(A) · I　　⇨　　当 det(A)≠0 时，A⁻¹ = adj(A) / det(A)</div>
+  <p>拖四个滑块改变 2×2 矩阵 A 的元素，实时看余子式→代数余子式→伴随矩阵→求逆全过程（二阶口诀：<b>主对角互换，副对角变号</b>）。</p>
+  <div class="ctrl">
+    <label>a</label><input id="adA" type="range" min="-3" max="3" step="1" value="2"><span class="val" id="adAv">2</span>
+    <label>b</label><input id="adB" type="range" min="-3" max="3" step="1" value="1"><span class="val" id="adBv">1</span>
+    <label>c</label><input id="adC" type="range" min="-3" max="3" step="1" value="1"><span class="val" id="adCv">1</span>
+    <label>d</label><input id="adD" type="range" min="-3" max="3" step="1" value="3"><span class="val" id="adDv">3</span>
+  </div>
+  <div class="grid2">
+    <div><canvas id="adjA" height="170"></canvas><p class="sub">A = [[a,b],[c,d]] 与 det(A)=ad−bc</p></div>
+    <div><canvas id="adjC" height="170"></canvas><p class="sub">余子式 Mᵢⱼ（删第 i 行第 j 列）</p></div>
+    <div><canvas id="adjCo" height="170"></canvas><p class="sub">代数余子式 Cᵢⱼ=(−1)ⁱ⁺ʲMᵢⱼ</p></div>
+    <div><canvas id="adjAdj" height="170"></canvas><p class="sub">伴随矩阵 adj(A)=Cᵀ（转置）→ 口诀：主对角互换/副对角变号</p></div>
+  </div>
+  <div class="grid2">
+    <div><canvas id="adjVerify" height="170"></canvas><p class="sub">验证 A·adj(A)=adj(A)·A=det(A)·I</p></div>
+    <div><canvas id="adjInv" height="170"></canvas><p class="sub">若 det≠0：A⁻¹=adj(A)/det(A)，验算 A·A⁻¹≈I</p></div>
+  </div>
+  <p id="adjMsg" class="sub"></p>
+  <div class="tip">📌 <b>为什么工程离不开它？</b>伴随矩阵是"求逆矩阵的理论钥匙"：<code>A⁻¹=adj(A)/det(A)</code> 给出<b>显式解析解</b>，揭示 A 的每个元素如何通过代数余子式（系统的局部特性）影响最终解 x=A⁻¹b——这对<b>灵敏度分析、符号计算、控制系统能控/能观性、有限元刚度矩阵求位移响应</b>至关重要。注意：伴随矩阵对任意方阵都存在；只有 det≠0 时才有逆。大规模求逆常用高斯消元/O(N³)，但伴随矩阵在小规模符号推导与理论分析中不可替代。</div>
+</section>
+
+<!-- 7 工程速览 -->
+<section class="card">
+  <h2><span class="num">7</span>六种运算 · 工程意义一览</h2>
+  <table>
+    <tr><th>运算</th><th>怎么算</th><th>工程直觉</th><th>典型场景</th></tr>
+    <tr><td>加法 A+B</td><td>对应元相加</td><td>信号/力叠加</td><td>叠加定理、RGB 混色</td></tr>
+    <tr><td>数乘 kA</td><td>每个元乘 k</td><td>整体缩放/增益</td><td>放大倍数、单位换算</td></tr>
+    <tr><td>乘法 AB</td><td>行·列内积</td><td>变换复合/系统串联</td><td>相机投影、神经网络、马尔可夫</td></tr>
+    <tr><td>转置 Aᵀ</td><td>行列互换</td><td>对偶/行↔列</td><td>协方差 XᵀX、最小二乘</td></tr>
+    <tr><td>逆 A⁻¹</td><td>AA⁻¹=I</td><td>反解/撤销变换</td><td>解 Ax=b、加解密、状态还原</td></tr>
+    <tr><td>伴随 adj(A)</td><td>代数余子式转置</td><td>求逆的"母公式"</td><td>符号求逆、有限元、控制能控性</td></tr>
+  </table>
+  <div class="golden">
+    💡 <b>记忆金句</b>：加法是"叠加"，数乘是"缩放"，乘法是"接力/复合"，转置是"对调视角"，逆是"倒放还原"，伴随是"给逆矩阵写显式公式"。<br>
+    它们共同把"对一个个变量分别算"升级为"对整个系统一次算清"——这就是矩阵运算在工程里无处不在的原因。
+  </div>
+</section>
+
+</main>
+
+<script>
+function fit(cv,h){
+  const dpr=window.devicePixelRatio||1;
+  const rect=cv.getBoundingClientRect();
+  let w=rect.width||cv.clientWidth||(cv.parentElement?cv.parentElement.clientWidth:0)||320;
+  if(w<10)w=320;
+  cv.width=w*dpr;(cv.height=(h||cv.height)*dpr);
+  const ctx=cv.getContext('2d');
+  ctx.setTransform(1,0,0,1,0,0);ctx.scale(dpr,dpr);
+  ctx.font='15px "Cambria Math","Noto Sans Math","STIX Two Math",sans-serif';
+  return {ctx,w,h:h||cv.height/dpr};
+}
+function matMul(A,B){const n=A.length,m=B[0].length,p=B.length;const C=Array.from({length:n},()=>Array(m).fill(0));
+  for(let i=0;i<n;i++)for(let j=0;j<m;j++){let s=0;for(let k=0;k<p;k++)s+=A[i][k]*B[k][j];C[i][j]=s;}return C;}
+function det2(M){return M[0][0]*M[1][1]-M[0][1]*M[1][0];}
+function inv2(M){const d=det2(M);return [[M[1][1]/d,-M[0][1]/d],[-M[1][0]/d,M[0][0]/d]];}
+function rot(phi){const c=Math.cos(phi),s=Math.sin(phi);return [[c,-s],[s,c]];}
+function arrow(ctx,cx,cy,v,col,label,sc){ctx.strokeStyle=col;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+v[0]*sc,cy-v[1]*sc);ctx.stroke();
+  ctx.fillStyle=col;ctx.beginPath();ctx.arc(cx+v[0]*sc,cy-v[1]*sc,6,0,7);ctx.fill();
+  ctx.fillStyle='#1a202c';ctx.fillText(label,(cx+v[0]*sc+6),(cy-v[1]*sc));}
+
+// ① 加法：两路信号叠加
+const aA=document.getElementById('aA'),aB=document.getElementById('aB');
+function drawAdd(){
+  const ka=+aA.value,kb=+aB.value;
+  document.getElementById('aAv').textContent=ka.toFixed(1);
+  document.getElementById('aBv').textContent=kb.toFixed(1);
+  const N=40;const xs=[];for(let i=0;i<N;i++)xs.push(i/(N-1)*4*Math.PI);
+  function sig(k,col,cv,lab){
+    const {ctx,w,h}=fit(cv,180);ctx.clearRect(0,0,w,h);
+    const cx=30,cy=h/2,sc=(h-40)/3;
+    ctx.strokeStyle='#cbd5e1';ctx.beginPath();ctx.moveTo(0,cy);ctx.lineTo(w,cy);ctx.stroke();
+    ctx.strokeStyle=col;ctx.lineWidth=2.2;ctx.beginPath();
+    xs.forEach((x,i)=>{const y=k*Math.sin(x);const px=cx+x/(4*Math.PI)*(w-40);const py=cy-y*sc;(i?ctx.lineTo(px,py):ctx.moveTo(px,py));});ctx.stroke();
+    ctx.fillStyle=col;ctx.fillText(lab,8,16);
+  }
+  sig(ka,'#2563eb',document.getElementById('addAB'),'A (幅值 '+ka.toFixed(1)+')');
+  sig(kb,'#10b981',document.getElementById('addAB'),'B (幅值 '+kb.toFixed(1)+')');
+  // 叠加画在第二个 canvas
+  const {ctx:ct,w:wt,h:ht}=fit(document.getElementById('addSum'),180);ct.clearRect(0,0,wt,ht);
+  const cx=30,cy=ht/2,sc=(ht-40)/5;
+  ct.strokeStyle='#cbd5e1';ct.beginPath();ct.moveTo(0,cy);ct.lineTo(wt,cy);ct.stroke();
+  ct.strokeStyle='#ea580c';ct.lineWidth=2.6;ct.beginPath();
+  xs.forEach((x,i)=>{const y=ka*Math.sin(x)+kb*Math.sin(x);const px=cx+x/(4*Math.PI)*(wt-40);const py=cy-y*sc;(i?ct.lineTo(px,py):ct.moveTo(px,py));});ct.stroke();
+  ct.fillStyle='#ea580c';ct.fillText('C=A+B (幅值 '+(ka+kb).toFixed(1)+')',8,16);
+}
+[aA,aB].forEach(x=>x.oninput=drawAdd);
+
+// ② 数乘
+const kSc=document.getElementById('kSc');
+function drawSc(){
+  const k=+kSc.value;document.getElementById('kScv').textContent=k.toFixed(1);
+  const v=[2,1.2];
+  function drawOne(cv,vec,col,label){
+    const {ctx,w,h}=fit(cv,200);ctx.clearRect(0,0,w,h);
+    const cx=w/2,cy=h/2,sc=Math.min(w,h)*0.28;
+    ctx.strokeStyle='#cbd5e1';ctx.beginPath();ctx.moveTo(0,cy);ctx.lineTo(w,cy);ctx.moveTo(cx,0);ctx.lineTo(cx,h);ctx.stroke();
+    arrow(ctx,cx,cy,vec,col,label,sc);
+    ctx.fillStyle='#5b6b7b';ctx.fillText('('+vec[0].toFixed(1)+', '+vec[1].toFixed(1)+')',cx+8,cy+18);
+  }
+  drawOne(document.getElementById('scOrig'),v,'#2563eb','v');
+  drawOne(document.getElementById('scMul'),[v[0]*k,v[1]*k],'#ea580c','k·v');
+}
+kSc.oninput=drawSc;
+
+// ③ 乘法：旋转
+const phi=document.getElementById('phi');
+function drawMul(){
+  const ph=+phi.value*Math.PI/180;document.getElementById('phiv').textContent=phi.value+'°';
+  const v=[2,0.8];const R=rot(ph);const R2=rot(30*Math.PI/180);
+  const R1=rot(ph);const comp=matMul(R1,R2);
+  function drawVec(cv,vec,col,label){
+    const {ctx,w,h}=fit(cv,220);ctx.clearRect(0,0,w,h);
+    const cx=w/2,cy=h/2,sc=Math.min(w,h)*0.26;
+    ctx.strokeStyle='#cbd5e1';ctx.beginPath();ctx.moveTo(0,cy);ctx.lineTo(w,cy);ctx.moveTo(cx,0);ctx.lineTo(cx,h);ctx.stroke();
+    arrow(ctx,cx,cy,vec,col,label,sc);
+  }
+  drawVec(document.getElementById('mulTrans'),v,'#94a3b8','v');
+  const v2=[R[0][0]*v[0]+R[0][1]*v[1],R[1][0]*v[0]+R[1][1]*v[1]];
+  drawVec(document.getElementById('mulTrans'),v2,'#ea580c','R(φ)·v');
+  // 复合
+  const vc=[comp[0][0]*v[0]+comp[0][1]*v[1],comp[1][0]*v[0]+comp[1][1]*v[1]];
+  drawVec(document.getElementById('mulComp'),v,'#94a3b8','v');
+  drawVec(document.getElementById('mulComp'),vc,'#10b981','R(φ)·R(30°)·v');
+}
+phi.oninput=drawMul;
+
+// ④ 转置
+function drawTP(){
+  const A=[[3,1,4],[2,5,2]]; // 2x3
+  function drawM(cv,M,col,label){
+    const {ctx,w,h}=fit(cv,200);ctx.clearRect(0,0,w,h);
+    const rows=M.length,cols=M[0].length;
+    const cw=Math.min((w-40)/cols,70),ch=Math.min((h-50)/rows,46);
+    const x0=(w-cols*cw)/2,y0=(h-rows*ch)/2;
+    ctx.fillStyle=col;ctx.fillText(label,x0,y0-8);
+    for(let i=0;i<rows;i++)for(let j=0;j<cols;j++){
+      ctx.strokeStyle='#cbd5e1';ctx.strokeRect(x0+j*cw,y0+i*ch,cw,ch);
+      ctx.fillStyle='#1a202c';ctx.font='15px "Cambria Math",serif';
+      ctx.fillText(M[i][j].toFixed(0),x0+j*cw+cw/2-8,y0+i*ch+ch/2+5);
+    }
+  }
+  drawM(document.getElementById('tpA'),A,'#2563eb','A (2x3)：2 个样本 x 3 个指标');
+  const AT=[[A[0][0],A[1][0]],[A[0][1],A[1][1]],[A[0][2],A[1][2]]];
+  drawM(document.getElementById('tpAT'),AT,'#10b981','Aᵀ (3x2)：行列互换');
+}
+drawTP();
+
+// ⑤ 逆
+const kInv=document.getElementById('kInv');
+function drawInv(){
+  let k=+kInv.value;if(Math.abs(k)<0.15)k=0.15;
+  document.getElementById('kInvv').textContent=k.toFixed(1);
+  const v=[2,1.2];const Av=[k*v[0],k*v[1]];
+  const Ainv=[Av[0]/k,Av[1]/k]; // = v
+  function drawVec(cv,vec,col,label){
+    const {ctx,w,h}=fit(cv,200);ctx.clearRect(0,0,w,h);
+    const cx=w/2,cy=h/2,sc=Math.min(w,h)*0.28;
+    ctx.strokeStyle='#cbd5e1';ctx.beginPath();ctx.moveTo(0,cy);ctx.lineTo(w,cy);ctx.moveTo(cx,0);ctx.lineTo(cx,h);ctx.stroke();
+    arrow(ctx,cx,cy,vec,col,label,sc);
+  }
+  drawVec(document.getElementById('invA'),Av,'#2563eb','A·v = k·v');
+  drawVec(document.getElementById('invAinv'),Ainv,'#10b981','A⁻¹·(A·v) = v (还原)');
+  document.getElementById('invMsg').textContent='k='+k.toFixed(1)+' → A⁻¹=(1/k)·I，A·A⁻¹ = '+((k*(1/k)).toFixed(2))+'·I ≈ I（撤销变换）';
+}
+kInv.oninput=drawInv;
+
+// ⑥ 伴随矩阵
+const adA=document.getElementById('adA'),adB=document.getElementById('adB'),
+      adC=document.getElementById('adC'),adD=document.getElementById('adD');
+function drawAdj(){
+  const a=+adA.value,b=+adB.value,c=+adC.value,d=+adD.value;
+  adA.previousElementSibling?null:null;
+  document.getElementById('adAv').textContent=a;
+  document.getElementById('adBv').textContent=b;
+  document.getElementById('adCv').textContent=c;
+  document.getElementById('adDv').textContent=d;
+  const det=a*d-b*c;
+  // 余子式 Mij = 删第i行第j列后的行列式
+  const M=[[d,c],[b,a]]; // M11=d,M12=c,M21=b,M22=a
+  // 代数余子式 Cij = (-1)^(i+j) Mij
+  const C=[[M[0][0],-M[0][1]],[-M[1][0],M[1][1]]]; // [[d,-c],[-b,a]]
+  // 伴随矩阵 = 余子矩阵(代数余子式矩阵)的转置
+  const adj=[[C[0][0],C[1][0]],[C[0][1],C[1][1]]]; // [[d,-b],[-c,a]]
+  function drawM(cv,Mtx,col,label){
+    const {ctx,w,h}=fit(cv,170);ctx.clearRect(0,0,w,h);
+    const rows=Mtx.length,cols=Mtx[0].length;
+    const cw=Math.min((w-40)/cols,70),ch=Math.min((h-50)/rows,46);
+    const x0=(w-cols*cw)/2,y0=(h-rows*ch)/2+8;
+    ctx.fillStyle=col;ctx.font='15px "Cambria Math",serif';ctx.fillText(label,x0,y0-10);
+    for(let i=0;i<rows;i++)for(let j=0;j<cols;j++){
+      ctx.strokeStyle='#cbd5e1';ctx.strokeRect(x0+j*cw,y0+i*ch,cw,ch);
+      ctx.fillStyle='#1a202c';ctx.font='15px "Cambria Math",serif';
+      ctx.fillText(Mtx[i][j].toFixed(0),x0+j*cw+cw/2-8,y0+i*ch+ch/2+5);
+    }
+  }
+  drawM(document.getElementById('adjA'),[[a,b],[c,d]],'#2563eb','A = [[a,b],[c,d]]');
+  drawM(document.getElementById('adjC'),M,'#7c3aed','M = 余子式矩阵');
+  drawM(document.getElementById('adjCo'),C,'#ea580c','C = 代数余子式矩阵');
+  drawM(document.getElementById('adjAdj'),adj,'#10b981','adj(A) = Cᵀ (主对角互换/副对角变号)');
+  // 验证 A*adj(A) = adj(A)*A = det*I
+  const A=[[a,b],[c,d]];
+  const p11=A[0][0]*adj[0][0]+A[0][1]*adj[1][0]; // a*d + b*(-c)
+  const p12=A[0][0]*adj[0][1]+A[0][1]*adj[1][1]; // a*(-b)+b*a =0
+  const p21=A[1][0]*adj[0][0]+A[1][1]*adj[1][0]; // c*d + d*(-c)=0
+  const p22=A[1][0]*adj[0][1]+A[1][1]*adj[1][1]; // c*(-b)+d*a
+  const verify=[[p11,p12],[p21,p22]];
+  drawM(document.getElementById('adjVerify'),verify,'#2563eb','A·adj(A) = det(A)·I = '+det.toFixed(0)+'·I');
+  // 逆
+  let invMsg;
+  if(Math.abs(det)<0.5){
+    invMsg='det(A)='+det.toFixed(0)+' → A 不可逆（奇异），但伴随矩阵仍存在（adj≠0）。提示：二阶伴随口诀 adj=[[d,-b],[-c,a]]。';
+    drawM(document.getElementById('adjInv'),[[0,0],[0,0]],'#94a3b8','det=0 → 无逆矩阵');
+  }else{
+    const inv=[[adj[0][0]/det,adj[0][1]/det],[adj[1][0]/det,adj[1][1]/det]];
+    drawM(document.getElementById('adjInv'),inv,'#10b981','A⁻¹ = adj(A)/det(A)');
+    const i11=Math.round((A[0][0]*inv[0][0]+A[0][1]*inv[1][0])*100)/100;
+    invMsg='det(A)='+det.toFixed(0)+'≠0 → A⁻¹=adj/det。验算 A·A⁻¹ 对角≈1、非对角≈0（'+i11.toFixed(2)+'）';
+  }
+  document.getElementById('adjMsg').innerHTML='<b>当前：</b>det(A)=ad−bc='+det.toFixed(0)+'　　<b>伴随矩阵 adj(A)=</b>[['+adj[0][0]+','+adj[0][1]+'],['+adj[1][0]+','+adj[1][1]+']]　　<b>母公式</b> A·adj=adj·A=det·I ✅<br>'+invMsg;
+}
+[adA,adB,adC,adD].forEach(x=>x.oninput=drawAdj);
+
+window.addEventListener('load',()=>{drawAdd();drawSc();drawMul();drawTP();drawInv();drawAdj();});
+window.addEventListener('resize',()=>{drawAdd();drawSc();drawMul();drawTP();drawInv();drawAdj();});
+</script>
+</body>
+</html>

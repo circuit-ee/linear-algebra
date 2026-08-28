@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>分块对角矩阵：工程系统的“模块化魔法”</title>
+    <style>
+        :root {
+            --bg-color: #FFFFFF;
+            --text-color: #333333;
+            --light-text: #666666;
+            --border-color: #E0E0E0;
+            --elec-blue: #007AFF;
+            --energy-orange: #FF9500;
+            --success-green: #34C759;
+            --gray-bg: #F5F7FA;
+            --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.8;
+            font-size: 18px;
+        }
+
+        header {
+            background: var(--gray-bg);
+            padding: 60px 20px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        header h1 { font-size: 2.6rem; margin-bottom: 15px; }
+        header p { max-width: 800px; margin: 0 auto; font-size: 1.2rem; color: var(--light-text); }
+
+        .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+
+        .section-title {
+            font-size: 2rem;
+            text-align: center;
+            margin: 50px 0 30px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid var(--border-color);
+        }
+
+        /* 核心概念区 */
+        .concept-card {
+            background: var(--gray-bg);
+            border-radius: 16px;
+            padding: 40px;
+            margin-bottom: 40px;
+            border-left: 6px solid var(--elec-blue);
+        }
+
+        .concept-card h3 { font-size: 1.6rem; margin-bottom: 20px; color: var(--elec-blue); }
+        
+        .matrix-display {
+            font-size: 2rem;
+            text-align: center;
+            padding: 30px;
+            background: white;
+            border-radius: 12px;
+            margin: 30px 0;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+            font-family: "Courier New", monospace;
+            overflow-x: auto;
+        }
+
+        /* 标签页切换 */
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .tab-button {
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            border: 2px solid var(--border-color);
+            background: white;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        .tab-button:hover { transform: translateY(-3px); box-shadow: var(--card-shadow); }
+        .tab-button.active-elec { border-color: var(--elec-blue); background: var(--elec-blue); color: white; }
+        .tab-button.active-energy { border-color: var(--energy-orange); background: var(--energy-orange); color: white; }
+
+        /* 内容卡片 */
+        .tab-content { display: none; animation: fadeIn 0.5s ease; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .app-card {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: var(--card-shadow);
+            border-top: 6px solid;
+        }
+        .app-card.elec { border-color: var(--elec-blue); }
+        .app-card.energy { border-color: var(--energy-orange); }
+
+        .app-card h3 { font-size: 1.8rem; margin-bottom: 20px; display: flex; align-items: center; gap: 15px;}
+        .app-card h3 i { font-size: 2rem; }
+        .app-card.elec h3 { color: var(--elec-blue); }
+        .app-card.energy h3 { color: var(--energy-orange); }
+
+        .analogy-box {
+            background: var(--gray-bg);
+            border: 2px dashed #ccc;
+            padding: 25px;
+            border-radius: 10px;
+            margin: 25px 0;
+            font-size: 1.1rem;
+        }
+        .analogy-box strong { color: #D0021B; }
+
+        /* 交互模拟器 */
+        .simulator {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 30px;
+            padding: 30px;
+            background: var(--gray-bg);
+            border-radius: 12px;
+        }
+
+        .control-panel label { display: block; margin-bottom: 15px; font-weight: bold; }
+        .control-panel input[type="range"] { width: 100%; margin-top: 8px; accent-color: var(--elec-blue); }
+        .control-panel.energy input[type="range"] { accent-color: var(--energy-orange); }
+
+        .status-panel pre {
+            background: #1E1E1E;
+            color: #D4D4D4;
+            padding: 20px;
+            border-radius: 8px;
+            font-size: 1rem;
+            white-space: pre-wrap;
+            word-break: break-all;
+            min-height: 150px;
+        }
+
+        .highlight { color: var(--success-green); font-weight: bold; }
+
+        footer {
+            text-align: center;
+            padding: 40px;
+            margin-top: 60px;
+            background: var(--gray-bg);
+            color: var(--light-text);
+        }
+
+        @media (max-width: 768px) {
+            body { font-size: 16px; }
+            header h1 { font-size: 1.8rem; }
+            .simulator { grid-template-columns: 1fr; }
+            .matrix-display { font-size: 1.2rem; }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+<header>
+    <h1>🏭 分块对角矩阵：工程系统的“乐高积木”</h1>
+    <p>
+        复杂的机器（如电动汽车、发电机组）内部有很多功能模块。<br>
+        分块对角矩阵就是一种“模块化”的数学语言，让工程师能像拼乐高一样管理复杂系统。
+    </p>
+</header>
+
+<div class="container">
+
+    <section class="concept-card">
+        <h3><i class="fas fa-th-large"></i> 什么是分块对角矩阵？</h3>
+        <p>想象一个大工厂，里面有几个完全隔离的车间：</p>
+        <ul>
+            <li>1号车间（电机控制）只跟自己玩。</li>
+            <li>2号车间（温度监测）只跟自己玩。</li>
+            <li>3号车间（振动分析）只跟自己玩。</li>
+        </ul>
+        <p><strong>数学上，我们就把这个工厂画成这样：</strong></p>
+        <div class="matrix-display">
+            M = [ <span style="color:var(--elec-blue);">A₁</span> &nbsp; 0 &nbsp; 0 ]<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;[ 0 &nbsp; <span style="color:var(--energy-orange);">A₂</span> &nbsp; 0 ]<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;[ 0 &nbsp; 0 &nbsp; <span style="color:var(--success-green);">A₃</span> ]
+        </div>
+        <p>中间的 <strong>0</strong> 代表车间之间没有物料交换（互不影响）。<strong>A₁, A₂, A₃</strong> 就是各自车间内部的“工作手册”（小矩阵）。</p>
+        <div class="analogy-box">
+            <strong>💡 核心优势：</strong>如果要修改电机参数（A₁），完全不需要动温度（A₂）和振动（A₃）的数据。这就是分块对角矩阵的魅力——<strong>解耦</strong>。
+        </div>
+    </section>
+
+    <h2 class="section-title">⚡ 电气工程：电机的控制台</h2>
+    <div class="tabs">
+        <button class="tab-button active-elec" onclick="showTab('motor', this, 'elec')">1. 电机驱动模块</button>
+        <button class="tab-button" onclick="showTab('circuit', this, 'elec')">2. 独立回路监测</button>
+    </div>
+
+    <div id="motor" class="tab-content active">
+        <div class="app-card elec">
+            <h3><i class="fas fa-cogs"></i> 应用一：电动汽车的电机控制</h3>
+            <p><strong>场景：</strong>电动汽车的电机需要精确控制“磁场”和“扭矩”。这两个物理量虽然都在电机里，但它们的控制逻辑是独立的。</p>
+            <div class="analogy-box">
+                <strong>🚗 开车类比：</strong>方向盘（控制转向）和油门（控制速度）。你打方向盘不会影响车速，踩油门也不会改变方向。它们是两套独立的控制系统。
+            </div>
+            <p><strong>数学建模：</strong>我们把磁场控制设为 $A_1$，扭矩控制设为 $A_2$。整个电机的系统矩阵就是一个分块对角阵。</p>
+            <div class="simulator">
+                <div class="control-panel">
+                    <label>磁场强度设定 (A₁): <span id="magVal">5</span></label>
+                    <input type="range" min="1" max="10" value="5" oninput="updateMotor(this.value)">
+                    <label style="margin-top:20px;">扭矩设定 (A₂): <span id="torqueVal">8</span></label>
+                    <input type="range" min="1" max="10" value="8" oninput="updateMotor(null, this.value)">
+                    <p style="margin-top:20px; font-size:0.9rem; color:var(--light-text);">试着拖动滑块，观察右侧矩阵的变化。你会发现修改A₁完全不影响A₂的位置。</p>
+                </div>
+                <div class="status-panel">
+                    <pre id="motorMatrix">系统矩阵 M = 
+[ <span class="highlight">5</span>  0 ]
+[ 0  <span class="highlight">8</span> ]</pre>
+                    <p style="color:#D4D4D4; margin-top:10px;">状态：系统运行平稳，模块间无干扰。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="circuit" class="tab-content">
+        <div class="app-card elec">
+            <h3><i class="fas fa-plug"></i> 应用二：家庭电路的独立回路</h3>
+            <p><strong>场景：</strong>家里装修时，电工通常会把电路分成：照明回路、空调回路、插座回路。</p>
+            <div class="analogy-box">
+                <strong>🏠 家庭类比：</strong>如果空调回路跳闸了（短路），你肯定不希望家里的灯也灭了。这就是“分块”的意义——把故障隔离在模块内部。
+            </div>
+            <p><strong>数学建模：</strong>每个回路的电阻/导纳构成一个对角块。总配电箱的数学模型就是一个巨大的分块对角矩阵。</p>
+            <div class="simulator">
+                <div class="control-panel">
+                    <label>照明回路状态: <span id="lightStatus">正常</span></label>
+                    <button onclick="tripCircuit('light')" style="padding:10px 20px; background:red; color:white; border:none; border-radius:5px; cursor:pointer;">模拟跳闸</button>
+                    
+                    <label style="margin-top:20px;">空调回路状态: <span id="acStatus">正常</span></label>
+                    <button onclick="tripCircuit('ac')" style="padding:10px 20px; background:red; color:white; border:none; border-radius:5px; cursor:pointer;">模拟跳闸</button>
+                </div>
+                <div class="status-panel">
+                    <pre id="circuitMatrix">总配电矩阵 = 
+[ <span class="highlight">R_light</span>  0    0  ]
+[ 0    <span class="highlight">R_ac</span>   0  ]
+[ 0      0   R_socket ]
+
+<span style="color:#D4D4D4;">// 点击左侧按钮，观察矩阵变化。
+// 一个回路故障（变为0或无穷大），
+// 其他回路的数值保持不变。</span></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h2 class="section-title">🔥 能动工程：机器的健康监测仪</h2>
+    <div class="tabs">
+        <button class="tab-button active-energy" onclick="showTab('vib', this, 'energy')">3. 振动模态分析</button>
+        <button class="tab-button" onclick="showTab('thermal', this, 'energy')">4. 温度场分布</button>
+    </div>
+
+    <div id="vib" class="tab-content active">
+        <div class="app-card energy">
+            <h3><i class="fas fa-wave-square"></i> 应用三：发动机的振动监测</h3>
+            <p><strong>场景：</strong>一台复杂的发动机工作时，会产生不同频率的振动（比如活塞上下振动、曲轴旋转振动）。</p>
+            <div class="analogy-box">
+                <strong>🎸 吉他类比：</strong>吉他有6根弦。你弹第1弦时，第2、3、4弦不会发出声音（理想情况下）。每根弦都有自己的固有频率（特征向量），互不干扰。
+            </div>
+            <p><strong>数学建模：</strong>每种振动模式对应一个“模态块”。整个发动机的振动系统是一个分块对角矩阵。工程师可以通过检测特定频率，判断是哪个零件出了问题，而不必检查整个机器。</p>
+            <div class="simulator">
+                <div class="control-panel energy">
+                    <label>活塞模态 (Mode 1): <span id="mode1">稳定</span></label>
+                    <input type="range" min="0" max="100" value="10" oninput="updateVibration(1, this.value)">
+                    <label style="margin-top:20px;">曲轴模态 (Mode 2): <span id="mode2">稳定</span></label>
+                    <input type="range" min="0" max="100" value="10" oninput="updateVibration(2, this.value)">
+                </div>
+                <div class="status-panel">
+                    <pre id="vibMatrix">振动系统矩阵 = 
+[ <span class="highlight">λ₁</span>  0 ]
+[ 0  <span class="highlight">λ₂</span> ]
+
+<span style="color:#D4D4D4;">// λ代表振动的剧烈程度。
+// 如果λ₁突然变大，说明活塞有问题，
+// 与曲轴(λ₂)无关。</span></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="thermal" class="tab-content">
+        <div class="app-card energy">
+            <h3><i class="fas fa-thermometer-full"></i> 应用四：锅炉的温度分层</h3>
+            <p><strong>场景：</strong>大型锅炉或储热罐中，水温通常是分层的：上层热水，下层冷水。</p>
+            <div class="analogy-box">
+                <strong>🧊 冰饮类比：</strong>杯子里加了冰块，上半杯是水，下半杯是冰。热量主要从热水传向冷水，但同一层内的热量交换更直接。
+            </div>
+            <p><strong>数学建模：</strong>我们把锅炉分成几层，每一层的温度平衡方程构成一个对角块。层与层之间的热传导很弱，或者被单独建模，因此整体可以用分块对角矩阵近似处理，大大简化计算。</p>
+            <div class="simulator">
+                 <div class="control-panel energy">
+                    <label>上层温度: <span id="tempTop">85°C</span></label>
+                    <input type="range" min="50" max="100" value="85" oninput="updateTemp('top', this.value)">
+                    <label style="margin-top:20px;">下层温度: <span id="tempBottom">15°C</span></label>
+                    <input type="range" min="5" max="50" value="15" oninput="updateTemp('bottom', this.value)">
+                </div>
+                <div class="status-panel">
+                    <pre id="thermalMatrix">热传导矩阵 K = 
+[ <span class="highlight">K_top</span>  0      ]
+[ 0    <span class="highlight">K_bottom</span> ]
+
+<span style="color:#D4D4D4;">// K代表该层的传热效率。
+// 调节上层温度，只改变K_top，
+// 不影响下层的热平衡方程。</span></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<footer>
+    <p><strong>总结：</strong>分块对角矩阵是工程师的“整理术”。</p>
+    <p>它把一个庞大复杂的系统，拆解成若干个独立可控的小模块，既降低了计算难度，又方便了故障排查。</p>
+    <p>© 2024 工程数学可视化教学</p>
+</footer>
+
+<script>
+    // Tab switching logic
+    function showTab(tabId, element, type) {
+        // Hide all tabs in the same group
+        const parent = element.parentElement.parentElement;
+        parent.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.remove('active');
+        });
+        parent.querySelectorAll('.tab-button').forEach(btn => {
+            btn.classList.remove('active-elec', 'active-energy');
+        });
+
+        // Show selected tab
+        document.getElementById(tabId).classList.add('active');
+        element.classList.add(`active-${type}`);
+    }
+
+    // Motor Simulator
+    function updateMotor(magValue, torqueValue) {
+        if (magValue !== null) {
+            document.getElementById('magVal').textContent = magValue;
+        }
+        if (torqueValue !== null) {
+            document.getElementById('torqueVal').textContent = torqueValue;
+        }
+        const m = document.getElementById('magVal').textContent;
+        const t = document.getElementById('torqueVal').textContent;
+        document.getElementById('motorMatrix').innerHTML = `系统矩阵 M = \n[ <span class="highlight">${m}</span>  0 ]\n[ 0  <span class="highlight">${t}</span> ]`;
+    }
+
+    // Circuit Simulator
+    let circuits = { light: 'R_light', ac: 'R_ac' };
+    function tripCircuit(circuit) {
+        const statusSpan = document.getElementById(`${circuit}Status`);
+        const matrixPre = document.getElementById('circuitMatrix');
+        
+        if (circuits[circuit] !== 'FAULT') {
+            circuits[circuit] = 'FAULT';
+            statusSpan.textContent = '跳闸!';
+            statusSpan.style.color = 'red';
+        } else {
+            circuits[circuit] = circuit === 'light' ? 'R_light' : 'R_ac';
+            statusSpan.textContent = '正常';
+            statusSpan.style.color = 'inherit';
+        }
+
+        matrixPre.innerHTML = `总配电矩阵 = 
+[ <span class="highlight">${circuits.light}</span>  0    0  ]
+[ 0    <span class="highlight">${circuits.ac}</span>   0  ]
+[ 0      0   R_socket ]
+
+<span style="color:#D4D4D4;">// 点击左侧按钮，观察矩阵变化。
+// 一个回路故障（变为0或无穷大），
+// 其他回路的数值保持不变。</span>`;
+    }
+
+    // Vibration Simulator
+    function updateVibration(mode, value) {
+        const intensity = parseFloat(value);
+        const statusSpan = document.getElementById(`mode${mode}`);
+        const lambda = (intensity / 10).toFixed(1);
+        
+        document.getElementById(`mode${mode}`).textContent = intensity > 50 ? '异常!' : '稳定';
+        document.getElementById(`mode${mode}`).style.color = intensity > 50 ? 'red' : 'inherit';
+
+        const l1 = mode === 1 ? lambda : document.getElementById('mode1').textContent === '稳定' ? '1.0' : '6.0';
+        const l2 = mode === 2 ? lambda : document.getElementById('mode2').textContent === '稳定' ? '1.2' : '6.0';
+
+        document.getElementById('vibMatrix').innerHTML = `振动系统矩阵 = 
+[ <span class="highlight">${l1}</span>  0 ]
+[ 0  <span class="highlight">${l2}</span> ]
+
+<span style="color:#D4D4D4;">// λ代表振动的剧烈程度。
+// 如果λ₁突然变大，说明活塞有问题，
+// 与曲轴(λ₂)无关。</span>`;
+    }
+
+    // Thermal Simulator
+    function updateTemp(layer, value) {
+        document.getElementById(`temp${layer.charAt(0).toUpperCase() + layer.slice(1)}`).textContent = `${value}°C`;
+        
+        const topTemp = document.getElementById('tempTop').textContent.replace('°C', '');
+        const bottomTemp = document.getElementById('tempBottom').textContent.replace('°C', '');
+        
+        // Simplified thermal conductivity calculation for demo
+        const kTop = (100 - parseInt(topTemp)) / 10;
+        const kBottom = (parseInt(bottomTemp) - 5) / 10;
+
+        document.getElementById('thermalMatrix').innerHTML = `热传导矩阵 K = 
+[ <span class="highlight">${kTop.toFixed(1)}</span>  0      ]
+[ 0    <span class="highlight">${kBottom.toFixed(1)}</span> ]
+
+<span style="color:#D4D4D4;">// K代表该层的传热效率。
+// 调节上层温度，只改变K_top，
+// 不影响下层的热平衡方程。</span>`;
+    }
+</script>
+</body>
+</html>

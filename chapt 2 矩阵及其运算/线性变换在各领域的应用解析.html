@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>线性变换：工程世界的“透视镜”</title>
+    <style>
+        :root {
+            --bg-color: #FFFFFF;
+            --text-color: #333333;
+            --light-text: #555555;
+            --elec-blue: #007AFF; /* 电气蓝 */
+            --energy-orange: #FF6B00; /* 能动橙 */
+            --gray-bg: #F7F9FC;
+            --border-color: #E5E9F2;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.8;
+            font-size: 18px; /* 基础大字号 */
+        }
+
+        header {
+            background: var(--gray-bg);
+            padding: 60px 20px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            color: var(--text-color);
+            margin-bottom: 20px;
+        }
+
+        header p {
+            max-width: 800px;
+            margin: 0 auto;
+            font-size: 1.2rem;
+            color: var(--light-text);
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            text-align: center;
+            margin: 60px 0 40px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid;
+        }
+
+        .section-title.elec { color: var(--elec-blue); border-color: var(--elec-blue); }
+        .section-title.energy { color: var(--energy-orange); border-color: var(--energy-orange); }
+
+        .card {
+            background: var(--gray-bg);
+            border-radius: 16px;
+            padding: 40px;
+            margin-bottom: 40px;
+            border-left: 6px solid;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }
+
+        .card.elec { border-color: var(--elec-blue); }
+        .card.energy { border-color: var(--energy-orange); }
+
+        .card h3 {
+            font-size: 1.6rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .card h3 i {
+            margin-right: 15px;
+            font-size: 1.8rem;
+        }
+
+        .card.elec h3 { color: var(--elec-blue); }
+        .card.energy h3 { color: var(--energy-orange); }
+
+        .analogy {
+            background: white;
+            border: 2px dashed #ccc;
+            padding: 25px;
+            border-radius: 10px;
+            margin: 25px 0;
+            font-size: 1.1rem;
+        }
+
+        .analogy strong {
+            color: #D0021B;
+        }
+
+        .visualization {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin: 30px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+        }
+
+        .coord-system {
+            text-align: center;
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .coord-system h4 {
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+        }
+
+        .arrow {
+            font-size: 2.5rem;
+            color: #999;
+            align-self: center;
+            margin: 20px;
+        }
+
+        canvas {
+            display: block;
+            margin: 0 auto;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+
+        .summary {
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-align: center;
+            padding: 20px;
+            margin-top: 20px;
+            background: #FFFBE6;
+            border: 1px solid #FFE58F;
+            border-radius: 8px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px;
+            margin-top: 60px;
+            background: var(--gray-bg);
+            color: var(--light-text);
+            font-size: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            body { font-size: 16px; }
+            header h1 { font-size: 1.8rem; }
+            .section-title { font-size: 1.5rem; }
+            .card { padding: 20px; }
+            .visualization { flex-direction: column; }
+        }
+    </style>
+    <!-- 使用Font Awesome图标 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+<header>
+    <h1>🛠️ 线性变换：工程世界的“透视镜”</h1>
+    <p>
+        刚接触线性代数？觉得矩阵只是数字游戏？其实，线性变换就像一副特殊的眼镜。<br>
+        戴上它，复杂的工程问题会变得像“1+1”一样简单。下面我们用最直观的方式，看看它在电气和能动领域的魔力。
+    </p>
+</header>
+
+<div class="container">
+
+    <!-- 电气工程部分 -->
+    <h2 class="section-title elec"><i class="fas fa-bolt"></i> 一、电气工程：让“乱跳”的交流电变“安静”</h2>
+
+    <div class="card elec">
+        <h3><i class="fas fa-sync-alt"></i> 应用1：电机的“定身法” (Park变换)</h3>
+        <p><strong>问题：</strong>电机转动时，里面的电流是疯狂交变的（正弦波）。如果我们直接用这些变化的量来控制电机，就像试图抓住一条游动的鱼，很难精准控制。</p>
+        
+        <div class="analogy">
+            <strong>💡 生活类比：</strong>你在追一辆旋转的碰碰车。如果你站在地面看，它的轨迹是圆圈（复杂）；但如果你跳上碰碰车，和它一起转，它就变成静止的了（简单）。
+        </div>
+
+        <p><strong>线性变换怎么用：</strong>我们通过一个叫<strong>Park变换</strong>的矩阵，把观测视角从“地面”（静止坐标系）搬到了“转子”（旋转坐标系）上。</p>
+
+        <div class="visualization">
+            <div class="coord-system">
+                <h4>变换前 (ABC坐标系)</h4>
+                <canvas id="abcCanvas" width="250" height="200"></canvas>
+                <p style="margin-top:10px; color:var(--light-text);">三相电流<br>此起彼伏，乱糟糟</p>
+            </div>
+            <div class="arrow">➡️</div>
+            <div class="coord-system">
+                <h4>变换后 (DQ坐标系)</h4>
+                <canvas id="dqCanvas" width="250" height="200"></canvas>
+                <p style="margin-top:10px; color:var(--light-text);">直流量<br>稳如泰山，好控制</p>
+            </div>
+        </div>
+
+        <div class="summary">
+            一句话总结：线性变换帮我们<strong>“换个跟着转的坐标系”</strong>，把烦人的交流电变成了听话的直流电！
+        </div>
+    </div>
+
+    <div class="card elec">
+        <h3><i class="fas fa-project-diagram"></i> 应用2：电路的“算盘” (节点电压法)</h3>
+        <p><strong>问题：</strong>一个复杂的电路板上焊接着几十个元件，如果人工去解每个支路的电流，需要列无数个方程，头都要大了。</p>
+
+        <div class="analogy">
+            <strong>💡 生活类比：</strong>做蛋糕时，我们不需要单独称量面粉、糖、鸡蛋的重量再去混合，我们只需要知道最终的“配方比例”（矩阵），就能算出任意份量的材料。
+        </div>
+
+        <p><strong>线性变换怎么用：</strong>我们把电路中各个节点的电压看作未知数，把电阻、电源的关系写成一个<strong>导纳矩阵 (Y Matrix)</strong>。原本的物理连接，变成了数学上的矩阵乘法：YV = I，即 <strong>电流 = 导纳 × 电压</strong>（I = Y·V）。</p>
+        
+        <div class="visualization">
+            <canvas id="circuitCanvas" width="400" height="150"></canvas>
+        </div>
+
+        <div class="summary">
+            一句话总结：线性变换把<strong>“物理连接”</strong>打包成了<strong>“数学矩阵”</strong>，电脑只要会算矩阵，就能瞬间算出全电路的状态。
+        </div>
+    </div>
+
+    <!-- 能动工程部分 -->
+    <h2 class="section-title energy"><i class="fas fa-fire"></i> 二、能源动力：找出机器的“舒适区”</h2>
+
+    <div class="card energy">
+        <h3><i class="fas fa-wave-square"></i> 应用3：机器的“体检表” (模态分析)</h3>
+        <p><strong>问题：</strong>发动机运行时会产生振动。如果不加控制，可能会剧烈抖动甚至散架。我们需要找出它最容易发生振动的“固有频率”。</p>
+
+        <div class="analogy">
+            <strong>💡 生活类比：</strong>推秋千。如果你乱推（频率不对），秋千不动；如果你找准节奏推（共振），轻轻一点力就能让它荡很高。这个“节奏”就是特征值。
+        </div>
+
+        <p><strong>线性变换怎么用：</strong>我们把机器看作由很多小弹簧和小质量块组成的系统。求解运动方程，本质上是求一个矩阵方程的特征值和特征向量。
+        <br><strong>特征值</strong>告诉我们振动的频率有多快；
+        <br><strong>特征向量</strong>（振型）告诉我们机器各部分怎么动。</p>
+
+        <div class="visualization">
+            <canvas id="modeCanvas" width="450" height="180"></canvas>
+        </div>
+
+        <div class="summary">
+            一句话总结：线性变换帮我们找到机器的<strong>“振动指纹”</strong>（特征向量），工程师据此避开危险转速，保证安全。
+        </div>
+    </div>
+
+    <div class="card energy">
+        <h3><i class="fas fa-thermometer-half"></i> 应用4：热量的“平衡术” (稳态热传导)</h3>
+        <p><strong>问题：</strong>暖气片开了很久，房间里每一点的温度都不一样。我们想知道最终稳定下来时，房间里的温度是怎么分布的。</p>
+
+        <div class="analogy">
+            <strong>💡 生活类比：</strong>往一杯水里滴一滴墨水，一开始颜色不均，过一会儿就均匀了。热量也是这样，从热的地方流向冷的地方，直到平衡。
+        </div>
+
+        <p><strong>线性变换怎么用：</strong>把房间分割成许多个小网格（有限元法）。每个网格的温度受周围邻居影响。这种“邻居影响关系”构成了一个巨大的矩阵方程 KT = F。这里的矩阵 K就像一个“热量调配规则”，它决定了热量如何流动以达到平衡。</p>
+
+        <div class="visualization">
+            <canvas id="heatCanvas" width="300" height="200"></canvas>
+        </div>
+
+        <div class="summary">
+            一句话总结：线性变换描述了<strong>“热量传递的规则”</strong>，让我们不用真的等一天，就能算出最终的稳定温度场。
+        </div>
+    </div>
+
+</div>
+
+<footer>
+    <p><strong>结语：</strong>线性变换不是目的，而是手段。它帮我们把复杂的物理世界翻译成计算机能懂的数学语言。</p>
+    <p>掌握了线性变换，你就拿到了打开现代工程大门的钥匙。</p>
+</footer>
+
+<script>
+    // 通用绘图设置
+    const blue = '#007AFF';
+    const orange = '#FF6B00';
+    const gray = '#999';
+
+    // 1. ABC 三相图
+    const abcCtx = document.getElementById('abcCanvas').getContext('2d');
+    function drawABC() {
+        abcCtx.clearRect(0,0,250,200);
+        abcCtx.strokeStyle = gray;
+        abcCtx.setLineDash([5, 5]);
+        abcCtx.beginPath(); abcCtx.moveTo(125, 10); abcCtx.lineTo(125, 190); abcCtx.stroke();
+        abcCtx.beginPath(); abcCtx.moveTo(10, 100); abcCtx.lineTo(240, 100); abcCtx.stroke();
+        abcCtx.setLineDash([]);
+
+        // 画三条正弦波
+        abcCtx.strokeStyle = blue;
+        abcCtx.beginPath();
+        for(let x=0; x<=240; x++) {
+            let y = 80 + 70*Math.sin(x*0.05 + 0);
+            if(x===0) abcCtx.moveTo(x+5, y); else abcCtx.lineTo(x+5, y);
+        }
+        abcCtx.stroke();
+
+        abcCtx.strokeStyle = orange;
+        abcCtx.beginPath();
+        for(let x=0; x<=240; x++) {
+            let y = 80 + 70*Math.sin(x*0.05 + Math.PI*2/3);
+            if(x===0) abcCtx.moveTo(x+5, y); else abcCtx.lineTo(x+5, y);
+        }
+        abcCtx.stroke();
+        
+        abcCtx.fillStyle = gray;
+        abcCtx.font = "14px Arial";
+        abcCtx.fillText("A", 230, 90);
+        abcCtx.fillText("B", 210, 160);
+        abcCtx.fillText("C", 210, 30);
+    }
+    drawABC();
+
+    // 2. DQ 坐标系图
+    const dqCtx = document.getElementById('dqCanvas').getContext('2d');
+    function drawDQ() {
+        dqCtx.clearRect(0,0,250,200);
+        dqCtx.strokeStyle = gray;
+        dqCtx.beginPath(); dqCtx.moveTo(125, 10); dqCtx.lineTo(125, 190); dqCtx.stroke();
+        dqCtx.beginPath(); dqCtx.moveTo(10, 100); dqCtx.lineTo(240, 100); dqCtx.stroke();
+
+        // 画两条水平直线
+        dqCtx.strokeStyle = blue;
+        dqCtx.lineWidth = 2;
+        dqCtx.beginPath(); dqCtx.moveTo(20, 80); dqCtx.lineTo(230, 80); dqCtx.stroke();
+        
+        dqCtx.strokeStyle = orange;
+        dqCtx.beginPath(); dqCtx.moveTo(20, 120); dqCtx.lineTo(230, 120); dqCtx.stroke();
+        
+        dqCtx.fillStyle = gray;
+        dqCtx.font = "14px Arial";
+        dqCtx.fillText("d", 230, 75);
+        dqCtx.fillText("q", 230, 115);
+    }
+    drawDQ();
+
+    // 3. 电路图
+    const circuitCtx = document.getElementById('circuitCanvas').getContext('2d');
+    function drawCircuit() {
+        circuitCtx.clearRect(0,0,400,150);
+        circuitCtx.strokeStyle = '#333';
+        circuitCtx.lineWidth = 2;
+        
+        // 节点
+        const nodes = [{x:50,y:75}, {x:200,y:30}, {x:200,y:120}, {x:350,y:75}];
+        nodes.forEach(n => {
+            circuitCtx.beginPath();
+            circuitCtx.arc(n.x, n.y, 5, 0, Math.PI*2);
+            circuitCtx.fill();
+        });
+
+        // 连线
+        circuitCtx.beginPath();
+        circuitCtx.moveTo(nodes[0].x, nodes[0].y);
+        circuitCtx.lineTo(nodes[1].x, nodes[1].y);
+        circuitCtx.lineTo(nodes[2].x, nodes[2].y);
+        circuitCtx.lineTo(nodes[3].x, nodes[3].y);
+        circuitCtx.moveTo(nodes[1].x, nodes[1].y);
+        circuitCtx.lineTo(nodes[2].x, nodes[2].y);
+        circuitCtx.stroke();
+
+        // 电阻
+        circuitCtx.fillStyle = blue;
+        circuitCtx.font = "bold 16px Arial";
+        circuitCtx.fillText("R₁", 110, 55);
+        circuitCtx.fillText("R₂", 110, 130);
+        circuitCtx.fillText("R₃", 270, 85);
+        
+        circuitCtx.fillStyle = orange;
+        circuitCtx.fillText("Y₁₁ Y₁₂ Y₁₃", 150, 180);
+        circuitCtx.fillText("Y₂₁ Y₂₂ Y₂₃", 250, 180);
+        circuitCtx.font = "14px Arial";
+        circuitCtx.fillText("(导纳矩阵)", 200, 195);
+    }
+    drawCircuit();
+
+    // 4. 模态振型
+    const modeCtx = document.getElementById('modeCanvas').getContext('2d');
+    function drawMode() {
+        modeCtx.clearRect(0,0,450,180);
+        const baseY = 90;
+        const masses = [50, 150, 250, 350];
+        const springs = [100, 200, 300];
+
+        // 画弹簧
+        modeCtx.strokeStyle = gray;
+        modeCtx.lineWidth = 2;
+        springs.forEach(x => {
+            modeCtx.beginPath();
+            modeCtx.moveTo(x, baseY);
+            for(let i=0; i<5; i++) {
+                modeCtx.lineTo(x + (i%2==0?5:-5), baseY - 15 + i*7);
+            }
+            modeCtx.lineTo(x, baseY + 5);
+            modeCtx.stroke();
+        });
+
+        // 画质量块和位移
+        modeCtx.fillStyle = blue;
+        masses.forEach((x, i) => {
+            let offset = 0;
+            if(i === 0) offset = -15; // 第一阶振型：同相
+            if(i === 1) offset = -15;
+            if(i === 2) offset = 15;  // 第二阶振型：反相
+            if(i === 3) offset = 15;
+            
+            modeCtx.fillRect(x-15, baseY-25+offset, 30, 50);
+            // 虚线表示原位置
+            modeCtx.strokeStyle = 'rgba(0,0,0,0.2)';
+            modeCtx.setLineDash([5,3]);
+            modeCtx.beginPath(); modeCtx.moveTo(x, baseY-25); modeCtx.lineTo(x, baseY+25); modeCtx.stroke();
+            modeCtx.setLineDash([]);
+        });
+
+        modeCtx.fillStyle = orange;
+        modeCtx.font = "14px Arial";
+        modeCtx.fillText("特征向量 (振型): 描述了各点的运动方向", 20, 30);
+    }
+    drawMode();
+
+    // 5. 热传导
+    const heatCtx = document.getElementById('heatCanvas').getContext('2d');
+    let heatTime = 0;
+    function drawHeat() {
+        heatCtx.clearRect(0,0,300,200);
+        const cols = 10;
+        const rows = 7;
+        const cellW = 300/cols;
+        const cellH = 200/rows;
+
+        for(let i=0; i<cols; i++) {
+            for(let j=0; j<rows; j++) {
+                // 模拟热源在左上角，随时间扩散
+                let dist = Math.sqrt(i*i + j*j);
+                let temp = Math.max(0, 1 - dist/(cols*0.8) - Math.sin(heatTime*0.02)*0.1);
+                
+                // 根据温度映射颜色 (冷色 -> 暖色)
+                const r = Math.min(255, Math.floor(255 * temp));
+                const g = Math.min(255, Math.floor(150 * (1-temp)));
+                const b = Math.min(255, Math.floor(255 * (1-temp)));
+                
+                heatCtx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+                heatCtx.fillRect(i*cellW, j*cellH, cellW+1, cellH+1);
+            }
+        }
+        heatTime++;
+        requestAnimationFrame(drawHeat); // 循环动画
+    }
+    drawHeat();
+</script>
+</body>
+</html>

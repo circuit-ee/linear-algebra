@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>矩阵乘法：顺序=物理先后 · 工程视角（核查修正版）</title>
+<style>
+:root{--b:#1f6feb;--r:#d73a49;--g:#2bb673;--k:#caa400;--ink:#1c2530;--m:#5b6b7c;}
+*{box-sizing:border-box}
+body{margin:0;font:20px/1.9 "PingFang SC","Microsoft YaHei",system-ui;background:linear-gradient(155deg,#eef3f9,#f7f9fc);color:var(--ink)}
+header{padding:22px 18px 6px;text-align:center}
+h1{font-size:2.3rem;margin:.1em 0}
+h2{font-size:1.5rem;margin:.7em 0 .3em}
+.wrap{max-width:1140px;margin:0 auto;padding:0 16px 90px}
+.tabs{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:14px 0}
+.tabs button{border:1px solid #c7d4e2;background:#fff;font-size:18px;padding:9px 16px;border-radius:30px;cursor:pointer}
+.tabs button.on{background:var(--b);color:#fff;border-color:var(--b)}
+.panel{display:none;background:#fff;border:1px solid #e3eaf2;border-radius:16px;padding:20px 22px;box-shadow:0 6px 20px rgba(40,70,110,.07)}
+.panel.on{display:block}
+.cv{width:100%;display:block;border:1px solid #e3eaf2;border-radius:12px;background:#fbfdff}
+.row{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin:12px 0}
+label{font-weight:600}input[type=range]{width:200px}
+button.play{border:1px solid var(--b);background:var(--b);color:#fff;font-size:17px;padding:7px 16px;border-radius:22px;cursor:pointer}
+button.play:disabled{opacity:.45;cursor:not-allowed}
+.legend{font-size:16px;display:flex;gap:16px;flex-wrap:wrap;margin-top:8px}
+.dot{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.card{border-left:5px solid var(--b);background:#f3f8ff;padding:11px 15px;border-radius:8px;margin:12px 0}
+.card.red{border-color:var(--r);background:#fff4f1}
+.card.grn{border-color:var(--g);background:#eefaf3}
+pre{background:#eef2f7;padding:12px;border-radius:8px;font-size:15px;font-family:ui-monospace,Menlo,Consolas;white-space:pre-wrap}
+</style>
+</head>
+<body>
+
+<header><h1>矩阵乘法为什么不交换、但结合？</h1>
+<div style="color:var(--m)">机器人走位 · 工程视角 · 大一线性代数</div></header>
+
+<div class="wrap">
+<div class="tabs">
+<button onclick="showTab(0)" class="on">① 核心直觉</button>
+<button onclick="showTab(1)">② 不交换（先转/先走）</button>
+<button onclick="showTab(2)">③ 结合律（分组预合成）</button>
+<button onclick="showTab(3)">④ 电气：RL 互感耦合</button>
+</div>
+
+<!-- ① -->
+<section class="panel on" data-p="0">
+<h2>一句话讲清</h2>
+<div class="card">矩阵 = 一种变换；矩阵相乘 = 连续做变换，顺序<b>从右到左</b>（同函数复合 f(g(x))）。<br>
+机器人：<b>先转腰再前进 ≠ 先前进再转腰</b> → 矩阵<b>不交换</b>（AB≠BA）；<br>
+同一条变换链怎么加括号，终点不变 → <b>结合律</b>（(AB)C=A(BC)）。</div>
+<div class="card red"><b>工程里"顺序敏感"（不交换）：</b>机器人正运动学 T=T₁·T₂·T₃（先到后乘）；状态空间 ẋ=Ax+Bu（A 系统矩阵、B 输入矩阵不可换）；Park 坐标变换电角度 ωt 须按时间推进。</div>
+<div class="card grn"><b>工程里"分组无关"（结合）：</b>多自由度总变换可任意分组预合成（先算哪两段都行）；有限元总刚度阵 K=ΣKₑ；多级坐标解耦先算哪两级结果一致。</div>
+</section>
+
+<!-- ② 交换律 -->
+<section class="panel" data-p="1">
+<h2>机器人走位：先转θ再走d vs 先走d再转θ</h2>
+<canvas class="cv" id="c1" width="1000" height="420"></canvas>
+<div class="row">
+<label>转角 θ：<span id="tv">40</span>°</label>
+<input id="th" type="range" min="0" max="90" value="40">
+<label>步长 d：<span id="dv">120</span></label>
+<input id="dst" type="range" min="40" max="180" value="120">
+<button class="play" id="btn1">▶ 播放</button>
+<button class="play" id="res1" style="background:#fff;color:var(--b)">↺ 重置</button>
+</div>
+<div class="legend">
+<span><i class="dot" style="background:var(--b)"></i>蓝：先转θ再走d → 终点(d·cosθ, d·sinθ)</span>
+<span><i class="dot" style="background:var(--r)"></i>红：先走d再转θ → 终点(d, 0)</span>
+</div>
+<div id="out1"></div>
+<div class="card red">θ≠0 时两终点不重合 → <b>Rot·Trans ≠ Trans·Rot</b>（矩阵不交换）。机器人本体带朝向箭头：蓝色箭头先转后位置移动；红色位置先右移后箭头转动。</div>
+</section>
+
+<!-- ③ 结合律 -->
+<section class="panel" data-p="2">
+<h2>同一条链 (R₁·T)·R₂ = R₁·(T·R₂)</h2>
+<canvas class="cv" id="c2" width="1000" height="460"></canvas>
+<div class="row">
+<label>θ₁：<span id="a1v">30</span>°</label><input id="t1" type="range" min="0" max="90" value="30">
+<label>d：<span id="ddv">100</span></label><input id="dd" type="range" min="40" max="160" value="100">
+<label>θ₂：<span id="a2v">50</span>°</label><input id="t2" type="range" min="0" max="90" value="50">
+<button class="play" id="btn2">▶ 播放</button>
+<button class="play" id="res2" style="background:#fff;color:var(--b)">↺ 重置</button>
+</div>
+<div class="legend">
+<span><i class="dot" style="background:var(--g)"></i>绿：(R₁·T)·R₂ — 先合并 R₁·T，再乘 R₂</span>
+<span><i class="dot" style="background:var(--k)"></i>黄：R₁·(T·R₂) — 先合并 T·R₂，再左乘 R₁</span>
+</div>
+<div id="out2"></div>
+<div class="card grn">两种分组的物理动作完全相同（都是「转θ₂ → 走d → 转θ₁」），只是先算哪两步的括号不同，故终点重合 → <b>结合律成立</b>。绿在上基线、黄在下基线，各自画出轨迹。</div>
+</section>
+
+<!-- ④ RL -->
+<section class="panel" data-p="3">
+<h2>互感耦合 RL 电路：A·B ≠ B·A</h2>
+<canvas class="cv" id="c3" width="1000" height="280"></canvas>
+<div class="row">
+<label>R₁：<span id="r1v">2</span></label><input id="r1" type="range" min="0.5" max="6" step="0.1" value="2">
+<label>R₂(互感)：<span id="r2v">1</span></label><input id="r2" type="range" min="0" max="4" step="0.1" value="1">
+<label>L：<span id="lv">1</span></label><input id="l" type="range" min="0.2" max="3" step="0.1" value="1">
+</div>
+<div id="out3"></div>
+<pre id="mat"></pre>
+<div class="card">A=系统矩阵（含互感耦合项 R₂/L），B=输入矩阵。<b>A·B≠B·A</b>：先有电路特性，再有电压激励，因果不可反。画布为信号流框图（u→B→A→x₁ vs u→A→B→x₂）。</div>
+</section>
+</div>
+
+<script>
+const rad = d => d * Math.PI / 180;
+
+/* 全局状态 */
+let tab = 0;
+let p1 = 0, run1 = false, hB = [], hR = [];
+let p2 = 0, run2 = false, hG = [], hY = [];
+
+/* 切换页 */
+function showTab(t) {
+  tab = t;
+  document.querySelectorAll('.tabs button').forEach((b,i)=>b.classList.toggle('on', i===t));
+  document.querySelectorAll('.panel').forEach(p=>p.style.display = (+p.dataset.p===t)?'block':'none');
+}
+
+/* 机器人绘制：身体圆 + 朝向箭头 */
+function drawBot(g, ox, oy, x, y, h, color) {
+  const px = ox + x, py = oy - y;
+  g.fillStyle = color; g.beginPath(); g.arc(px, py, 10, 0, 7); g.fill();
+  g.strokeStyle = color; g.lineWidth = 3; g.beginPath();
+  g.moveTo(px, py); g.lineTo(px + 22*Math.cos(h), py - 22*Math.sin(h)); g.stroke();
+}
+
+/* ② 交换律：蓝先转再走 / 红先走再转，各自独立进度分段 */
+function draw1() {
+  const th = +document.getElementById('th').value;
+  const d  = +document.getElementById('dst').value;
+  document.getElementById('tv').textContent = th;
+  document.getElementById('dv').textContent = d;
+  const W = 1000, H = 420, ox = W/2, oy = H/2;
+  const g = document.getElementById('c1').getContext('2d');
+  g.clearRect(0,0,W,H);
+  g.strokeStyle='#ccc';g.beginPath();g.moveTo(0,oy);g.lineTo(W,oy);g.stroke();
+
+  // 蓝：前半段转(朝向0→th)，后半段走(位置沿新朝向0→d)
+  const bp = Math.min(1, p1*2), ba = Math.max(0, p1*2-1);
+  const bh = rad(th * bp);
+  const bx = d * ba * Math.cos(bh), by = d * ba * Math.sin(bh);
+  drawBot(g, ox, oy, bx, by, bh, '#1f6feb');
+  hB.push({x:bx,y:by});
+  // 红：前半段走(位置0→d沿x)，后半段转(朝向0→th)
+  const rp = Math.min(1, p1*2), ra = Math.max(0, p1*2-1);
+  const rx = d * rp, ry = 0;
+  const rh = rad(th * ra);
+  drawBot(g, ox, oy, rx, ry, rh, '#d73a49');
+  hR.push({x:rx,y:ry});
+
+  g.strokeStyle='#1f6feb';g.lineWidth=2;g.beginPath();hB.forEach((q,i)=>i?g.lineTo(ox+q.x,oy-q.y):g.moveTo(ox+q.x,oy-q.y));g.stroke();
+  g.strokeStyle='#d73a49';g.beginPath();hR.forEach((q,i)=>i?g.lineTo(ox+q.x,oy-q.y):g.moveTo(ox+q.x,oy-q.y));g.stroke();
+
+  const ex = d*Math.cos(rad(th)), ey = d*Math.sin(rad(th));
+  const diff = Math.hypot(ex-d, ey-0);
+  document.getElementById('out1').innerHTML =
+    `<b>蓝终点(${ex.toFixed(1)}, ${ey.toFixed(1)})　红终点(${d}, 0)　差=${diff.toFixed(1)}</b> → AB≠BA`;
+}
+
+/* ③ 结合律：链 R1·T·R2，物理动作 转θ2→走d→转θ1；绿/黄各自独立绘制，基线错开 */
+function botChain(p, th1, d, th2) {
+  // p∈[0,1]，分三段：转θ2 / 走d / 转θ1
+  let x=0,y=0,h=0; const seg = p*3;
+  if (seg < 1) { h = rad(th2*seg); }
+  else { h = rad(th2); x = d*Math.cos(h)*(seg-1); y = d*Math.sin(h)*(seg-1);
+    if (seg > 2) { x = d*Math.cos(h); y = d*Math.sin(h); h += rad(th1*(seg-2)); } }
+  return {x,y,h};
+}
+function draw2() {
+  const th1 = +document.getElementById('t1').value;
+  const d   = +document.getElementById('dd').value;
+  const th2 = +document.getElementById('t2').value;
+  document.getElementById('a1v').textContent = th1;
+  document.getElementById('ddv').textContent = d;
+  document.getElementById('a2v').textContent = th2;
+  const W = 1000, H = 460, ox = W/2;
+  const g = document.getElementById('c2').getContext('2d');
+  g.clearRect(0,0,W,H);
+  const oyG = H/2 - 40, oyY = H/2 + 30;
+  g.strokeStyle='#bfe6cf';g.setLineDash([6,5]);g.beginPath();g.moveTo(0,oyG);g.lineTo(W,oyG);g.stroke();
+  g.strokeStyle='#f0e3b0';g.beginPath();g.moveTo(0,oyY);g.lineTo(W,oyY);g.stroke();g.setLineDash([]);
+
+  const G = botChain(p2, th1, d, th2);
+  const Y = botChain(p2, th1, d, th2);
+  drawBot(g, ox, oyG, G.x, G.y, G.h, '#2bb673');
+  drawBot(g, ox, oyY, Y.x, Y.y, Y.h, '#caa400');
+  hG.push({x:G.x,y:G.y}); hY.push({x:Y.x,y:Y.y});
+  g.strokeStyle='#2bb673';g.lineWidth=2;g.beginPath();hG.forEach((q,i)=>i?g.lineTo(ox+q.x,oyG-q.y):g.moveTo(ox+q.x,oyG-q.y));g.stroke();
+  g.strokeStyle='#caa400';g.beginPath();hY.forEach((q,i)=>i?g.lineTo(ox+q.x,oyY-q.y):g.moveTo(ox+q.x,oyY-q.y));g.stroke();
+
+  const ex = d*Math.cos(rad(th2)), ey = d*Math.sin(rad(th2));
+  const err = Math.hypot(G.x-Y.x, G.y-Y.y);
+  document.getElementById('out2').innerHTML =
+    `绿=(R₁·T)·R₂　黄=R₁·(T·R₂)　物理动作同=转θ₂→走d→转θ₁　终点(${ex.toFixed(1)}, ${ey.toFixed(1)})　误差=${err.toExponential(2)} → 结合律成立`;
+}
+
+/* ④ RL 互感耦合 */
+function mul(A,B){const R=[[0,0],[0,0]];for(let i=0;i<2;i++)for(let j=0;j<2;j++)R[i][j]=A[i][0]*B[0][j]+A[i][1]*B[1][j];return R;}
+function draw3() {
+  const R1=+document.getElementById('r1').value, R2=+document.getElementById('r2').value, L=+document.getElementById('l').value;
+  document.getElementById('r1v').textContent=R1;document.getElementById('r2v').textContent=R2;document.getElementById('lv').textContent=L;
+  const A = [[-R1/L, -R2/L],[R2/L, R2/L]];
+  const B = [[1/L, 1/L],[0, 1/L]];
+  const AB = mul(A,B), BA = mul(B,A), u=[1,0];
+  const x1=[AB[0][0]*u[0]+AB[0][1]*u[1], AB[1][0]*u[0]+AB[1][1]*u[1]];
+  const x2=[BA[0][0]*u[0]+BA[0][1]*u[1], BA[1][0]*u[0]+BA[1][1]*u[1]];
+  const W=1000,H=280,g=document.getElementById('c3').getContext('2d');
+  g.clearRect(0,0,W,H);g.font='16px sans-serif';g.fillStyle='#111';
+  g.strokeStyle='#1f6feb';g.lineWidth=2;
+  g.fillText('u',40,60);g.strokeRect(70,42,56,24);g.fillText('B',86,60);
+  g.beginPath();g.moveTo(126,54);g.lineTo(200,54);g.stroke();g.strokeRect(200,42,56,24);g.fillText('A',216,60);
+  g.beginPath();g.moveTo(256,54);g.lineTo(360,54);g.stroke();
+  g.fillText(`x₁=A·B·u=[${x1[0].toFixed(3)}, ${x1[1].toFixed(3)}]`,370,60);
+  g.strokeStyle='#d73a49';
+  g.fillText('u',40,140);g.strokeRect(70,122,56,24);g.fillText('A',86,140);
+  g.beginPath();g.moveTo(126,134);g.lineTo(200,134);g.stroke();g.strokeRect(200,122,56,24);g.fillText('B',216,140);
+  g.beginPath();g.moveTo(256,134);g.lineTo(360,134);g.stroke();
+  g.fillText(`x₂=B·A·u=[${x2[0].toFixed(3)}, ${x2[1].toFixed(3)}]`,370,140);
+  const diff = Math.hypot(x1[0]-x2[0], x1[1]-x2[1]);
+  document.getElementById('out3').innerHTML = `<b>A·B≠B·A　差异=${diff.toFixed(4)}</b>`;
+  document.getElementById('mat').textContent =
+`A = [${A[0][0].toFixed(2)}  ${A[0][1].toFixed(2)}; ${A[1][0].toFixed(2)}  ${A[1][1].toFixed(2)}]
+B = [${B[0][0].toFixed(2)}  ${B[0][1].toFixed(2)}; ${B[1][0].toFixed(2)}  ${B[1][1].toFixed(2)}]
+A·B = [${AB[0][0].toFixed(3)} ${AB[0][1].toFixed(3)}; ${AB[1][0].toFixed(3)} ${AB[1][1].toFixed(3)}]
+B·A = [${BA[0][0].toFixed(3)} ${BA[0][1].toFixed(3)}; ${BA[1][0].toFixed(3)} ${BA[1][1].toFixed(3)}]`;
+}
+
+/* 单循环驱动：根据当前tab和run标志绘制动画帧 */
+function loop() {
+  if (tab === 1) {
+    if (run1) { p1 += 0.012; if (p1 >= 1) { p1 = 1; run1 = false; document.getElementById('btn1').disabled = false; } }
+    draw1();
+  } else if (tab === 2) {
+    if (run2) { p2 += 0.012; if (p2 >= 1) { p2 = 1; run2 = false; document.getElementById('btn2').disabled = false; } }
+    draw2();
+  }
+  requestAnimationFrame(loop);
+}
+
+/* 按钮绑定（仅一次） */
+document.getElementById('btn1').addEventListener('click', ()=>{ if(p1>=1) p1=0; run1=true; document.getElementById('btn1').disabled=true; });
+document.getElementById('res1').addEventListener('click', ()=>{ p1=0; run1=false; hB=[]; hR=[]; document.getElementById('btn1').disabled=false; draw1(); });
+document.getElementById('btn2').addEventListener('click', ()=>{ if(p2>=1) p2=0; run2=true; document.getElementById('btn2').disabled=true; });
+document.getElementById('res2').addEventListener('click', ()=>{ p2=0; run2=false; hG=[]; hY=[]; document.getElementById('btn2').disabled=false; draw2(); });
+document.getElementById('th').addEventListener('input', draw1);
+document.getElementById('dst').addEventListener('input', draw1);
+document.getElementById('t1').addEventListener('input', draw2);
+document.getElementById('dd').addEventListener('input', draw2);
+document.getElementById('t2').addEventListener('input', draw2);
+document.getElementById('r1').addEventListener('input', draw3);
+document.getElementById('r2').addEventListener('input', draw3);
+document.getElementById('l').addEventListener('input', draw3);
+
+/* 初始化 */
+draw1(); draw2(); draw3(); loop();
+</script>
+</body></html>

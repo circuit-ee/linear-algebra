@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>3D球体→2D线性变换（经纬网格+闭合形状）</title>
+  <style>
+    body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;display:flex;flex-direction:column;align-items:center;padding:20px;background:linear-gradient(135deg,#e0f7fa 0%,#bbdefb 100%);min-height:100vh;margin:0}
+    h1{color:#1565c0;margin-bottom:30px;text-shadow:0 2px 4px rgba(0,0,0,0.1)}
+    .container{background:rgba(255,255,255,0.2);backdrop-filter:blur(10px);border-radius:16px;border:1px solid rgba(255,255,255,0.3);padding:30px;box-shadow:0 8px 32px rgba(31,38,135,0.2);margin-bottom:30px}
+    .matrix-editor{display:flex;gap:30px;margin:20px 0;flex-wrap:wrap;justify-content:center}
+    .matrix-input{display:flex;flex-direction:column;align-items:center;gap:10px}
+    .matrix-input h3{color:#0d47a1;margin:0}
+    .matrix-grid{display:grid;grid-template-columns:repeat(3,60px);gap:5px}
+    .matrix-grid input{width:60px;height:60px;text-align:center;font-size:18px;border:1px solid rgba(255,255,255,0.5);border-radius:8px;background:rgba(255,255,255,0.5);color:#0d47a1;font-weight:bold}
+    .canvas-container{display:flex;gap:30px;margin:20px 0;flex-wrap:wrap;justify-content:center}
+    canvas{border:1px solid rgba(255,255,255,0.5);border-radius:12px;background:rgba(255,255,255,0.3);box-shadow:0 4px 8px rgba(0,0,0,0.1)}
+    button{padding:12px 24px;font-size:16px;font-weight:600;background:rgba(25,118,210,0.8);color:white;border:none;border-radius:8px;cursor:pointer;margin:0 10px;transition:all 0.3s ease}
+    button:hover{background:rgba(21,101,192,0.9);transform:translateY(-2px)}
+    .info{margin-top:20px;padding:20px;background:rgba(255,255,255,0.3);border-radius:12px;text-align:center;font-size:18px;color:#0d47a1}
+    .legend{display:flex;justify-content:center;gap:30px;margin-top:15px;flex-wrap:wrap}
+    .legend-item{display:flex;align-items:center;gap:8px;padding:8px 16px;background:rgba(255,255,255,0.5);border-radius:20px}
+    .legend-color{width:20px;height:20px;border-radius:4px}
+  </style>
+</head>
+<body>
+  <h1>3D球体 → 2D线性变换（经纬网格+闭合形状）</h1>
+  <div class="container">
+    <div class="matrix-editor">
+      <div class="matrix-input">
+        <h3>2×3 变换矩阵 M</h3>
+        <div class="matrix-grid">
+          <input type="number" id="m11" value="0.8" step="0.1">
+          <input type="number" id="m12" value="0.2" step="0.1">
+          <input type="number" id="m13" value="0.1" step="0.1">
+          <input type="number" id="m21" value="0.2" step="0.1">
+          <input type="number" id="m22" value="0.8" step="0.1">
+          <input type="number" id="m23" value="0.4" step="0.1">
+        </div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button onclick="startAnimation()">开始动画</button>
+      <button onclick="resetAnimation()">重置</button>
+      <button onclick="updateMatrix()">应用新矩阵</button>
+      <button onclick="randomMatrix()">随机矩阵</button>
+    </div>
+
+    <div class="canvas-container">
+      <div><h3>原始3D球体（等轴测）</h3><canvas id="canvas3d" width="400" height="400"></canvas></div>
+      <div><h3>变换后2D闭合形状</h3><canvas id="canvas2d" width="400" height="400"></canvas></div>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item"><div class="legend-color" style="background:#ff5252"></div><span>3D球体网格</span></div>
+      <div class="legend-item"><div class="legend-color" style="background:#42a5f5"></div><span>2D闭合形状</span></div>
+      <div class="legend-item"><div class="legend-color" style="background:#26a69a"></div><span>基向量 î , ĵ , k̂</span></div>
+    </div>
+
+    <div class="info" id="info">点击"应用新矩阵"或"随机矩阵"后，再点击"开始动画"</div>
+  </div>
+
+  <script>
+    const canvas3d=document.getElementById('canvas3d'),ctx3d=canvas3d.getContext('2d');
+    const canvas2d=document.getElementById('canvas2d'),ctx2d=canvas2d.getContext('2d');
+    const centerX=200,centerY=200,scale3d=60,scale2d=80;
+
+    let M=[[0.8,0.2,0.1],[0.2,0.8,0.4]];
+    const base3d=[[1,0,0],[0,1,0],[0,0,1]]; // î , ĵ , k̂
+
+    // 生成单位球面经纬网格（闭合环）
+    function generateSphereGrid(lat=8,lon=12){
+      const grids=[];
+      // 纬线（闭合环）
+      for(let i=1;i<lat;i++){
+        const y=Math.cos(i/lat*Math.PI);
+        const r=Math.sin(i/lat*Math.PI);
+        const ring=[];
+        for(let j=0;j<=lon;j++){
+          const ang=j/lon*2*Math.PI;
+          ring.push([r*Math.cos(ang),y,r*Math.sin(ang)]);
+        }
+        grids.push(ring);
+      }
+      // 经线（半圆环，闭合）
+      for(let j=0;j<lon;j++){
+        const ang=j/lon*2*Math.PI;
+        const arc=[];
+        for(let i=0;i<=lat;i++){
+          const y=Math.cos(i/lat*Math.PI);
+          const r=Math.sin(i/lat*Math.PI);
+          arc.push([r*Math.cos(ang),y,r*Math.sin(ang)]);
+        }
+        grids.push(arc);
+      }
+      return grids;
+    }
+    const sphereGrid=generateSphereGrid(8,12);
+
+    function multiplyMatrix2x3Vector(m,v){
+      return [m[0][0]*v[0]+m[0][1]*v[1]+m[0][2]*v[2],m[1][0]*v[0]+m[1][1]*v[1]+m[1][2]*v[2]];
+    }
+    function isometricProjection(x,y,z){
+      const cos=Math.cos(Math.PI/6),sin=Math.sin(Math.PI/6);
+      return [x*cos-y*cos,x*sin+y*sin-z];
+    }
+    function drawGrid3D(ctx){
+      ctx.strokeStyle='rgba(255,255,255,0.3)';ctx.lineWidth=1;
+      const cos=Math.cos(Math.PI/6),sin=Math.sin(Math.PI/6);
+      for(let i=-3;i<=3;i++){
+        ctx.beginPath();ctx.moveTo(centerX+i*cos*scale3d-3*cos*scale3d,centerY+i*sin*scale3d+3*sin*scale3d);ctx.lineTo(centerX+i*cos*scale3d+3*cos*scale3d,centerY+i*sin*scale3d-3*sin*scale3d);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(centerX-i*cos*scale3d-3*cos*scale3d,centerY+i*sin*scale3d+3*sin*scale3d);ctx.lineTo(centerX-i*cos*scale3d+3*cos*scale3d,centerY+i*sin*scale3d-3*sin*scale3d);ctx.stroke();
+      }
+      ctx.strokeStyle='#1565c0';ctx.lineWidth=2;
+      ctx.beginPath();ctx.moveTo(centerX,centerY);ctx.lineTo(centerX+2*cos*scale3d,centerY+2*sin*scale3d);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(centerX,centerY);ctx.lineTo(centerX-2*cos*scale3d,centerY+2*sin*scale3d);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(centerX,centerY);ctx.lineTo(centerX,centerY-2*scale3d);ctx.stroke();
+      ctx.font='14px Arial';ctx.fillStyle='#1565c0';
+      ctx.fillText('X',centerX+2*cos*scale3d+10,centerY+2*sin*scale3d);
+      ctx.fillText('Y',centerX-2*cos*scale3d-20,centerY+2*sin*scale3d);
+      ctx.fillText('Z',centerX,centerY-2*scale3d-10);
+    }
+    function drawGrid2D(ctx){
+      ctx.strokeStyle='rgba(255,255,255,0.5)';ctx.lineWidth=1;
+      for(let i=0;i<=400;i+=40){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i,400);ctx.stroke();ctx.beginPath();ctx.moveTo(0,i);ctx.lineTo(400,i);ctx.stroke();}
+      ctx.strokeStyle='rgba(21,101,192,0.7)';ctx.lineWidth=2;
+      ctx.beginPath();ctx.moveTo(centerX,0);ctx.lineTo(centerX,400);ctx.moveTo(0,centerY);ctx.lineTo(400,centerY);ctx.stroke();
+    }
+    function drawSphereGrid3D(ctx,grids,color,alpha=1){
+      ctx.save();ctx.translate(centerX,centerY);
+      const v2=grids.map(ring=>ring.map(v=>{const p=isometricProjection(v[0],v[1],v[2]);return [p[0]*scale3d,p[1]*scale3d];}));
+      ctx.strokeStyle=color;ctx.globalAlpha=alpha;ctx.lineWidth=2;
+      v2.forEach(ring=>{ctx.beginPath();ring.forEach((p,i)=>{if(i===0)ctx.moveTo(p[0],p[1]);else ctx.lineTo(p[0],p[1]);});ctx.closePath();ctx.stroke();});
+      ctx.restore();
+    }
+    function drawClosedShape2D(ctx,points,color,alpha=1){
+      ctx.save();ctx.translate(centerX,centerY);ctx.scale(scale2d,-scale2d);
+      ctx.fillStyle=color;ctx.globalAlpha=alpha;
+      ctx.beginPath();ctx.moveTo(points[0][0],points[0][1]);
+      for(let i=1;i<points.length;i++)ctx.lineTo(points[i][0],points[i][1]);
+      ctx.closePath();ctx.fill();
+      ctx.strokeStyle='#0d47a1';ctx.lineWidth=2/scale2d;ctx.stroke();
+      ctx.restore();
+    }
+    function drawVector2D(ctx,v2D,color){
+      ctx.save();ctx.translate(centerX,centerY);ctx.scale(scale2d,-scale2d);
+      ctx.strokeStyle=color;ctx.lineWidth=3/scale2d;
+      ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(v2D[0],v2D[1]);ctx.stroke();
+      ctx.restore();
+    }
+    function clearCanvas(ctx2=false){
+      (ctx2?ctx2d:ctx3d).clearRect(0,0,400,400);
+      drawGrid2D(ctx2?ctx2d:ctx3d);
+      if(!ctx2)drawGrid3D(ctx3d);
+    }
+
+    let animationStep=0,isAnimating=false;
+    function updateMatrix(){
+      M=[
+        [parseFloat(document.getElementById('m11').value)||0,parseFloat(document.getElementById('m12').value)||0,parseFloat(document.getElementById('m13').value)||0],
+        [parseFloat(document.getElementById('m21').value)||0,parseFloat(document.getElementById('m22').value)||0,parseFloat(document.getElementById('m23').value)||0]
+      ];
+      resetAnimation();
+      document.getElementById('info').textContent='矩阵已更新，点击"开始动画"查看新的演示';
+    }
+    function randomMatrix(){
+      const rand=()=>(Math.random()*2-1).toFixed(1);
+      for(let i=1;i<=2;i++)for(let j=1;j<=3;j++)document.getElementById(`m${i}${j}`).value=rand();
+      updateMatrix();
+    }
+    function animate(){
+      if(!isAnimating)return;
+      clearCanvas();clearCanvas(true);
+      drawSphereGrid3D(ctx3d,sphereGrid,'#ff5252',0.8);
+      // 绘制3D基向量
+      ctx3d.save();ctx3d.translate(centerX,centerY);ctx3d.scale(scale3d,-scale3d);
+      ctx3d.strokeStyle='#26a69a';ctx3d.lineWidth=2/scale3d;
+      ctx3d.beginPath();ctx3d.moveTo(0,0);ctx3d.lineTo(1,0);ctx3d.stroke();
+      ctx3d.beginPath();ctx3d.moveTo(0,0);ctx3d.lineTo(0,1);ctx3d.stroke();
+      ctx3d.restore();
+      if(animationStep>=1){
+        const proj=sphereGrid.map(ring=>ring.map(v=>multiplyMatrix2x3Vector(M,v)));
+        proj.forEach(ring=>drawClosedShape2D(ctx2d,ring,'#42a5f5',0.7));
+        const base2dProj=base3d.map(v=>multiplyMatrix2x3Vector(M,v));
+        base2dProj.forEach((vec,idx)=>{
+          const color=['#26a69a','#66bb6a','#ffa726'][idx];
+          drawVector2D(ctx2d,vec,color);
+        });
+        document.getElementById('info').textContent='球体与基向量正在投影到2D...';
+      }
+      if(animationStep>=2){
+        const proj=sphereGrid.map(ring=>ring.map(v=>multiplyMatrix2x3Vector(M,v)));
+        proj.forEach(ring=>drawClosedShape2D(ctx2d,ring,'#26a69a',0.9));
+        const base2dProj=base3d.map(v=>multiplyMatrix2x3Vector(M,v));
+        base2dProj.forEach((vec,idx)=>{
+          const color=['#26a69a','#66bb6a','#ffa726'][idx];
+          drawVector2D(ctx2d,vec,color);
+        });
+        document.getElementById('info').textContent='✓ 投影完成！3D球体与基向量已映射到2D闭合形状';
+        ctx2d.save();ctx2d.strokeStyle='#4caf50';ctx2d.lineWidth=3;ctx2d.strokeRect(10,10,380,380);ctx2d.restore();
+      }
+      if(animationStep<3){animationStep++;setTimeout(animate,1500);}else isAnimating=false;
+    }
+    function startAnimation(){if(isAnimating)return;animationStep=0;isAnimating=true;animate();}
+    function resetAnimation(){isAnimating=false;animationStep=0;clearCanvas();clearCanvas(true);drawSphereGrid3D(ctx3d,sphereGrid,'#ff5252',0.8);document.getElementById('info').textContent='点击"应用新矩阵"或"随机矩阵"后，再点击"开始动画"';}
+    resetAnimation();
+  </script>
+</body>
+</html>

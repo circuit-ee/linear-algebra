@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>矩阵构造规律动画演示</title>
+    <style>
+        /* ===== 浅色高对比度主题 ===== */
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', 'Helvetica Neue', sans-serif;
+            background: #f8f9fa; /* 浅灰背景 */
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            color: #212529; /* 深灰文字 */
+            position: relative;
+            overflow-x: hidden;
+            font-weight: 600; /* 整体加粗 */
+        }
+        
+        .container {
+            max-width: 1300px; /* 稍微加宽 */
+            margin: 0 auto;
+            background: #ffffff; /* 纯白容器 */
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+            border: 2px solid #dee2e6; /* 明显边框 */
+            position: relative;
+            overflow: hidden;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #0d47a1; /* 深蓝标题 */
+            font-size: 3.5em; /* 加大标题 */
+            margin-bottom: 40px;
+            font-weight: 900; /* 更粗 */
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1); /* 文字阴影增强可读性 */
+        }
+        
+        /* ===== 按钮样式 - 高对比度 ===== */
+        .button-container {
+            text-align: center;
+            margin: 40px 0;
+        }
+        
+        button {
+            font-size: 24px; /* 按钮文字加大 */
+            padding: 18px 35px;
+            margin: 0 15px;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            font-weight: 800; /* 按钮文字加粗 */
+            position: relative;
+            min-width: 220px; /* 按钮加宽 */
+        }
+        
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+        }
+        
+        button:active {
+            transform: translateY(1px);
+        }
+        
+        button:disabled {
+            background: #9e9e9e !important; /* 禁用状态更明显 */
+            cursor: not-allowed;
+        }
+        
+        /* 按钮颜色 - 高对比度 */
+        .btn-adjoint { background: #d32f2f; } /* 红色 */
+        .btn-symmetric { background: #1976d2; } /* 蓝色 */
+        .btn-antisymmetric { background: #388e3c; } /* 绿色 */
+        .btn-reset { background: #f57c00; } /* 橙色 */
+        
+        /* 快捷键提示 */
+        button::after {
+            content: attr(data-shortcut);
+            position: absolute;
+            top: -12px;
+            right: -12px;
+            background: #ff9800; /* 橙色提示 */
+            color: white;
+            padding: 6px 12px;
+            border-radius: 50%;
+            font-size: 16px;
+            font-weight: 900;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            z-index: 10;
+        }
+        
+        /* ===== 动画区域 ===== */
+        .animation-area {
+            margin: 40px 0;
+            min-height: 650px; /* 稍微加高 */
+            position: relative;
+            background: #f1f3f5; /* 浅灰背景 */
+            padding: 30px;
+            border-radius: 12px;
+            border: 2px solid #ced4da;
+        }
+        
+        .matrix-container {
+            text-align: center;
+            margin: 30px 0;
+        }
+        
+        .matrix {
+            display: inline-block;
+            position: relative;
+            margin: 25px;
+        }
+        
+        .matrix-bracket {
+            font-size: 72px; /* 括号加大 */
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #0d47a1; /* 深蓝括号 */
+            font-weight: 900;
+        }
+        
+        .left-bracket { 
+            left: -25px;
+            border-left: 4px solid #0d47a1; /* 更粗边框 */
+            height: 100%;
+        }
+        
+        .right-bracket { 
+            right: -25px;
+            border-right: 4px solid #0d47a1;
+            height: 100%;
+        }
+        
+        .matrix-content {
+            display: inline-block;
+            padding: 30px 40px;
+            background: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            border: 2px solid #adb5bd;
+        }
+        
+        .matrix-row {
+            display: flex;
+            justify-content: center;
+            margin: 12px 0; /* 增大行间距 */
+        }
+        
+        .matrix-cell {
+            width: 80px; /* 单元格加大 */
+            height: 80px;
+            margin: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #e9ecef; /* 浅灰背景 */
+            border: 2px solid #495057; /* 深灰边框 */
+            border-radius: 10px;
+            font-size: 28px; /* 文字加大 */
+            font-weight: 900; /* 文字加粗 */
+            transition: all 0.3s ease;
+            cursor: pointer;
+            color: #212529; /* 深灰文字 */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .matrix-cell:hover {
+            transform: scale(1.1);
+            background: #dee2e6;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        /* 高亮颜色 - 更鲜艳 */
+        .highlight {
+            background: linear-gradient(45deg, #1976d2, #0d47a1) !important; /* 蓝色 */
+            color: white !important;
+            transform: scale(1.15);
+            box-shadow: 0 0 15px rgba(25, 118, 210, 0.5) !important;
+        }
+        
+        .highlight-yellow {
+            background: linear-gradient(45deg, #f57c00, #e65100) !important; /* 橙色 */
+            color: white !important;
+        }
+        
+        .highlight-red {
+            background: linear-gradient(45deg, #d32f2f, #b71c1c) !important; /* 红色 */
+            color: white !important;
+        }
+        
+        .highlight-green {
+            background: linear-gradient(45deg, #388e3c, #1b5e20) !important; /* 绿色 */
+            color: white !important;
+        }
+        
+        .highlight-purple {
+            background: linear-gradient(45deg, #7b1fa2, #4a148c) !important; /* 紫色 */
+            color: white !important;
+        }
+        
+        .highlight-blue {
+            background: linear-gradient(45deg, #009688, #00695c) !important; /* 蓝绿色 */
+            color: white !important;
+        }
+        
+        .struck-out {
+            opacity: 0.3;
+            text-decoration: line-through;
+            background: #ced4da !important;
+        }
+        
+        /* ===== 说明文字 ===== */
+        .explanation {
+            text-align: center;
+            padding: 30px;
+            background: #e3f2fd; /* 浅蓝背景 */
+            border-radius: 12px;
+            margin: 30px auto;
+            max-width: 900px;
+            border-left: 8px solid #1976d2; /* 左侧边框 */
+        }
+        
+        .explanation h3 {
+            color: #0d47a1;
+            font-size: 2em; /* 标题加大 */
+            font-weight: 900;
+            margin-bottom: 20px;
+        }
+        
+        .explanation p {
+            color: #1565c0;
+            font-size: 22px; /* 文字加大 */
+            font-weight: 700; /* 文字加粗 */
+            line-height: 1.8;
+        }
+        
+        /* ===== 公式样式 ===== */
+        .formula {
+            text-align: center;
+            font-size: 36px; /* 公式加大 */
+            margin: 30px 0;
+            color: #0d47a1;
+            font-family: 'Courier New', monospace;
+            font-weight: 700;
+            background: #f8f9fa; /* 浅灰背景 */
+            padding: 20px;
+            border-radius: 10px;
+            display: inline-block;
+            border: 2px solid #dee2e6;
+            min-width: 600px;
+        }
+        
+        .formula-box {
+            background: #ffffff;
+            border: 2px solid #adb5bd;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px auto;
+            display: inline-block;
+            font-size: 28px; /* 文字加大 */
+            font-weight: 700;
+            max-width: 800px;
+        }
+        
+        .symbol {
+            font-size: 48px; /* 符号加大 */
+            vertical-align: middle;
+            margin: 0 20px;
+            font-weight: 900;
+            color: #d32f2f; /* 红色箭头 */
+        }
+        
+        .arrow {
+            font-size: 60px; /* 箭头加大 */
+            color: #d32f2f;
+            margin: 30px;
+            display: inline-block;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+        }
+        
+        /* 子矩阵样式 */
+        .minor-matrix {
+            display: inline-block;
+            margin-left: 40px;
+            vertical-align: middle;
+        }
+        
+        .minor-show {
+            transform: scale(0.9);
+            opacity: 0;
+            border: 2px dashed #1976d2;
+            animation: minorAppear 0.6s ease forwards;
+        }
+        
+        @keyframes minorAppear {
+            0% {
+                opacity: 0;
+                transform: scale(0.9) translateX(20px);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(0.9) translateX(0);
+            }
+        }
+        
+        /* 快捷键提示框 */
+        .shortcut-hint {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #0d47a1;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            font-size: 20px; /* 提示文字加大 */
+            font-weight: 700;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 1000;
+            line-height: 1.6;
+            border: 2px solid #ffffff;
+        }
+        
+        /* 响应式调整 */
+        @media (max-width: 1200px) {
+            .matrix-cell {
+                width: 65px;
+                height: 65px;
+                font-size: 24px;
+            }
+            .formula { font-size: 30px; }
+            .formula-box { font-size: 24px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>矩阵构造规律动画演示</h1>
+        
+        <!-- 按钮添加data-shortcut属性 -->
+        <div class="button-container">
+            <button class="btn-adjoint" onclick="showAdjointMatrix()" data-shortcut="1">
+                伴随矩阵构造规律
+            </button>
+            <button class="btn-symmetric" onclick="showSymmetricMatrix()" data-shortcut="2">
+                对称矩阵构造规律
+            </button>
+            <button class="btn-antisymmetric" onclick="showAntiSymmetricMatrix()" data-shortcut="3">
+                反对称矩阵构造规律
+            </button>
+            <button class="btn-reset" onclick="resetAnimation()" data-shortcut="4">
+                重置演示
+            </button>
+        </div>
+        
+        <div id="animationArea" class="animation-area"></div>
+    </div>
+    
+    <!-- 快捷键提示框 -->
+    <div class="shortcut-hint">
+        <strong>快捷键：</strong><br>
+        1: 伴随矩阵<br>
+        2: 对称矩阵<br>
+        3: 反对称矩阵<br>
+        4: 重置演示
+    </div>
+
+    <script>
+        // 全局动画状态
+        let isAnimating = false;
+
+        // 高亮元素函数
+        function highlightElement(elementId, className = 'highlight') {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.classList.add(className);
+            }
+        }
+
+        // 禁用按钮
+        function disableButtons() {
+            const buttons = document.querySelectorAll('button');
+            buttons.forEach(btn => {
+                btn.disabled = true;
+                btn.style.opacity = '0.6';
+            });
+        }
+
+        // 启用按钮
+        function enableButtons() {
+            const buttons = document.querySelectorAll('button');
+            buttons.forEach(btn => {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+            });
+        }
+
+        // 重置演示
+        function resetAnimation() {
+            if (isAnimating) return; // 动画中不重置
+            const animationArea = document.getElementById('animationArea');
+            animationArea.innerHTML = '';
+        }
+
+        // 伴随矩阵演示
+        function showAdjointMatrix() {
+            if (isAnimating) return;
+            isAnimating = true;
+            disableButtons();
+            
+            const animationArea = document.getElementById('animationArea');
+            animationArea.innerHTML = '';
+            
+            const matrixHTML = `
+                <div class="matrix-container">
+                    <h2 style="text-align: center; color: #d32f2f; font-size: 2.2em; font-weight: 800;">原矩阵 A</h2>
+                    <div class="matrix">
+                        <div class="left-bracket">[</div>
+                        <div class="matrix-content">
+                            <div class="matrix-row">
+                                <div class="matrix-cell" id="a11">a₁₁</div>
+                                <div class="matrix-cell" id="a12">a₁₂</div>
+                                <div class="matrix-cell" id="a13">a₁₃</div>
+                            </div>
+                            <div class="matrix-row">
+                                <div class="matrix-cell" id="a21">a₂₁</div>
+                                <div class="matrix-cell" id="a22">a₂₂</div>
+                                <div class="matrix-cell" id="a23">a₂₃</div>
+                            </div>
+                            <div class="matrix-row">
+                                <div class="matrix-cell" id="a31">a₃₁</div>
+                                <div class="matrix-cell" id="a32">a₃₂</div>
+                                <div class="matrix-cell" id="a33">a₃₃</div>
+                            </div>
+                        </div>
+                        <div class="right-bracket">]</div>
+                    </div>
+                </div>
+            `;
+            
+            animationArea.innerHTML = matrixHTML;
+            
+            setTimeout(() => {
+                highlightElement('a11');
+                highlightElement('a12', 'struck-out');
+                highlightElement('a13', 'struck-out');
+                highlightElement('a21', 'struck-out');
+                highlightElement('a31', 'struck-out');
+                
+                setTimeout(() => {
+                    const minorHTML = `
+                        <div class="formula">
+                            余子式 M₁₁ = <div class="matrix minor-show" style="display: inline-block;">
+                                <div class="left-bracket">[</div>
+                                <div class="matrix-content">
+                                    <div class="matrix-row">
+                                        <div class="matrix-cell">a₂₂</div>
+                                        <div class="matrix-cell">a₂₃</div>
+                                    </div>
+                                    <div class="matrix-row">
+                                        <div class="matrix-cell">a₃₂</div>
+                                        <div class="matrix-cell">a₃₃</div>
+                                    </div>
+                                </div>
+                                <div class="right-bracket">]</div>
+                            </div>
+                        </div>
+                    `;
+                    animationArea.innerHTML += minorHTML;
+                    
+                    setTimeout(() => {
+                        const cofactorHTML = `
+                            <div class="formula">
+                                <div class="formula-box">
+                                    代数余子式 A₁₁ = (−1)¹⁺¹ × M₁₁ = <br>
+                                    <span style="font-size: 1.2em; color: #1976d2;">1</span> × 
+                                    <span style="color: #d32f2f;">|a₂₂  a₂₃|</span><br>
+                                    <span style="margin-left: 120px; color: #d32f2f;">|a₃₂  a₃₃|</span>
+                                </div>
+                            </div>
+                        `;
+                        animationArea.innerHTML += cofactorHTML;
+                        
+                        setTimeout(() => {
+                            const adjointHTML = `
+                                <div class="symbol">⬇</div>
+                                <h3 style="text-align: center; color: #d32f2f; font-size: 2em; font-weight: 800;">伴随矩阵 A*（部分构造）</h3>
+                                <div class="matrix-container">
+                                    <div class="matrix">
+                                        <div class="left-bracket">[</div>
+                                        <div class="matrix-content">
+                                            <div class="matrix-row">
+                                                <div class="matrix-cell highlight" id="adj_11">A₁₁</div>
+                                                <div class="matrix-cell">A₂₁</div>
+                                                <div class="matrix-cell">A₃₁</div>
+                                            </div>
+                                            <div class="matrix-row">
+                                                <div class="matrix-cell">...</div>
+                                                <div class="matrix-cell">...</div>
+                                                <div class="matrix-cell">...</div>
+                                            </div>
+                                            <div class="matrix-row">
+                                                <div class="matrix-cell">...</div>
+                                                <div class="matrix-cell">...</div>
+                                                <div class="matrix-cell">...</div>
+                                            </div>
+                                        </div>
+                                        <div class="right-bracket">]</div>
+                                    </div>
+                                </div>
+                            `;
+                            animationArea.innerHTML += adjointHTML;
+                            
+                            setTimeout(() => {
+                                const a12ProcessHTML = `
+                                    <div class="formula" style="margin-top: 30px;">
+                                        <div class="formula-box">
+                                            <strong style="color: #d32f2f; font-size: 1.2em;">下一个：A₂₁（注意转置位置）</strong><br>
+                                            删除第2行第1列，得到 M₂₁ = <br>
+                                            <span style="color: #1976d2;">|a₁₂  a₁₃|</span><br>
+                                            <span style="margin-left: 60px; color: #1976d2;">|a₃₂  a₃₃|</span><br>
+                                            A₂₁ = (−1)²⁺¹ × M₂₁ = <span style="color: #1976d2;">−M₂₁</span>
+                                        </div>
+                                    </div>
+                                `;
+                                animationArea.innerHTML += a12ProcessHTML;
+                                
+                                setTimeout(() => {
+                                    const remainingHTML = `
+                                        <div class="formula">
+                                            <div class="formula-box">
+                                                <strong style="color: #388e3c; font-size: 1.2em;">快速构造伴随矩阵的第一列：</strong><br>
+                                                <span style="color: #d32f2f;">A₁₁ = (−1)² × M₁₁</span> | 
+                                                <span style="color: #1976d2;">A₂₁ = (−1)³ × M₂₁</span> | 
+                                                <span style="color: #388e3c;">A₃₁ = (−1)⁴ × M₃₁</span>
+                                            </div>
+                                        </div>
+                                        <div class="matrix-container">
+                                            <div class="matrix">
+                                                <div class="left-bracket">[</div>
+                                                <div class="matrix-content">
+                                                    <div class="matrix-row">
+                                                        <div class="matrix-cell highlight">A₁₁</div>
+                                                        <div class="matrix-cell highlight-red">A₂₁</div>
+                                                        <div class="matrix-cell highlight-green">A₃₁</div>
+                                                    </div>
+                                                    <div class="matrix-row">
+                                                        <div class="matrix-cell">...</div>
+                                                        <div class="matrix-cell">...</div>
+                                                        <div class="matrix-cell">...</div>
+                                                    </div>
+                                                    <div class="matrix-row">
+                                                        <div class="matrix-cell">...</div>
+                                                        <div class="matrix-cell">...</div>
+                                                        <div class="matrix-cell">...</div>
+                                                    </div>
+                                                </div>
+                                                <div class="right-bracket">]</div>
+                                            </div>
+                                        </div>
+                                    `;
+                                    animationArea.innerHTML += remainingHTML;
+                                    
+                                    setTimeout(() => {
+                                        const finalAdjointHTML = `
+                                            <div class="symbol">⬇</div>
+                                            <h3 style="text-align: center; color: #d32f2f; font-size: 2em; font-weight: 800;">完整伴随矩阵 A*</h3>
+                                            <div class="matrix-container">
+                                                <div class="matrix">
+                                                    <div class="left-bracket">[</div>
+                                                    <div class="matrix-content">
+                                                        <div class="matrix-row">
+                                                            <div class="matrix-cell highlight-blue">A₁₁</div>
+                                                            <div class="matrix-cell highlight-green">A₂₁</div>
+                                                            <div class="matrix-cell highlight-purple">A₃₁</div>
+                                                        </div>
+                                                        <div class="matrix-row">
+                                                            <div class="matrix-cell highlight-green">A₁₂</div>
+                                                            <div class="matrix-cell highlight-blue">A₂₂</div>
+                                                            <div class="matrix-cell highlight-yellow">A₃₂</div>
+                                                        </div>
+                                                        <div class="matrix-row">
+                                                            <div class="matrix-cell highlight-purple">A₁₃</div>
+                                                            <div class="matrix-cell highlight-yellow">A₂₃</div>
+                                                            <div class="matrix-cell highlight-blue">A₃₃</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="right-bracket">]</div>
+                                                </div>
+                                            </div>
+                                            <div class="explanation show">
+                                                <h3>伴随矩阵构造规律</h3>
+                                                <p>
+                                                    <strong style="color: #d32f2f;">定义：</strong> 伴随矩阵 A* 是代数余子式矩阵的转置。<br>
+                                                    对于 n 阶方阵 A，其伴随矩阵 A* 的每个元素 Aᵢⱼ 满足：<br>
+                                                    <strong style="color: #1976d2;">Aᵢⱼ = (−1)ⁱ⁺ʲ × Mⱼᵢ</strong><br>
+                                                    其中 Mⱼᵢ 是元素 aⱼᵢ 的余子式（删除第 j 行第 i 列后得到的子矩阵的行列式）。
+                                                </p>
+                                                <p style="margin-top: 20px;">
+                                                    <strong style="color: #d32f2f;">构造步骤：</strong><br>
+                                                    1. 计算每个元素的余子式 Mᵢⱼ<br>
+                                                    2. 计算代数余子式 Aᵢⱼ = (−1)ⁱ⁺ʲ × Mᵢⱼ<br>
+                                                    3. 将代数余子式矩阵转置得到伴随矩阵 A*
+                                                </p>
+                                                <p style="margin-top: 20px;">
+                                                    <strong style="color: #d32f2f;">重要性质：</strong> A × A* = A* × A = |A| × I
+                                                </p>
+                                            </div>
+                                        `;
+                                        animationArea.innerHTML += finalAdjointHTML;
+                                        isAnimating = false;
+                                        enableButtons();
+                                    }, 2500);
+                                }, 3000);
+                            }, 3000);
+                        }, 2000);
+                    }, 2000);
+                }, 2000);
+            }, 1500);
+        }
+
+        // 对称矩阵演示
+        function showSymmetricMatrix() {
+            if (isAnimating) return;
+            isAnimating = true;
+            disableButtons();
+            
+            const animationArea = document.getElementById('animationArea');
+            animationArea.innerHTML = '';
+            
+            const matrixHTML = `
+                <div class="matrix-container">
+                    <h2 style="text-align: center; color: #1976d2; font-size: 2.2em; font-weight: 800;">对称矩阵示例</h2>
+                    <div class="matrix">
+                        <div class="left-bracket">[</div>
+                        <div class="matrix-content">
+                            <div class="matrix-row">
+                                <div class="matrix-cell" id="s11">a₁₁</div>
+                                <div class="matrix-cell" id="s12">a₁₂</div>
+                                <div class="matrix-cell" id="s13">a₁₃</div>
+                            </div>
+                            <div class="matrix-row">
+                                <div class="matrix-cell" id="s21">a₂₁</div>
+                                <div class="matrix-cell" id="s22">a₂₂</div>
+                                <div class="matrix-cell" id="s23">a₂₃</div>
+                            </div>
+                            <div class="matrix-row">
+                                <div class="matrix-cell" id="s31">a₃₁</div>
+                                <div class="matrix-cell" id="s32">a₃₂</div>
+                                <div class="matrix-cell" id="s33">a₃₃</div>
+                            </div>
+                        </div>
+                        <div class="right-bracket">]</div>
+                    </div>
+                </div>
+            `;
+            
+            animationArea.innerHTML = matrixHTML;
+            
+            const delay = 600;
+            
+            setTimeout(() => {
+                highlightElement('s12');
+                setTimeout(() => {
+                    highlightElement('s21');
+                    
+                    setTimeout(() => {
+                        highlightElement('s13', 'highlight-yellow');
+                        setTimeout(() => {
+                            highlightElement('s31', 'highlight-yellow');
+                            
+                            setTimeout(() => {
+                                highlightElement('s23', 'highlight-red');
+                                setTimeout(() => {
+                                    highlightElement('s32', 'highlight-red');
+                                    
+                                    setTimeout(() => {
+                                        highlightElement('s11', 'highlight-green');
+                                        setTimeout(() => {
+                                            highlightElement('s22', 'highlight-green');
+                                            setTimeout(() => {
+                                                highlightElement('s33', 'highlight-green');
+                                                
+                                                setTimeout(() => {
+                                                    const explanationHTML = `
+                                                        <div class="explanation show">
+                                                            <h3>对称矩阵构造规律</h3>
+                                                            <p>
+                                                                <strong style="color: #1976d2;">定义：</strong> 设 A 是一个 n 阶方阵，如果满足 <strong style="color: #d32f2f;">Aᵀ = A</strong>，即<br>
+                                                                <strong style="color: #388e3c;">aᵢⱼ = aⱼᵢ （i, j = 1, 2, ..., n）</strong><br>
+                                                                则称 A 为对称矩阵。
+                                                            </p>
+                                                            <p style="margin-top: 20px;">
+                                                                <strong style="color: #1976d2;">关键特征：</strong><br>
+                                                                1. 关于主对角线对称的元素相等<br>
+                                                                2. 主对角线上的元素可以任意取值<br>
+                                                                3. 只有对角线及对角线上方的元素需要独立指定
+                                                            </p>
+                                                            <p style="margin-top: 20px;">
+                                                                <strong style="color: #1976d2;">示例：</strong> 
+                                                                <span class="highlight">蓝色 a₁₂</span> = <span class="highlight">a₂₁</span>、
+                                                                <span class="highlight-yellow">黄色 a₁₃</span> = <span class="highlight-yellow">a₃₁</span>、
+                                                                <span class="highlight-red">红色 a₂₃</span> = <span class="highlight-red">a₃₂</span>
+                                                            </p>
+                                                        </div>
+                                                    `;
+                                                    animationArea.innerHTML += explanationHTML;
+                                                    isAnimating = false;
+                                                    enableButtons();
+                                                }, 1000);
+                                            }, 500);
+                                        }, 500);
+                                    }, 1000);
+                                }, 500);
+                            }, 500);
+                        }, 500);
+                    }, 500);
+                }, 500);
+            }, delay);
+        }
+
+        // 反对称矩阵演示
+        function showAntiSymmetricMatrix() {
+            if (isAnimating) return;
+            isAnimating = true;
+            disableButtons();
+            
+            const animationArea = document.getElementById('animationArea');
+            animationArea.innerHTML = '';
+            
+            const matrixHTML = `
+                <div class="matrix-container">
+                    <h2 style="text-align: center; color: #388e3c; font-size: 2.2em; font-weight: 800;">反对称矩阵示例</h2>
+                    <div class="matrix">
+                        <div class="left-bracket">[</div>
+                        <div class="matrix-content">
+                            <div class="matrix-row">
+                                <div class="matrix-cell" id="a11">0</div>
+                                <div class="matrix-cell" id="a12">a</div>
+                                <div class="matrix-cell" id="a13">b</div>
+                            </div>
+                            <div class="matrix-row">
+                                <div class="matrix-cell" id="a21">-a</div>
+                                <div class="matrix-cell" id="a22">0</div>
+                                <div class="matrix-cell" id="a23">c</div>
+                            </div>
+                            <div class="matrix-row">
+                                <div class="matrix-cell" id="a31">-b</div>
+                                <div class="matrix-cell" id="a32">-c</div>
+                                <div class="matrix-cell" id="a33">0</div>
+                            </div>
+                        </div>
+                        <div class="right-bracket">]</div>
+                    </div>
+                </div>
+            `;
+            
+            animationArea.innerHTML = matrixHTML;
+            
+            const delay = 600;
+            
+            setTimeout(() => {
+                highlightElement('a12');
+                highlightElement('a21', 'highlight-red');
+                
+                setTimeout(() => {
+                    highlightElement('a13', 'highlight-yellow');
+                    highlightElement('a31', 'highlight-blue');
+                    
+                    setTimeout(() => {
+                        highlightElement('a23', 'highlight-green');
+                        highlightElement('a32', 'highlight-purple');
+                        
+                        setTimeout(() => {
+                            highlightElement('a11', 'highlight-red');
+                            highlightElement('a22', 'highlight-red');
+                            highlightElement('a33', 'highlight-red');
+                            
+                            setTimeout(() => {
+                                const explanationHTML = `
+                                    <div class="explanation show">
+                                        <h3>反对称矩阵构造规律</h3>
+                                        <p>
+                                            <strong style="color: #388e3c;">定义：</strong> 设 A 是一个 n 阶方阵，如果满足 <strong style="color: #d32f2f;">Aᵀ = −A</strong>，即<br>
+                                            <strong style="color: #1976d2;">aᵢⱼ = −aⱼᵢ （i, j = 1, 2, ..., n）</strong><br>
+                                            则称 A 为反对称矩阵。
+                                        </p>
+                                        <p style="margin-top: 20px;">
+                                            <strong style="color: #388e3c;">关键特征：</strong><br>
+                                            1. 关于主对角线对称的元素互为相反数<br>
+                                            2. <strong style="color: #d32f2f;">主对角线元素恒为零</strong>（因为 aᵢᵢ = −aᵢᵢ ⇒ aᵢᵢ = 0）<br>
+                                            3. 只有对角线上方的元素需要独立指定，下方的元素由反对称性确定
+                                        </p>
+                                        <p style="margin-top: 20px;">
+                                            <strong style="color: #388e3c;">示例说明：</strong><br>
+                                            <span class="highlight">蓝色 a</span> = −<span class="highlight-red">红色 −a</span>、
+                                            <span class="highlight-yellow">黄色 b</span> = −<span class="highlight-blue">蓝色 −b</span>、
+                                            <span class="highlight-green">绿色 c</span> = −<span class="highlight-purple">紫色 −c</span><br>
+                                            <span class="highlight-red">红色 0</span> 表示主对角线元素必须为零
+                                        </p>
+                                    </div>
+                                `;
+                                animationArea.innerHTML += explanationHTML;
+                                isAnimating = false;
+                                enableButtons();
+                            }, 1000);
+                        }, 1000);
+                    }, 500);
+                }, 500);
+            }, delay);
+        }
+
+        // 键盘快捷键处理
+        document.addEventListener('keydown', function(event) {
+            // 防止在输入框中触发
+            if (event.target.tagName === 'INPUT') return;
+            
+            switch(event.key) {
+                case '1':
+                    event.preventDefault();
+                    showAdjointMatrix();
+                    break;
+                case '2':
+                    event.preventDefault();
+                    showSymmetricMatrix();
+                    break;
+                case '3':
+                    event.preventDefault();
+                    showAntiSymmetricMatrix();
+                    break;
+                case '4':
+                    event.preventDefault();
+                    resetAnimation();
+                    break;
+            }
+        });
+
+        // 页面加载完成提示
+        window.onload = function() {
+            console.log('矩阵构造演示系统已加载完成');
+            console.log('快捷键：1-伴随矩阵 2-对称矩阵 3-反对称矩阵 4-重置演示');
+        };
+    </script>
+</body>
+</html>

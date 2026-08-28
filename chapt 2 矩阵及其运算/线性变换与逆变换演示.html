@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>线性变换演示</title>
+<style>
+body{margin:0;padding:20px;background:#f5f7fa;color:#2d3748;font-family:Arial}
+.container{max-width:800px;margin:0 auto;background:#ffffff;border-radius:8px;padding:20px;box-shadow:0 2px 10px rgba(0,0,0,0.1)}
+h1{text-align:center;font-size:22px;margin-bottom:15px}
+.row{display:flex;justify-content:center;gap:10px;margin:10px 0;align-items:center}
+input{width:60px;padding:6px;text-align:center;border:1px solid #cbd5e0;border-radius:4px;background:#fff}
+input:focus{outline:none;border-color:#4299e1}
+button{padding:8px 16px;margin:0 4px;border:none;border-radius:4px;background:#4299e1;color:#fff;font-size:15px;cursor:pointer;transition:background 0.3s}
+button:hover{background:#3182ce}
+button:disabled{background:#a0aec0;cursor:not-allowed}
+#status{text-align:center;margin:10px 0;color:#4a5568;font-weight:500}
+#info{background:rgba(66, 153, 225, 0.1);padding:10px;border-radius:6px;margin:10px 0;font-family:monospace;font-size:14px;color:#2d3748;border:1px solid rgba(66, 153, 225, 0.2)}
+canvas{border:1px solid #e2e8f0;background:#ffffff;display:block;margin:15px auto}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>线性变换演示（双按钮）</h1>
+
+  <div class="row">
+    <label>v₁ x<input id="v1x" type="number" value="2" step="0.1"></label>
+    <label>y<input id="v1y" type="number" value="1" step="0.1"></label>
+    <span style="margin:0 10px"></span>
+    <label>v₂ x<input id="v2x" type="number" value="-1" step="0.1"></label>
+    <label>y<input id="v2y" type="number" value="2" step="0.1"></label>
+  </div>
+
+  <div class="row">
+    <span>A =</span>
+    <input id="a11" type="number" value="1" step="0.1">
+    <input id="a12" type="number" value="0.5" step="0.1">
+    <span style="margin:0 6px"></span>
+    <input id="a21" type="number" value="0.5" step="0.1">
+    <input id="a22" type="number" value="1" step="0.1">
+  </div>
+
+  <div class="row">
+    <button id="btnA">A 矩阵变换演示</button>
+    <button id="btnInv">逆矩阵变换演示</button>
+    <button id="resetBtn">重置</button>
+  </div>
+
+  <div id="status">准备就绪</div>
+  <div id="info"></div>
+  <canvas id="canvas" width="600" height="600"></canvas>
+</div>
+
+<script>
+// ===== 初始化 =====
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const centerX = 300, centerY = 300, scale = 25;
+
+let v1 = [2,1], v2 = [-1,2];
+let userMatrix = [[1,0.5],[0.5,1]];
+let currentMatrix = [[1,0],[0,1]];   // 实时矩阵
+let animating = false;
+let progress = 0;
+let targetMatrix = [[1,0],[0,1]];    // 动画目标
+let startAnimMatrix = [[1,0],[0,1]]; // 动画起始
+
+const gridPoints = [];
+for (let i=-8;i<=8;i++) for (let j=-8;j<=8;j++) gridPoints.push([i,j]);
+
+// ===== 工具函数 =====
+function mul(m,v){return [m[0][0]*v[0]+m[0][1]*v[1],m[1][0]*v[0]+m[1][1]*v[1]]}
+function det(m){return m[0][0]*m[1][1]-m[0][1]*m[1][0]}
+function inv(m){
+  const d=det(m); if(Math.abs(d)<1e-10)return null;
+  return [[m[1][1]/d,-m[0][1]/d],[-m[1][0]/d,m[0][0]/d]];
+}
+function lerp(a,b,t){return a+(b-a)*t}
+function interp(m1,m2,t){
+  return [
+    [lerp(m1[0][0],m2[0][0],t),lerp(m1[0][1],m2[0][1],t)],
+    [lerp(m1[1][0],m2[1][0],t),lerp(m1[1][1],m2[1][1],t)]
+  ];
+}
+
+// ===== 读取输入 =====
+function readInputs(){
+  v1=[+document.getElementById('v1x').value,+document.getElementById('v1y').value];
+  v2=[+document.getElementById('v2x').value,+document.getElementById('v2y').value];
+  userMatrix=[
+    [+document.getElementById('a11').value,+document.getElementById('a12').value],
+    [+document.getElementById('a21').value,+document.getElementById('a22').value]
+  ];
+}
+
+// ===== 绘制 =====
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  currentMatrix = interp(startAnimMatrix, targetMatrix, progress);
+
+  // 网格点
+  ctx.fillStyle='#63b3ed';
+  gridPoints.forEach(p=>{
+    const q=mul(currentMatrix,p);
+    ctx.beginPath(); ctx.arc(centerX+q[0]*scale,centerY-q[1]*scale,2,0,6.28); ctx.fill();
+  });
+
+  // 坐标轴
+  ctx.strokeStyle='#a0aec0'; ctx.lineWidth=2;
+  const drawAx=(from,to)=>{
+    const a=mul(currentMatrix,from), b=mul(currentMatrix,to);
+    ctx.beginPath(); ctx.moveTo(centerX+a[0]*scale,centerY-a[1]*scale); ctx.lineTo(centerX+b[0]*scale,centerY-b[1]*scale); ctx.stroke();
+  };
+  drawAx([-10,0],[10,0]); drawAx([0,-10],[0,10]);
+
+  // 平行四边形
+  const verts=[[0,0],v1,[v1[0]+v2[0],v1[1]+v2[1]],v2];
+  ctx.strokeStyle='#e53e3e'; ctx.fillStyle='#e53e3e20'; ctx.lineWidth=3;
+  ctx.beginPath();
+  let p=mul(currentMatrix,verts[0]); ctx.moveTo(centerX+p[0]*scale,centerY-p[1]*scale);
+  for(let i=1;i<verts.length;i++){ const q=mul(currentMatrix,verts[i]); ctx.lineTo(centerX+q[0]*scale,centerY-q[1]*scale); }
+  ctx.closePath(); ctx.stroke(); ctx.fill();
+
+  // 向量
+  const drawVec=(v,color,label)=>{
+    const q=mul(currentMatrix,v);
+    ctx.strokeStyle=color; ctx.fillStyle=color; ctx.lineWidth=4;
+    ctx.beginPath(); ctx.moveTo(centerX,centerY); ctx.lineTo(centerX+q[0]*scale,centerY-q[1]*scale); ctx.stroke();
+    const ang=Math.atan2(-q[1],q[0]), len=12, da=Math.PI/6;
+    ctx.beginPath();
+    ctx.moveTo(centerX+q[0]*scale,centerY-q[1]*scale);
+    ctx.lineTo(centerX+q[0]*scale-len*Math.cos(ang-da),centerY-q[1]*scale+len*Math.sin(ang-da));
+    ctx.moveTo(centerX+q[0]*scale,centerY-q[1]*scale);
+    ctx.lineTo(centerX+q[0]*scale-len*Math.cos(ang+da),centerY-q[1]*scale+len*Math.sin(ang+da));
+    ctx.stroke();
+    ctx.font='bold 16px Arial'; ctx.fillText(label,centerX+q[0]*scale+15,centerY-q[1]*scale-15);
+  };
+  drawVec(v1,'#e53e3e','v₁'); drawVec(v2,'#38a169','v₂');
+
+  // 信息
+  const q1=mul(currentMatrix,v1), q2=mul(currentMatrix,v2);
+  document.getElementById('info').innerHTML=
+    `<strong>当前向量坐标：</strong><br>
+     v₁' = [${q1[0].toFixed(2)}, ${q1[1].toFixed(2)}]<br>
+     v₂' = [${q2[0].toFixed(2)}, ${q2[1].toFixed(2)}]`;
+}
+
+// ===== 动画 =====
+function animate(){
+  if(!animating) return;
+  progress+=0.02; if(progress>1) progress=1;
+  draw();
+  if(progress<1) requestAnimationFrame(animate);
+  else {          // 动画结束
+    animating=false;
+    document.getElementById('btnA').disabled=false;
+    document.getElementById('btnInv').disabled=false;
+    document.getElementById('status').textContent='变换完成（可点击另一按钮或重置）';
+  }
+}
+
+// ===== 按钮逻辑 =====
+function btnA(){
+  if(animating) return;
+  readInputs();
+  const d=det(userMatrix); if(Math.abs(d)<1e-10){alert('矩阵不可逆！'); return;}
+  startAnimMatrix = [[1,0],[0,1]];   // 从单位矩阵开始
+  targetMatrix = userMatrix;
+  progress=0; animating=true;
+  document.getElementById('btnA').disabled=true;
+  document.getElementById('btnInv').disabled=true;
+  document.getElementById('status').textContent='正在执行 A 矩阵变换...';
+  animate();
+}
+function btnInv(){
+  if(animating) return;
+  readInputs();
+  const d=det(userMatrix); if(Math.abs(d)<1e-10){alert('矩阵不可逆！'); return;}
+  const invMat=inv(userMatrix); if(!invMat)return;
+  startAnimMatrix = currentMatrix;   // 从当前矩阵（A 变换后）开始
+  targetMatrix = [[1,0],[0,1]];      // 回到单位矩阵（原始状态）
+  progress=0; animating=true;
+  document.getElementById('btnA').disabled=true;
+  document.getElementById('btnInv').disabled=true;
+  document.getElementById('status').textContent='正在执行逆矩阵变换...';
+  animate();
+}
+function reset(){
+  if(animating){cancelAnimationFrame(animationId); animating=false;}
+  progress=0; currentMatrix=[[1,0],[0,1]]; draw();
+  document.getElementById('status').textContent='准备就绪';
+  document.getElementById('btnA').disabled=false;
+  document.getElementById('btnInv').disabled=false;
+}
+
+// ===== 事件绑定 =====
+document.getElementById('btnA').addEventListener('click',btnA);
+document.getElementById('btnInv').addEventListener('click',btnInv);
+document.getElementById('resetBtn').addEventListener('click',reset);
+['v1x','v1y','v2x','v2y','a11','a12','a21','a22'].forEach(id=>
+  document.getElementById(id).addEventListener('input',()=>{if(!animating){readInputs(); draw();}})
+);
+
+draw();   // 初始绘制
+</script>
+</body>
+</html>

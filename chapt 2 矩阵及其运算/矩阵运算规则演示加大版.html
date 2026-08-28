@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>矩阵运算规则动画演示</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', 'Arial', sans-serif;
+            background: #f8f9fa;
+            min-height: 100vh;
+            padding: 20px;
+            color: #212529;
+            font-weight: 600;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            border: 2px solid #dee2e6;
+        }
+
+        h1 {
+            text-align: center;
+            color: #0d47a1;
+            margin-bottom: 30px;
+            font-size: 3.5em;
+            font-weight: 800;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            letter-spacing: 1px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 18px 32px;
+            border: none;
+            border-radius: 10px;
+            font-size: 22px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: white;
+            position: relative;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            min-width: 220px;
+            text-align: center;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+
+        .btn.active {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(0,0,0,0.4);
+        }
+
+        .btn-addition { background: #d32f2f; }
+        .btn-scalar { background: #1976d2; }
+        .btn-multiplication { background: #388e3c; }
+
+        .btn::after {
+            content: attr(data-shortcut);
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: #ff9800;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 14px;
+            font-weight: 800;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .demo-area {
+            min-height: 600px;
+            background: #f1f3f5;
+            border-radius: 10px;
+            padding: 30px;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid #ced4da;
+        }
+
+        .matrix-container {
+            display: none;
+            justify-content: space-around;
+            align-items: center;
+            min-height: 400px;
+            flex-wrap: wrap;
+            gap: 30px;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+        }
+
+        .matrix-container.show {
+            display: flex;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .matrix {
+            display: grid;
+            gap: 12px;
+            padding: 25px;
+            background: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border: 2px solid #adb5bd;
+        }
+
+        .matrix-3x4 {
+            grid-template-columns: repeat(4, 1fr);
+        }
+
+        .matrix-element {
+            width: 90px;
+            height: 90px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            font-weight: 800;
+            font-size: 28px;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            transition: all 0.2s ease;
+            cursor: pointer;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .matrix-element:hover {
+            transform: scale(1.15);
+            box-shadow: 0 5px 10px rgba(0,0,0,0.3);
+        }
+
+        .operator {
+            font-size: 72px;
+            font-weight: 900;
+            color: #0d47a1;
+            animation: pulse 2s infinite;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .equals {
+            font-size: 72px;
+            font-weight: 900;
+            color: #0d47a1;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+        }
+
+        .rules {
+            margin-top: 30px;
+            padding: 25px;
+            background: #e3f2fd;
+            border-radius: 10px;
+            border-left: 8px solid #2196f3;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+        }
+
+        .rules h3 {
+            color: #0d47a1;
+            margin-bottom: 20px;
+            font-size: 2em;
+            font-weight: 800;
+        }
+
+        .rules p {
+            color: #1565c0;
+            line-height: 1.8;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .scalar-input {
+            display: none;
+            margin: 25px 0;
+            text-align: center;
+        }
+
+        .scalar-input label {
+            font-size: 24px;
+            font-weight: 700;
+            margin-right: 15px;
+            color: #0d47a1;
+        }
+
+        .scalar-input input {
+            padding: 15px;
+            font-size: 24px;
+            border: 3px solid #2196f3;
+            border-radius: 8px;
+            width: 120px;
+            text-align: center;
+            background: white;
+            color: #212529;
+            font-weight: 700;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .scalar-input input:focus {
+            outline: none;
+            border-color: #0d47a1;
+            box-shadow: 0 0 10px rgba(33,150,243,0.5);
+        }
+
+        .demo-button {
+            display: block;
+            margin: 30px auto;
+            padding: 20px 40px;
+            background: #ff6f00;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 26px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            min-width: 300px;
+        }
+
+        .demo-button:hover {
+            transform: translateY(-3px);
+            background: #e65100;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+        }
+
+        .demo-button:disabled {
+            background: #bdbdbd;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .demo-button::after {
+            content: "快捷键: 4";
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: #ff9800;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 14px;
+            font-weight: 800;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(-20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .matrix-label {
+            text-align: center;
+            font-weight: 800;
+            margin-bottom: 15px;
+            font-size: 26px;
+            color: #0d47a1;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .welcome {
+            text-align: center;
+            color: #0d47a1;
+            margin-top: 120px;
+            animation: fadeIn 2s ease-in-out;
+        }
+
+        .welcome p {
+            margin-top: 25px;
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .welcome p:first-child {
+            font-size: 36px;
+            font-weight: 800;
+        }
+
+        /* 结果矩阵放大效果 */
+        #matrixResult .matrix-element,
+        #matrixScalarResult .matrix-element,
+        #matrixMulResult .matrix-element {
+            width: 95px;
+            height: 95px;
+            font-size: 20px;
+            line-height: 1.2;
+            white-space: normal;
+            word-break: break-all;
+            padding: 5px;
+        }
+
+        /* 快捷键提示 */
+        .shortcut-hint {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #0d47a1;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 700;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 1000;
+            line-height: 1.6;
+        }
+
+        /* 响应式调整 */
+        @media (max-width: 1200px) {
+            .matrix-element {
+                width: 75px;
+                height: 75px;
+                font-size: 24px;
+            }
+            h1 { font-size: 3em; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>矩阵运算规则动画演示</h1>
+        
+        <div class="controls">
+            <button class="btn btn-addition" onclick="showAddition()" data-shortcut="1">
+                矩阵加法演示
+            </button>
+            <button class="btn btn-scalar" onclick="showScalar()" data-shortcut="2">
+                矩阵数乘演示
+            </button>
+            <button class="btn btn-multiplication" onclick="showMultiplication()" data-shortcut="3">
+                矩阵乘法演示
+            </button>
+        </div>
+
+        <div class="demo-area">
+            <div class="welcome" id="welcome">
+                <p>👋 欢迎使用矩阵运算演示系统</p>
+                <p>请选择上方的运算类型开始演示</p>
+                <p style="margin-top: 30px; font-size: 22px; color: #d32f2f;">
+                    💡 快捷键提示：按数字键1、2、3选择演示类型，按4开始演示
+                </p>
+            </div>
+
+            <!-- 矩阵加法演示区域 -->
+            <div class="matrix-container" id="addition-demo">
+                <div>
+                    <div class="matrix-label">矩阵 A</div>
+                    <div class="matrix matrix-3x4" id="matrixA"></div>
+                </div>
+                <div class="operator">+</div>
+                <div>
+                    <div class="matrix-label">矩阵 B</div>
+                    <div class="matrix matrix-3x4" id="matrixB"></div>
+                </div>
+                <div class="equals">=</div>
+                <div>
+                    <div class="matrix-label">结果矩阵</div>
+                    <div class="matrix matrix-3x4" id="matrixResult"></div>
+                </div>
+            </div>
+
+            <!-- 矩阵数乘演示区域 -->
+            <div class="matrix-container" id="scalar-demo">
+                <div class="scalar-input" id="scalar-input">
+                    <label for="scalar">请输入标量值：</label>
+                    <input type="number" id="scalar" value="3" onchange="updateScalar()" min="1" max="99">
+                </div>
+                <div style="display: flex; align-items: center; gap: 30px;">
+                    <div class="operator" id="scalar-operator">×</div>
+                    <div>
+                        <div class="matrix-label">矩阵 A</div>
+                        <div class="matrix matrix-3x4" id="matrixScalar"></div>
+                    </div>
+                    <div class="equals">=</div>
+                    <div>
+                        <div class="matrix-label">结果矩阵</div>
+                        <div class="matrix matrix-3x4" id="matrixScalarResult"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 矩阵乘法演示区域 -->
+            <div class="matrix-container" id="multiplication-demo">
+                <div>
+                    <div class="matrix-label">矩阵 A (3×4)</div>
+                    <div class="matrix matrix-3x4" id="matrixMulA"></div>
+                </div>
+                <div class="operator">×</div>
+                <div>
+                    <div class="matrix-label">矩阵 B (4×3)</div>
+                    <div class="matrix" id="matrixMulB" style="grid-template-columns: repeat(3, 1fr);"></div>
+                </div>
+                <div class="equals">=</div>
+                <div>
+                    <div class="matrix-label">结果矩阵 (3×3)</div>
+                    <div class="matrix" id="matrixMulResult" style="grid-template-columns: repeat(3, 1fr);"></div>
+                </div>
+            </div>
+
+            <button class="demo-button" id="demo-btn" onclick="startDemo()">
+                🚀 开始运算演示
+            </button>
+
+            <div class="rules" id="rules" style="display: none;">
+                <h3>运算规则</h3>
+                <p id="rules-content"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 快捷键提示 -->
+    <div class="shortcut-hint">
+        快捷键：<br>
+        1: 加法演示<br>
+        2: 数乘演示<br>
+        3: 乘法演示<br>
+        4: 开始演示
+    </div>
+
+    <script>
+        let currentDemo = '';
+        let isAnimating = false;
+
+        // 生成随机颜色 - 使用高对比度配色
+        function getRandomColor() {
+            const colors = [
+                'linear-gradient(135deg, #d32f2f, #b71c1c)',
+                'linear-gradient(135deg, #1976d2, #0d47a1)',
+                'linear-gradient(135deg, #388e3c, #1b5e20)',
+                'linear-gradient(135deg, #f57c00, #e65100)',
+                'linear-gradient(135deg, #7b1fa2, #4a148c)',
+                'linear-gradient(135deg, #5d4037, #3e2723)',
+                'linear-gradient(135deg, #455a64, #263238)',
+                'linear-gradient(135deg, #009688, #00695c)'
+            ];
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+
+        // 创建矩阵元素
+        function createMatrixElement(value, color) {
+            const element = document.createElement('div');
+            element.className = 'matrix-element';
+            element.textContent = value;
+            element.style.background = color;
+            return element;
+        }
+
+        // 生成随机矩阵元素值
+        function generateRandomValue() {
+            return Math.floor(Math.random() * 9) + 1;
+        }
+
+        // 创建矩阵
+        function createMatrix(containerId, rows, cols, prefix = 'a') {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            
+            for (let i = 0; i < rows; i++) {
+                for (let j = 0; j < cols; j++) {
+                    const value = generateRandomValue();
+                    const color = getRandomColor();
+                    const element = createMatrixElement(
+                        `${prefix}${i+1}${j+1}`, 
+                        color
+                    );
+                    element.dataset.value = value;
+                    element.dataset.row = i;
+                    element.dataset.col = j;
+                    container.appendChild(element);
+                }
+            }
+        }
+
+        // 显示加法演示
+        function showAddition() {
+            hideAllDemos();
+            currentDemo = 'addition';
+            document.getElementById('welcome').style.display = 'none';
+            document.getElementById('addition-demo').classList.add('show');
+            document.getElementById('demo-btn').style.display = 'block';
+            document.getElementById('scalar-input').style.display = 'none';
+            resetDemoButton();
+            
+            createMatrix('matrixA', 3, 4, 'a');
+            createMatrix('matrixB', 3, 4, 'b');
+            updateActiveButton(0);
+        }
+
+        // 显示数乘演示
+        function showScalar() {
+            hideAllDemos();
+            currentDemo = 'scalar';
+            document.getElementById('welcome').style.display = 'none';
+            document.getElementById('scalar-demo').classList.add('show');
+            document.getElementById('demo-btn').style.display = 'block';
+            document.getElementById('scalar-input').style.display = 'block';
+            resetDemoButton();
+            
+            createMatrix('matrixScalar', 3, 4, 'a');
+            updateActiveButton(1);
+        }
+
+        // 显示乘法演示
+        function showMultiplication() {
+            hideAllDemos();
+            currentDemo = 'multiplication';
+            document.getElementById('welcome').style.display = 'none';
+            document.getElementById('multiplication-demo').classList.add('show');
+            document.getElementById('demo-btn').style.display = 'block';
+            document.getElementById('scalar-input').style.display = 'none';
+            resetDemoButton();
+            
+            createMatrix('matrixMulA', 3, 4, 'a');
+            createMatrix('matrixMulB', 4, 3, 'b');
+            updateActiveButton(2);
+        }
+
+        // 更新标量值
+        function updateScalar() {
+            if (currentDemo === 'scalar' && !isAnimating) {
+                // 实时预览功能可在此添加
+            }
+        }
+
+        // 隐藏所有演示
+        function hideAllDemos() {
+            document.getElementById('addition-demo').classList.remove('show');
+            document.getElementById('scalar-demo').classList.remove('show');
+            document.getElementById('multiplication-demo').classList.remove('show');
+            document.getElementById('rules').style.display = 'none';
+            document.getElementById('demo-btn').style.display = 'none';
+            document.getElementById('welcome').style.display = 'block';
+        }
+
+        // 更新活动按钮状态
+        function updateActiveButton(index) {
+            const buttons = document.querySelectorAll('.btn');
+            buttons.forEach((btn, i) => {
+                btn.classList.toggle('active', i === index);
+            });
+        }
+
+        // 重置演示按钮
+        function resetDemoButton() {
+            const btn = document.getElementById('demo-btn');
+            btn.disabled = false;
+            btn.textContent = '🚀 开始运算演示';
+            isAnimating = false;
+        }
+
+        // 开始演示
+        function startDemo() {
+            if (isAnimating) return;
+            
+            isAnimating = true;
+            const btn = document.getElementById('demo-btn');
+            btn.disabled = true;
+            btn.textContent = '演示中...';
+
+            switch(currentDemo) {
+                case 'addition':
+                    performAddition();
+                    break;
+                case 'scalar':
+                    performScalarMultiplication();
+                    break;
+                case 'multiplication':
+                    performMultiplication();
+                    break;
+            }
+        }
+
+        // 矩阵加法
+        function performAddition() {
+            const matrixA = document.querySelectorAll('#matrixA .matrix-element');
+            const matrixB = document.querySelectorAll('#matrixB .matrix-element');
+            const resultContainer = document.getElementById('matrixResult');
+            
+            resultContainer.innerHTML = '';
+            
+            matrixA.forEach((element, index) => {
+                setTimeout(() => {
+                    const valueA = element.textContent;
+                    const valueB = matrixB[index].textContent;
+                    
+                    const resultElement = createMatrixElement(
+                        `${valueA}+${valueB}`,
+                        'linear-gradient(135deg, #388e3c, #1b5e20)'
+                    );
+                    resultContainer.appendChild(resultElement);
+                    
+                    element.style.transform = 'scale(1.2)';
+                    matrixB[index].style.transform = 'scale(1.2)';
+                    
+                    setTimeout(() => {
+                        element.style.transform = 'scale(1)';
+                        matrixB[index].style.transform = 'scale(1)';
+                    }, 300);
+                    
+                    if (index === matrixA.length - 1) {
+                        setTimeout(() => {
+                            showRules('addition');
+                            resetDemoButton();
+                        }, 500);
+                    }
+                }, index * 200);
+            });
+        }
+
+        // 矩阵数乘
+        function performScalarMultiplication() {
+            const k = parseInt(document.getElementById('scalar').value) || 3;
+            document.getElementById('scalar-operator').textContent = `× ${k}`;
+            
+            const matrixElements = document.querySelectorAll('#matrixScalar .matrix-element');
+            const resultContainer = document.getElementById('matrixScalarResult');
+            
+            resultContainer.innerHTML = '';
+            
+            matrixElements.forEach((element, index) => {
+                setTimeout(() => {
+                    const elementName = element.textContent;
+                    
+                    const resultElement = createMatrixElement(
+                        `${k}${elementName}`,
+                        'linear-gradient(135deg, #f57c00, #e65100)'
+                    );
+                    resultContainer.appendChild(resultElement);
+                    
+                    element.style.transform = 'scale(1.2)';
+                    element.style.boxShadow = '0 0 15px rgba(0,0,0,0.4)';
+                    
+                    setTimeout(() => {
+                        element.style.transform = 'scale(1)';
+                        element.style.boxShadow = '0 3px 6px rgba(0,0,0,0.2)';
+                    }, 300);
+                    
+                    if (index === matrixElements.length - 1) {
+                        setTimeout(() => {
+                            showRules('scalar');
+                            resetDemoButton();
+                        }, 500);
+                    }
+                }, index * 150);
+            });
+        }
+
+        // 矩阵乘法
+        function performMultiplication() {
+            const matrixA = [];
+            const matrixB = [];
+            
+            const elementsA = document.querySelectorAll('#matrixMulA .matrix-element');
+            for (let i = 0; i < 3; i++) {
+                matrixA[i] = [];
+                for (let j = 0; j < 4; j++) {
+                    matrixA[i][j] = elementsA[i * 4 + j].textContent;
+                }
+            }
+            
+            const elementsB = document.querySelectorAll('#matrixMulB .matrix-element');
+            for (let i = 0; i < 4; i++) {
+                matrixB[i] = [];
+                for (let j = 0; j < 3; j++) {
+                    matrixB[i][j] = elementsB[i * 3 + j].textContent;
+                }
+            }
+            
+            const resultContainer = document.getElementById('matrixMulResult');
+            resultContainer.innerHTML = '';
+            
+            let elementIndex = 0;
+            
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    setTimeout(() => {
+                        let calculation = '';
+                        
+                        for (let k = 0; k < 4; k++) {
+                            calculation += (k === 0 ? '' : ' + ') + `${matrixA[i][k]}×${matrixB[k][j]}`;
+                        }
+                        
+                        const resultElement = createMatrixElement(
+                            calculation,
+                            'linear-gradient(135deg, #7b1fa2, #4a148c)'
+                        );
+                        resultElement.style.fontSize = '14px';
+                        resultContainer.appendChild(resultElement);
+                        
+                        for (let k = 0; k < 4; k++) {
+                            elementsA[i * 4 + k].style.transform = 'scale(1.1)';
+                            elementsB[k * 3 + j].style.transform = 'scale(1.1)';
+                        }
+                        
+                        setTimeout(() => {
+                            for (let k = 0; k < 4; k++) {
+                                elementsA[i * 4 + k].style.transform = 'scale(1)';
+                                elementsB[k * 3 + j].style.transform = 'scale(1)';
+                            }
+                        }, 300);
+                        
+                        if (elementIndex === 8) {
+                            setTimeout(() => {
+                                showRules('multiplication');
+                                resetDemoButton();
+                            }, 500);
+                        }
+                        elementIndex++;
+                    }, (i * 3 + j) * 400);
+                }
+            }
+        }
+
+        // 显示规则
+        function showRules(type) {
+            const rulesDiv = document.getElementById('rules');
+            const rulesContent = document.getElementById('rules-content');
+            
+            let ruleText = '';
+            
+            switch(type) {
+                case 'addition':
+                    ruleText = '矩阵加法规则：两个矩阵相加，必须是同型矩阵（行数和列数相同）。对应位置的元素相加，即 C[i][j] = A[i][j] + B[i][j]。例如：a₁₁ + b₁₁ = c₁₁。矩阵加法满足交换律和结合律。';
+                    break;
+                case 'scalar':
+                    ruleText = '矩阵数乘规则：一个标量与矩阵相乘，是将该标量与矩阵的每一个元素相乘，即 B[i][j] = k × A[i][j]，其中 k 是标量。数乘运算满足分配律和结合律。';
+                    break;
+                case 'multiplication':
+                    ruleText = '矩阵乘法规则：矩阵A（m×n）与矩阵B（n×p）相乘，得到矩阵C（m×p）。C的第i行第j列元素等于A的第i行与B的第j列对应元素乘积之和，即 C[i][j] = Σ(A[i][k] × B[k][j])。矩阵乘法满足结合律和分配律，但不满足交换律。';
+                    break;
+            }
+            
+            rulesContent.textContent = ruleText;
+            rulesDiv.style.display = 'block';
+        }
+
+        // 键盘快捷键处理
+        document.addEventListener('keydown', function(event) {
+            // 只响应数字键1-4，不区分小键盘
+            const key = event.key;
+            
+            // 防止在输入框中触发快捷键
+            if (event.target.tagName === 'INPUT') {
+                return;
+            }
+            
+            switch(key) {
+                case '1':
+                    event.preventDefault();
+                    showAddition();
+                    break;
+                case '2':
+                    event.preventDefault();
+                    showScalar();
+                    break;
+                case '3':
+                    event.preventDefault();
+                    showMultiplication();
+                    break;
+                case '4':
+                    event.preventDefault();
+                    if (document.getElementById('demo-btn').style.display !== 'none' && 
+                        !document.getElementById('demo-btn').disabled) {
+                        startDemo();
+                    }
+                    break;
+            }
+        });
+
+        // 页面加载完成后的初始化
+        window.onload = function() {
+            console.log('矩阵运算演示系统已加载完成');
+            console.log('快捷键已启用：1-加法 2-数乘 3-乘法 4-开始演示');
+        };
+    </script>
+</body>
+</html>

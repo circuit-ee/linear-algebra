@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>矩阵分块运算动画演示</title>
+  <style>
+    body{
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #e0f7fa 0%, #bbdefb 100%);
+      margin: 0; padding: 20px;
+      font-weight: 700; /* 整体加粗 */
+    }
+    .container{
+      max-width: 1200px; margin: 0 auto;
+      background: rgba(255,255,255,0.9); padding: 30px;
+      border-radius: 16px; box-shadow: 0 8px 32px rgba(31,38,135,0.2);
+    }
+    h1{
+      text-align: center; color: #1565c0;
+      font-size: 3em; /* 标题加大 */
+      font-weight: 900; /* 标题加粗 */
+      margin: 20px 0;
+    }
+    .controls{text-align: center; margin: 30px 0;}
+    button{
+      margin: 10px; padding: 15px 30px; /* 按钮增大 */
+      font-size: 22px; /* 按钮文字加大 */
+      font-weight: 800; /* 按钮文字加粗 */
+      border: none; border-radius: 8px; cursor: pointer; transition: 0.3s;
+    }
+    .btn-add{background: #4caf50; color: white;}
+    .btn-multiply{background: #2196f3; color: white;}
+    .btn-scalar{background: #ff9800; color: white;}
+    .btn-transpose{background: #9c27b0; color: white;}
+    .matrix-wrapper{display: inline-block; margin: 30px; vertical-align: top;}
+    .matrix{
+      border-collapse: separate; border-spacing: 6px; /* 增大间距 */
+    }
+    .matrix-cell{
+      width: 85px; height: 85px; /* 单元格增大 */
+      text-align: center; vertical-align: middle;
+      font-weight: 900; /* 文字加粗 */
+      font-size: 28px; /* 文字加大 */
+      border-radius: 8px; transition: all 0.3s ease;
+    }
+    /* 四大块颜色 */
+    .block1-1{background: #ffccbc;}
+    .block1-2{background: #ffab91;}
+    .block2-1{background: #b2dfdb;}
+    .block2-2{background: #80cbc4;}
+    .block3-1{background: #c5e1a5;}
+    .block3-2{background: #aed581;}
+    .block4-1{background: #fff59d;}
+    .block4-2{background: #fff176;}
+    /* 动画 */
+    .highlight{animation: pulse 1s infinite; transform: scale(1.1); box-shadow: 0 0 20px rgba(33,150,243,0.8);}
+    @keyframes pulse{
+      0%{transform: scale(1.1); box-shadow: 0 0 10px rgba(33,150,243,0.6);}
+      50%{transform: scale(1.2); box-shadow: 0 0 20px rgba(33,150,243,0.9);}
+      100%{transform: scale(1.1); box-shadow: 0 0 10px rgba(33,150,243,0.6);}
+    }
+    .step-box{
+      background: #e3f2fd; padding: 25px; /* 增大内边距 */
+      margin: 30px 0; border-radius: 10px; display: none;
+    }
+    #stepTitle{
+      font-size: 1.8em; /* 步骤标题加大 */
+      font-weight: 900; /* 步骤标题加粗 */
+      margin-bottom: 15px;
+      color: #1565c0;
+    }
+    #stepContent{
+      font-size: 22px; /* 步骤内容加大 */
+      font-weight: 700; /* 步骤内容加粗 */
+      line-height: 1.6;
+    }
+    .matrix-wrapper h3,
+    .matrix-wrapper h4{
+      font-size: 1.5em; /* 矩阵标签加大 */
+      font-weight: 800; /* 矩阵标签加粗 */
+      margin-bottom: 10px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>矩阵分块运算动画演示系统</h1>
+
+    <div class="controls">
+      <button class="btn-add" onclick="performAddition()">分块加法</button>
+      <button class="btn-multiply" onclick="performMultiplication()">分块乘法</button>
+      <button class="btn-scalar" onclick="performScalar()">分块数乘</button>
+      <button class="btn-transpose" onclick="performTranspose()">分块转置</button>
+    </div>
+
+    <div style="text-align: center;">
+      <div class="matrix-wrapper"><h3>矩阵 A</h3><div id="matrixA"></div></div>
+      <div class="matrix-wrapper"><h3>矩阵 B</h3><div id="matrixB"></div></div>
+    </div>
+
+    <div id="stepBox" class="step-box">
+      <h3 id="stepTitle">运算步骤</h3>
+      <div id="stepContent"></div>
+    </div>
+
+    <div id="resultArea" class="matrix-wrapper" style="display: none;">
+      <h3>运算结果</h3>
+      <div id="operationResult"></div>
+    </div>
+  </div>
+
+  <script>
+    const matrixA = [
+      [1, 2, 3],
+      [4, 5, 6],
+      [7, 8, 9]
+    ];
+    const matrixB = [
+      [9, 8, 7],
+      [6, 5, 4],
+      [3, 2, 1]
+    ];
+    const blockConfig = {rowSplits: [2], colSplits: [2]};
+
+    function getBlockClass(row, col){
+      let rb = 0, cb = 0;
+      if (row < blockConfig.rowSplits[0]) rb = 1; else rb = 2;
+      if (col < blockConfig.colSplits[0]) cb = 1; else cb = 2;
+      const bn = (rb - 1) * 2 + cb;
+      const shade = (row + col) % 2 === 0 ? '-1' : '-2';
+      return `block${bn}${shade}`;
+    }
+
+    function displayMatrix(matrix, containerId, title){
+      const container = document.getElementById(containerId);
+      let html = `<div class="matrix-wrapper"><h4>${title}</h4><table class="matrix">`;
+      for (let i = 0; i < matrix.length; i++){
+        html += '<tr>';
+        for (let j = 0; j < matrix[i].length; j++){
+          const bc = getBlockClass(i, j);
+          html += `<td class="matrix-cell ${bc}" id="${containerId}_cell_${i}_${j}">${matrix[i][j]}</td>`;
+        }
+        html += '</tr>';
+      }
+      html += '</table></div>';
+      container.innerHTML = html;
+    }
+
+    function highlightCell(cid, r, c, dur=1000){
+      const cell = document.getElementById(`${cid}_cell_${r}_${c}`);
+      if (!cell) return;
+      cell.classList.add('highlight');
+      setTimeout(() => cell.classList.remove('highlight'), dur);
+    }
+
+    function highlightBlock(cid, blk, dur=1000){
+      const cells = document.querySelectorAll(`#${cid} .matrix-cell`);
+      cells.forEach(cl => {
+        const r = parseInt(cl.id.split('_')[2]), c = parseInt(cl.id.split('_')[3]);
+        if (isInBlock(r, c, blk)) {
+          cl.classList.add('highlight');
+          setTimeout(() => cl.classList.remove('highlight'), dur);
+        }
+      });
+    }
+
+    function isInBlock(r, c, blk){
+      const sr = blockConfig.rowSplits[0], sc = blockConfig.colSplits[0];
+      switch (blk){
+        case 'A11': return r < sr && c < sc;
+        case 'A12': return r < sr && c >= sc;
+        case 'A21': return r >= sr && c < sc;
+        case 'A22': return r >= sr && c >= sc;
+      }
+      return false;
+    }
+
+    function showStep(title, content){
+      const box = document.getElementById('stepBox');
+      box.style.display = 'block';
+      document.getElementById('stepTitle').textContent = title;
+      document.getElementById('stepContent').innerHTML = content;
+    }
+
+    function sleep(ms){return new Promise(resolve => setTimeout(resolve, ms));}
+
+    async function performAddition(){
+      showStep('分块加法', '对应子块相加：Cᵢⱼ = Aᵢⱼ + Bᵢⱼ');
+      const blocks = ['A11', 'A12', 'A21', 'A22'];
+      for (const b of blocks){highlightBlock('matrixA', b); highlightBlock('matrixB', b); await sleep(1200);}
+      const res = matrixA.map((row, i) => row.map((v, j) => v + matrixB[i][j]));
+      displayMatrix(res, 'operationResult', '加法结果');
+      document.getElementById('resultArea').style.display = 'block';
+      showStep('加法完成', '✅ 所有子块相加完毕！');
+    }
+
+    async function performMultiplication(){
+      showStep('分块乘法', '逐步计算各子块...');
+      const steps = [
+        'C₁₁ = A₁₁×B₁₁ + A₁₂×B₂₁',
+        'C₁₂ = A₁₁×B₁₂ + A₁₂×B₂₂',
+        'C₂₁ = A₂₁×B₁₁ + A₂₂×B₂₁',
+        'C₂₂ = A₂₁×B₁₂ + A₂₂×B₂₂'
+      ];
+      for (const s of steps){showStep('分步计算', s); await sleep(1400);}
+      const res = matrixMultiply(matrixA, matrixB);
+      displayMatrix(res, 'operationResult', '乘法结果');
+      document.getElementById('resultArea').style.display = 'block';
+      showStep('乘法完成', '✅ 所有子块乘法完毕！');
+    }
+
+    function matrixMultiply(A, B){
+      const res = [];
+      for (let i = 0; i < A.length; i++){
+        res[i] = [];
+        for (let j = 0; j < B[0].length; j++){
+          let s = 0;
+          for (let k = 0; k < A[i].length; k++) s += A[i][k] * B[k][j];
+          res[i][j] = s;
+        }
+      }
+      return res;
+    }
+
+    /* ===== 分块数乘 ===== */
+    async function performScalar(){
+      showStep('分块数乘', '每个子块乘以标量 k = 2');
+      const blocks = ['A11', 'A12', 'A21', 'A22'];
+      for (const b of blocks){
+        showStep('数乘子块', `${b}′ = 2 × ${b}`);
+        highlightBlock('matrixA', b);
+        await sleep(1200);
+      }
+      const res = matrixA.map(r => r.map(v => v * 2));
+      displayMatrix(res, 'operationResult', '数乘结果（×2）');
+      document.getElementById('resultArea').style.display = 'block';
+      showStep('数乘完成', '✅ 所有子块数乘完毕！');
+    }
+
+    /* ===== 分块转置 ===== */
+    async function performTranspose(){
+      showStep('分块转置', '子块位置转置 + 内部转置');
+      const blocks = ['A11', 'A12', 'A21', 'A22'];
+      for (const b of blocks){
+        showStep('转置子块', `${b}ᵀ 行列互换`);
+        highlightBlock('matrixA', b);
+        await sleep(1200);
+      }
+      const res = matrixA[0].map((_, i) => matrixA.map(r => r[i]));
+      displayMatrix(res, 'operationResult', '转置结果');
+      document.getElementById('resultArea').style.display = 'block';
+      showStep('转置完成', '✅ 所有子块转置完毕！');
+    }
+
+    // 初始渲染
+    displayMatrix(matrixA, 'matrixA', '矩阵A');
+    displayMatrix(matrixB, 'matrixB', '矩阵B');
+  </script>
+</body>
+</html>

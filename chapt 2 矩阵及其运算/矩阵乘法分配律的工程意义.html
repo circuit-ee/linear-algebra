@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<title>矩阵分配律：从几何到工程</title>
+<style>
+    body {
+        background: #ffffff;
+        font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+        text-align: center;
+        padding: 20px;
+        color: #222;
+        line-height: 1.6;
+    }
+    h1 { font-size: 34px; margin-bottom: 6px; }
+    .sub { font-size: 20px; color: #666; margin-bottom: 20px; }
+
+    .view { display: flex; justify-content: center; gap: 80px; flex-wrap: wrap; }
+
+    svg {
+        width: 340px; height: 340px;
+        border: 1.5px solid #ccc;
+        background: #fff;
+    }
+
+    .panel h3 { margin: 10px 0 8px; font-size: 22px; }
+    .panel { max-width: 360px; }
+
+    .ctrl { margin: 25px 0; }
+    input { width: 280px; height: 8px; }
+    .deg { font-size: 20px; font-weight: bold; margin-left: 10px; }
+
+    /* 工程解释区 */
+    .bridge {
+        max-width: 800px;
+        margin: 30px auto 0;
+        background: #f6f8ff;
+        border-radius: 14px;
+        padding: 25px 30px;
+        text-align: left;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }
+    .bridge h2 { font-size: 26px; margin-top: 0; color: #1e40af; }
+    .bridge p { font-size: 20px; margin: 12px 0; }
+
+    .eq {
+        font-size: 26px;
+        text-align: center;
+        padding: 15px;
+        background: #eef2ff;
+        border-radius: 10px;
+        margin: 20px 0;
+        color: #1e3a8a;
+    }
+
+    .compare {
+        display: flex;
+        gap: 30px;
+        flex-wrap: wrap;
+        margin-top: 20px;
+    }
+    .box {
+        flex: 1; min-width: 300px;
+        background: white;
+        padding: 18px;
+        border-radius: 10px;
+        border-left: 5px solid #3b82f6;
+    }
+    .box.red { border-left-color: #dc2626; }
+    .box h4 { margin: 0 0 10px; font-size: 20px; }
+    .box ul { font-size: 19px; padding-left: 20px; }
+
+    .conclusion {
+        font-size: 22px;
+        font-weight: bold;
+        color: #16a34a;
+        text-align: center;
+        margin-top: 25px;
+        padding: 15px;
+        border: 2px dashed #16a34a;
+        border-radius: 10px;
+    }
+</style>
+</head>
+
+<body>
+
+<h1>向量三角形 → 工程叠加原理</h1>
+<div class="sub">几何里的加法，就是工程里的“分工况计算”</div>
+
+<div class="view">
+    <div class="panel">
+        <h3>变换前</h3>
+        <svg id="L" viewBox="-6 -6 12 12"></svg>
+        <div style="font-size:18px">u（蓝） + v（红） = u+v（绿）</div>
+    </div>
+    <div class="panel">
+        <h3>旋转 θ 角后</h3>
+        <svg id="R" viewBox="-6 -6 12 12"></svg>
+        <div style="font-size:18px">Au + Av = A(u+v)</div>
+    </div>
+</div>
+
+<div class="ctrl">
+    旋转角度
+    <input type="range" id="t" min="0" max="360" value="50">
+    <span class="deg" id="d">50°</span>
+</div>
+
+<!-- 工程意义区 -->
+<div class="bridge">
+
+<h2>🔧 工程上这叫什么？</h2>
+
+<p>把上面的箭头换一个名字：</p>
+<ul style="font-size:20px">
+    <li><b style="color:#2563eb">蓝色 u</b>：桥梁受到的<strong>风荷载</strong>（水平力）</li>
+    <li><b style="color:#dc2626">红色 v</b>：桥梁受到的<strong>自重</strong>（竖向力）</li>
+    <li><b>矩阵 A</b>：桥梁的<strong>刚度/柔度特性</strong>（系统怎么把力变成变形）</li>
+</ul>
+
+<div class="eq">A(风 + 自重) = A·风 + A·自重</div>
+
+<div class="compare">
+    <div class="box">
+        <h4>👉 左边：一起算</h4>
+        <ul>
+            <li>把两种荷载加在一起</li>
+            <li>一次性算出桥梁总变形</li>
+        </ul>
+    </div>
+    <div class="box red">
+        <h4>👉 右边：分开算</h4>
+        <ul>
+            <li>先只算风，得到变形₁</li>
+            <li>再只算自重，得到变形₂</li>
+            <li>两个变形加起来</li>
+        </ul>
+    </div>
+</div>
+
+<p style="font-size:20px; margin-top:18px">
+<b>为什么工程师一定要这样做？</b><br>
+实际工程中，风、地震、温度、设备重量……是不同专业、不同时间算的。如果矩阵乘法不满足分配律，分开算的结果加起来，就和一次性算的不一样，结构设计就失去了确定性。
+</p>
+
+<div class="conclusion">
+✅ 矩阵分配律 = 线性系统“叠加原理”的数学基础
+</div>
+
+</div>
+
+<script>
+// 向量定义
+const u = [3.5, 0];
+const v = [-1, 2.8];
+const w = [u[0]+v[0], u[1]+v[1]];
+
+// 箭头 marker
+function setupSVG(svg) {
+    svg.innerHTML = `
+    <defs>
+        <marker id="b" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="4" markerHeight="4" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="#2563eb"/>
+        </marker>
+        <marker id="r" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="4" markerHeight="4" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="#dc2626"/>
+        </marker>
+        <marker id="g" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="4" markerHeight="4" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="#16a34a"/>
+        </marker>
+    </defs>
+    <line x1="-6" y1="0" x2="6" y2="0" stroke="#ccc" stroke-width="0.05"/>
+    <line x1="0" y1="-6" x2="0" y2="6" stroke="#ccc" stroke-width="0.05"/>
+    `;
+}
+
+// 画线
+function draw(svg, a, b, c) {
+    setupSVG(svg);
+    // 蓝: 0 -> a
+    svg.innerHTML += `<line x1="0" y1="0" x2="${a[0]}" y2="${a[1]}" stroke="#2563eb" stroke-width="0.16" marker-end="url(#b)"/>`;
+    // 红: a -> c
+    svg.innerHTML += `<line x1="${a[0]}" y1="${a[1]}" x2="${c[0]}" y2="${c[1]}" stroke="#dc2626" stroke-width="0.16" marker-end="url(#r)"/>`;
+    // 绿: 0 -> c
+    svg.innerHTML += `<line x1="0" y1="0" x2="${c[0]}" y2="${c[1]}" stroke="#16a34a" stroke-width="0.16" marker-end="url(#g)"/>`;
+}
+
+function rot(p, c, s) {
+    return [p[0]*c - p[1]*s, p[0]*s + p[1]*c];
+}
+
+t.oninput = function() {
+    const rad = t.value * Math.PI/180;
+    const c = Math.cos(rad), s = Math.sin(rad);
+    d.textContent = t.value + '°';
+
+    draw(L, u, v, w);
+
+    const Au = rot(u, c, s);
+    const Aw = rot(w, c, s);
+    draw(R, Au, v, Aw); // 注意：这里 v 也要转，所以实际上是 rot(v)
+    // 修正：画右侧时，v也要旋转
+    R.innerHTML = '';
+    setupSVG(R);
+    const Ar = rot(v, c, s);
+    const Au2 = rot(u, c, s);
+    const Aw2 = rot(w, c, s);
+    R.innerHTML += `<line x1="0" y1="0" x2="${Au2[0]}" y2="${Au2[1]}" stroke="#2563eb" stroke-width="0.16" marker-end="url(#b)"/>`;
+    R.innerHTML += `<line x1="${Au2[0]}" y1="${Au2[1]}" x2="${Aw2[0]}" y2="${Aw2[1]}" stroke="#dc2626" stroke-width="0.16" marker-end="url(#r)"/>`;
+    R.innerHTML += `<line x1="0" y1="0" x2="${Aw2[0]}" y2="${Aw2[1]}" stroke="#16a34a" stroke-width="0.16" marker-end="url(#g)"/>`;
+};
+
+t.oninput();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<title>线性系统的描述矩阵：元素可以是常数 / 参数表达式 / 函数</title>
+<style>
+    * { box-sizing: border-box; }
+    body {
+        background: #f4f6f9;
+        font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+        color: #1a1a2e;
+        margin: 0;
+        padding: 24px 16px 60px;
+        text-align: center;
+    }
+    h1 { font-size: 34px; margin: 0 0 8px; line-height: 1.3; }
+    .lead { font-size: 18px; color: #555; max-width: 820px; margin: 0 auto 22px; line-height: 1.7; }
+
+    .tabs { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin-bottom: 22px; }
+    .tabs button {
+        font-size: 17px; padding: 10px 20px; border: none; border-radius: 10px;
+        background: #e5e7eb; color: #333; cursor: pointer; transition: .2s;
+    }
+    .tabs button:hover { background: #d1d5db; }
+    .tabs button.active { background: #2563eb; color: #fff; }
+
+    .card {
+        background: #fff; border-radius: 16px; padding: 26px 28px;
+        max-width: 1000px; margin: 0 auto 22px;
+        box-shadow: 0 6px 20px rgba(0,0,0,.08); text-align: left;
+    }
+    .card h2 { font-size: 24px; margin: 0 0 6px; color: #1e3a8a; }
+    .card .sysdesc { font-size: 17px; color: #555; margin-bottom: 18px; line-height: 1.7; }
+
+    /* 矩阵行布局 */
+    .eqrow { display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap; }
+
+    .mat {
+        font-family: "Courier New", monospace; font-size: 21px;
+        background: #f8fafc; border: 3px solid #222; border-radius: 10px;
+        padding: 14px 18px; line-height: 2.1;
+    }
+    .mat .r { display: flex; gap: 10px; justify-content: center; }
+    .mat span { min-width: 150px; text-align: center; display: inline-block; }
+    .mat.tall span { min-width: 170px; }
+
+    .const { color: #2563eb; }
+    .param { color: #7c3aed; font-weight: bold; }
+    .func  { color: #d97706; font-weight: bold; }
+
+    .op { font-size: 34px; font-weight: bold; }
+
+    .label { text-align: center; font-size: 15px; color: #888; margin-top: 6px; }
+
+    /* 参数控制 */
+    .ctrlbar {
+        display: flex; flex-wrap: wrap; gap: 24px; align-items: center;
+        justify-content: center; margin: 20px 0 8px;
+    }
+    .ctrlbar label { font-size: 18px; }
+    input[type=range] { width: 200px; height: 8px; vertical-align: middle; }
+    .vtag { font-size: 20px; font-weight: bold; color: #16a34a; min-width: 90px; display: inline-block; }
+
+    /* 计算明细 */
+    .detail {
+        background: #f0f9ff; border-radius: 12px; padding: 18px 20px;
+        margin-top: 18px; font-size: 18px; line-height: 1.9;
+    }
+    .detail h3 { margin: 0 0 10px; font-size: 20px; color: #0369a1; }
+    .step { background: #fff; border-radius: 8px; padding: 10px 14px; margin: 8px 0; }
+    .step b { color: #dc2626; }
+
+    .foot {
+        max-width: 1000px; margin: 0 auto; background: #fffbeb;
+        border-left: 6px solid #f59e0b; border-radius: 12px;
+        padding: 22px 26px; font-size: 19px; line-height: 1.85; text-align: left;
+    }
+    .foot h3 { margin-top: 0; font-size: 22px; color: #b45309; }
+    .legend { font-size: 17px; margin-top: 8px; }
+    .legend i { display: inline-block; width: 14px; height: 14px; vertical-align: -2px; margin-right: 4px; border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<h1>线性系统的描述矩阵</h1>
+<div class="lead">
+在线性代数课上，矩阵元素大多是具体的常数。但在真实工程中，描述一个线性系统的矩阵，<br>
+其元素可以是<b>常数</b>、<b>含设计参数 k 的表达式</b>，也可以是<b>含频率 ω / 时间 t 的函数</b>。<br>
+<b>无论元素是哪种形式，矩阵乘法的计算规则（行×列逐项相乘再求和）始终不变。</b>
+</div>
+
+<div class="tabs" id="tabs">
+    <button data-scene="rc" class="active">① RC 电路（常数矩阵）</button>
+    <button data-scene="mass">② 弹簧振子（含参数 k）</button>
+    <button data-scene="ac">③ 交流导纳（含频率 ω）</button>
+    <button data-scene="robot">④ 机械臂惯量（含位形 θ）</button>
+</div>
+
+<!-- 主卡片 -->
+<div class="card" id="card">
+    <h2 id="title"></h2>
+    <div class="sysdesc" id="sysdesc"></div>
+
+    <div class="eqrow">
+        <div>
+            <div class="mat tall" id="matA"></div>
+            <div class="label">系统矩阵 A（描述系统）</div>
+        </div>
+        <div class="op">×</div>
+        <div>
+            <div class="mat" id="matX"></div>
+            <div class="label" id="labelX">状态 x</div>
+        </div>
+        <div class="op">=</div>
+        <div>
+            <div class="mat" id="matB"></div>
+            <div class="label" id="labelB">输出 b = A·x</div>
+        </div>
+    </div>
+
+    <div class="ctrlbar" id="ctrlbar"></div>
+
+    <div class="detail" id="detail"></div>
+</div>
+
+<div class="foot">
+    <h3>为什么“元素含参数 / 含函数”依然是矩阵？</h3>
+    矩阵的本质是<b>线性映射规则</b>：输出向量的每个分量，都是输入分量的<b>线性组合</b>。<br>
+    线性代数只要求“组合系数是数”，并不要求这些数是写死的常量——<br>
+    它们可以是物理参数 <b>k</b>（刚度、质量），也可以是工况变量 <b>ω、θ、t</b> 的函数。<br><br>
+    计算时，先把当前参数 / 工况代入，得到一组具体的数，再按<b>行×列求和</b>的同一套规则做乘法即可。<br>
+    因此：<b>常数矩阵、参数矩阵、函数矩阵，共享完全相同的矩阵运算体系（加法、乘法、分配律、结合律）。</b><br><br>
+    <div class="legend">
+        <div><i style="background:#2563eb"></i>蓝色 = 常数元素（不随工况变）</div>
+        <div><i style="background:#7c3aed"></i>紫色 = 含设计参数 k 的表达式</div>
+        <div><i style="background:#d97706"></i>橙色 = 含频率 ω / 位形 θ / 时间 t 的函数</div>
+    </div>
+</div>
+
+<script>
+/* ============ 四个系统的数据与渲染 ============ */
+
+// 工具：渲染 2x2 矩阵 A，元素带类型样式
+function renderMat2x2(host, a00,a01,a10,a11){
+    host.innerHTML = `
+      <div class="r">[ <span class="${a00.cls}">${a00.txt}</span>  <span class="${a01.cls}">${a01.txt}</span> ]</div>
+      <div class="r">[ <span class="${a10.cls}">${a10.txt}</span>  <span class="${a11.cls}">${a11.txt}</span> ]</div>`;
+}
+function renderVec(host, v){
+    host.innerHTML = v.map(x=>`<div class="r">[ ${x} ]</div>`).join('');
+}
+
+/* ---- 场景定义 ---- */
+const Scenes = {
+    /* ① RC 电路：dx/dt = A x，A 为常数矩阵 */
+    rc: {
+        title: "① RC 串联电路 —— 常数矩阵（LTI 定常系统）",
+        desc: "一阶 RC 电路：τ·dx/dt + x = u，写成状态方程 dx/dt = -(1/RC)·x + (1/RC)·u。<br>这里系统矩阵只有一个元素 A = −1/(RC)。取 R=2kΩ、C=1μF，则 1/(RC)=500，矩阵元素就是<b>纯常数</b>。",
+        A: ()=>({a00:{txt:"−500",cls:"const"},a01:{txt:"0",cls:"const"},
+                 a10:{txt:"0",cls:"const"},a11:{txt:"−500",cls:"const"}}),
+        x: ()=>["1.0","0.6"],
+        labelX:"状态 x = [u_C ; i_L]（示意）",
+        labelB:"b = A·x",
+        ctrls: [],
+        detail: (A)=>`<h3>计算过程（行×列求和）</h3>
+          <div class="step">b₁ = (−500)·1.0 + 0·0.6 = <b>−500.00</b></div>
+          <div class="step">b₂ = 0·1.0 + (−500)·0.6 = <b>−300.00</b></div>
+          <p style="color:#555;font-size:16px;margin:6px 0 0">A 的元素全是常数，这是线性定常（LTI）系统，最“课本”。</p>`
+    },
+
+    /* ② 弹簧振子：A 含刚度参数 k */
+    mass: {
+        title: "② 弹簧振子 —— 含参数 k 的矩阵（参数化系统）",
+        desc: "质量-弹簧系统：m·ẍ + k·x = 0。令状态 x₁=x、x₂=ẋ，状态矩阵 A = [[0,1],[−k/m,−b/m]]。<br>取 m=2、b=0.5，则 A₁₂=1（常数），A₂₁=−k/2 是<b>含刚度参数 k 的表达式</b>。扫描 k 即可研究不同刚度下的响应。",
+        A: (p)=>({a00:{txt:"0",cls:"const"},a01:{txt:"1",cls:"const"},
+                   a10:{txt:"−k/2",cls:"param"},a11:{txt:"−0.25",cls:"const"}}),
+        x: ()=>["0.8","0.3"],
+        labelX:"状态 x = [x ; ẋ]",
+        labelB:"b = A·x",
+        ctrls: [{key:"k",label:"刚度 k",min:1,max:20,step:1,val:4,fmt:v=>"k = "+v}],
+        detail: (A,p)=>`<h3>计算过程（把 k 的当前值 −${p.k}/2 代入后，行×列求和）</h3>
+          <div class="step">b₁ = 0·0.8 + 1·0.3 = <b>0.30</b></div>
+          <div class="step">b₂ = (−${p.k}/2)·0.8 + (−0.25)·0.3 = <b>(−${(p.k*0.4).toFixed(2)}) + (−0.075) = ${(-p.k*0.4-0.075).toFixed(3)}</b></div>
+          <p style="color:#555;font-size:16px;margin:6px 0 0">A₂₁ = −k/2 随设计参数 k 变化；但乘法规则不变，仍是“行×列求和”。</p>`
+    },
+
+    /* ③ 交流导纳：A 含频率 ω */
+    ac: {
+        title: "③ 两节点交流导纳 —— 含频率 ω 的矩阵（频变系统）",
+        desc: "两节点 RC 电路的导纳矩阵 Y（j 省写作虚部系数）：Y₁₁=G+jωC、Y₁₂=Y₂₁=−jωC、Y₂₂=G+jωC。<br>取 G=0.1、C=1mF，则非对角元 −ωC 是<b>角频率 ω 的函数</b>。同一电路在 50Hz 与 100Hz 下的系统矩阵不同。</div>",
+        A: (p)=>({a00:{txt:"G+jωC",cls:"func"},a01:{txt:"−jωC",cls:"func"},
+                   a10:{txt:"−jωC",cls:"func"},a11:{txt:"G+jωC",cls:"func"}}),
+        x: ()=>["10","6"],
+        labelX:"节点电压 V = [V₁ ; V₂]",
+        labelB:"注入电流 I = Y·V",
+        ctrls: [{key:"w",label:"角频率 ω (rad/s)",min:1,max:628,step:1,val:314,fmt:v=>"ω = "+v+" rad/s"}],
+        detail: (A,p)=>{
+            const Yc=p.w*1e-3, G=0.1, Yd=G+Yc;
+            const I1=(Yd*10-Yc*6).toFixed(2), I2=(-Yc*10+Yd*6).toFixed(2);
+            return `<h3>计算过程（实部/虚部整体参与行×列求和）</h3>
+              <div class="step">I₁ = (G+jωC)·10 + (−jωC)·6 = <b>${I1} + j·${(Yc*4).toFixed(2)}</b></div>
+              <div class="step">I₂ = (−jωC)·10 + (G+jωC)·6 = <b>${I2} + j·${(Yc*(-4)).toFixed(2)}</b></div>
+              <p style="color:#555;font-size:16px;margin:6px 0 0">元素 −jωC 随 ω 变，但矩阵乘法仍是同一套“行×列求和”规则。</p>`;
+        }
+    },
+
+    /* ④ 机械臂惯量：A 含位形 θ */
+    robot: {
+        title: "④ 单连杆机械臂惯量 —— 含位形 θ 的矩阵（时变 / 位形相关系统）",
+        desc: "单连杆绕基座转动，驱动力矩 τ = J(θ)·α。惯量随杆的位置 θ 变化：J(θ)=mL²(1+½cos2θ)。<br>这里“系统矩阵”退化为 1×1 的 J(θ)（标量即 1×1 矩阵），其元素 J 是<b>位形角 θ 的函数</b>。杆越平(θ=0°)惯量越小，杆越竖(θ=90°)惯量越大。",
+        A: (p)=>({a00:{txt:"J(θ)",cls:"func"},a01:{txt:"0",cls:"const"},
+                   a10:{txt:"0",cls:"const"},a11:{txt:"1",cls:"const"}}),
+        x: ()=>["2.0","0"],
+        labelX:"输入 α = [角加速度 ; 0]",
+        labelB:"输出 τ = J·α",
+        ctrls: [{key:"th",label:"杆位形 θ (°)",min:0,max:90,step:1,val:30,fmt:v=>"θ = "+v+"°"}],
+        detail: (A,p)=>{
+            const th=p.th*Math.PI/180, J=(1+0.5*Math.cos(2*th)).toFixed(2);
+            return `<h3>计算过程（代入当前 θ 求 J(θ)，再行×列求和）</h3>
+              <div class="step">J(θ) = 1 + ½cos(2θ) = 1 + ½cos(${2*p.th}°) = <b>${J}</b></div>
+              <div class="step">τ₁ = J(θ)·2.0 + 0·0 = <b>${(J*2).toFixed(3)}</b></div>
+              <div class="step">τ₂ = 0·2.0 + 1·0 = <b>0.000</b></div>
+              <p style="color:#555;font-size:16px;margin:6px 0 0">J(θ) 随 θ 变（时变/位形相关），但乘法规则依旧是“行×列求和”。</p>`;
+        }
+    }
+};
+
+/* ---- 渲染与控制 ---- */
+let cur = "rc";
+let params = {};
+
+function buildCtrls(scene){
+    const box = document.getElementById("ctrlbar");
+    box.innerHTML = "";
+    scene.ctrls.forEach(c=>{
+        params[c.key] = +c.val;
+        const lab = document.createElement("label");
+        lab.innerHTML = `${c.label}：<input type="range" id="r_${c.key}" min="${c.min}" max="${c.max}" step="${c.step}" value="${c.val}"><span class="vtag" id="t_${c.key}">${c.fmt(c.val)}</span>`;
+        box.appendChild(lab);
+        lab.querySelector("input").oninput = e=>{
+            params[c.key] = +e.target.value;
+            lab.querySelector(".vtag").textContent = c.fmt(e.target.value);
+            render();
+        };
+    });
+}
+
+function render(){
+    const S = Scenes[cur];
+    document.getElementById("title").innerHTML = S.title;
+    document.getElementById("sysdesc").innerHTML = S.desc;
+    document.getElementById("labelX").textContent = S.labelX;
+    document.getElementById("labelB").textContent = S.labelB;
+
+    const A = S.A(params);
+    renderMat2x2(document.getElementById("matA"), A.a00,A.a01,A.a10,A.a11);
+    renderVec(document.getElementById("matX"), S.x());
+    // 计算数值 b = A*x（仅用于右侧结果展示数值）
+    const xv = S.x().map(Number);
+    const Av = [[evalTxt(A.a00.txt,S),evalTxt(A.a01.txt,S)],[evalTxt(A.a10.txt,S),evalTxt(A.a11.txt,S)]];
+    const b = [ (Av[0][0]*xv[0]+Av[0][1]*xv[1]).toFixed(2),
+                (Av[1][0]*xv[0]+Av[1][1]*xv[1]).toFixed(2) ];
+    renderVec(document.getElementById("matB"), b);
+
+    document.getElementById("detail").innerHTML = S.detail(A, params);
+}
+
+// 把含参/含函数的元素文本，在当前 params 下求成具体数值（用于右侧 b 的数值计算）
+function evalTxt(txt, p){
+    let s = txt.replace(/−/g,"-").replace(/θ/g,"th");
+    // 处理 jωC 这类：导纳虚部系数（取实部系数参与实算演示）
+    if(/j/i.test(s)){ s = s.replace(/j/gi,""); }
+    s = s.replace(/ω/g, p.w!=null? p.w : 0)
+         .replace(/k/g, p.k!=null? p.k : 0)
+         .replace(/th/g, p.th!=null? p.th : 0);
+    // J(θ) 特殊
+    if(/J/.test(txt)){ const th=(p.th||0)*Math.PI/180; return 1+0.5*Math.cos(2*th); }
+    try { return Function('"use strict";return ('+s.replace(/[^-()\d/*+.]/g,'')+')')(); }catch(e){ return 0; }
+}
+
+/* ---- 切换 tab ---- */
+document.getElementById("tabs").addEventListener("click", e=>{
+    if(!e.target.dataset.scene) return;
+    cur = e.target.dataset.scene;
+    document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("active", b.dataset.scene===cur));
+    // 重置参数到各场景默认值
+    params = {};
+    buildCtrls(Scenes[cur]);
+    render();
+});
+
+/* 初始 */
+buildCtrls(Scenes.rc);
+render();
+</script>
+
+</body>
+</html>
