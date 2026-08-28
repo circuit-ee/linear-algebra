@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>协方差矩阵与 PCA · 交互直观版</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--ink:#1a202c;--sub:#5b6b7b;--brand:#2563eb;--green:#10b981;--warn:#ea580c;--line:#e4e9f2;}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:20px;}
+body{background:var(--bg);color:var(--ink);font-family:-apple-system,"PingFang SC","Microsoft YaHei","Cambria Math","Noto Sans Math","STIX Two Math",sans-serif;line-height:1.8;}
+header{background:linear-gradient(135deg,#2563eb,#10b981);color:#fff;padding:2.6rem 1.5rem 2.2rem;text-align:center;}
+header h1{font-size:2.2rem;margin-bottom:.6rem;}
+header p{font-size:1.08rem;opacity:.95;max-width:900px;margin:0 auto;}
+main{max-width:1100px;margin:0 auto;padding:2rem 1.2rem 4rem;}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:2rem;box-shadow:0 6px 24px rgba(30,50,90,.07);margin:1.8rem 0;}
+h2{font-size:1.55rem;color:var(--brand);margin-bottom:.8rem;display:flex;align-items:center;gap:.6rem;}
+h2 .num{background:var(--brand);color:#fff;border-radius:10px;padding:.2rem .8rem;font-size:1.05rem;}
+code{background:#eef4ff;border-radius:6px;padding:.1rem .5rem;font-family:"Cambria Math","STIX Two Math",serif;font-size:1.05em;}
+.formula{background:#eef4ff;border-left:5px solid var(--brand);padding:1rem 1.2rem;margin:1rem 0;border-radius:8px;font-family:"Cambria Math","STIX Two Math",serif;font-size:1.22rem;text-align:center;}
+.ctrl{display:flex;flex-wrap:wrap;gap:.8rem;align-items:center;margin:.8rem 0;}
+.ctrl label{font-size:1rem;font-weight:600;}
+input[type=range]{flex:1;min-width:140px;accent-color:var(--brand);}
+.val{font-size:1.1rem;font-weight:800;color:var(--brand);min-width:56px;text-align:center;}
+canvas{display:block;background:#f8fafc;border-radius:10px;width:100%;}
+.golden{background:linear-gradient(135deg,#fff7e6,#eaf2ff);border:2px solid #f2c94c;border-radius:14px;padding:1.1rem 1.3rem;margin:1rem 0;font-size:1.06rem;}
+.tip{background:#eef4ff;border-left:4px solid var(--brand);padding:1rem;border-radius:8px;margin:.8rem 0;}
+table{width:100%;border-collapse:collapse;font-size:1rem;}
+td,th{border:1px solid var(--line);padding:.6rem;text-align:center;}
+th{background:#e8f4fd;}
+button{background:var(--brand);color:#fff;border:none;border-radius:10px;padding:.6rem 1.2rem;font-size:1rem;font-weight:700;cursor:pointer;}
+button:hover{background:#1d4ed8;}
+.tag{display:inline-block;background:#fff7e6;color:var(--warn);border:1px solid #f2c94c;border-radius:8px;padding:.2rem .7rem;font-size:.9rem;font-weight:600;}
+@media(max-width:600px){html{font-size:18px;}header h1{font-size:1.8rem;}.card{padding:1.3rem;}}
+</style>
+</head>
+<body>
+<header>
+  <h1>协方差矩阵与 PCA 主成分分析</h1>
+  <p>从"两个变量怎么一起变"到"数据降维" · 大一友好 · 原生 Canvas 无依赖</p>
+</header>
+<main>
+
+<!-- 统摄 -->
+<section class="card">
+  <h2><span class="num">★</span>一句话串起来</h2>
+  <div class="golden">
+    <b>方差</b>：一个变量自己有多散（离散度）。<br>
+    <b>协方差 Cov(X,Y)</b>：两个变量"一起怎么变"——同方向为正、反方向为负、≈0 为无线性关系。<br>
+    <b>协方差矩阵 C</b>：多变量两两协方差排成的<b>实对称半正定</b>矩阵。<br>
+    <b>PCA</b>：对 C 做<b>正交对角化 C=QΛQᵀ</b>，Q 的列=主成分轴（数据主轴、互相正交），Λ 的对角 λᵢ=该轴方差（信息量）。<br>
+    👉 把"耦合的相关指标"解耦成"互不相关的主成分"，只留前 k 个 → 降维、去相关、保主要信息。
+  </div>
+</section>
+
+<!-- 协方差直观 -->
+<section class="card">
+  <h2><span class="num">1</span>协方差：两变量怎么"一起变"</h2>
+  <p>拖动点云的整体"倾斜方向"，看 Cov(X,Y) 正负如何随数据形状变化。</p>
+  <div class="ctrl">
+    <label>数据倾斜角</label><input id="tilt" type="range" min="-60" max="60" step="1" value="30"><span class="val" id="tiltv">30°</span>
+    <label>分散度</label><input id="spread" type="range" min="20" max="120" step="1" value="70"><span class="val" id="spreadv">70</span>
+    <button id="randBtn">随机重抽数据</button>
+  </div>
+  <canvas id="covCloud" height="300"></canvas>
+  <div class="formula" id="covOut">Cov(X,Y) = 0.00 &nbsp;|&nbsp; Var(X)=0.00 , Var(Y)=0.00 &nbsp;|&nbsp; Corr ρ = 0.00</div>
+  <p class="sub">点云右上/左下倾斜 → Cov>0（同变）；左上/右下倾斜 → Cov<0（反变）；圆团 → Cov≈0。</p>
+</section>
+
+<!-- 协方差矩阵 + 特征分解 -->
+<section class="card">
+  <h2><span class="num">2</span>协方差矩阵 C 的特征分解</h2>
+  <p>C 是实对称半正定矩阵 → 可<b>正交对角化</b> C = Q Λ Qᵀ。</p>
+  <div class="formula">C = Q · Λ · Qᵀ &nbsp;⇒&nbsp; Q 的列 = 主成分轴（正交），Λ 的对角 λᵢ = 各轴方差（信息量）</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+    <div style="min-width:0;">
+      <h3>协方差矩阵 C</h3>
+      <canvas id="matC" height="180" style="width:100%;"></canvas>
+    </div>
+    <div style="min-width:0;">
+      <h3>特征分解 C = Q Λ Qᵀ</h3>
+      <canvas id="eig" height="180" style="width:100%;"></canvas>
+    </div>
+  </div>
+  <div class="tip" id="eigOut">点击"随机重抽数据"更新。</div>
+</section>
+
+<!-- PCA 投影降维 -->
+<section class="card">
+  <h2><span class="num">3</span>PCA 投影降维：拖 k 看保留信息</h2>
+  <p>把数据投影到前 k 个主成分轴。k 越小越压缩，保留信息比例 = (λ₁+…+λₖ)/(λ₁+…+λₙ)。</p>
+  <div class="ctrl">
+    <label>保留主成分数 k</label><input id="kdim" type="range" min="1" max="2" step="1" value="1"><span class="val" id="kdimv">1</span>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+    <div style="min-width:0;">
+      <canvas id="pcaCloud" height="260" style="width:100%;"></canvas>
+      <p class="sub">左：原始数据云 + 主成分轴(PC1红, PC2绿)</p>
+    </div>
+    <div style="min-width:0;">
+      <canvas id="recon" height="260" style="width:100%;"></canvas>
+      <p class="sub">右：降到 k 维后重建回原空间（蓝=重建点，灰=原始）</p>
+    </div>
+  </div>
+  <div class="formula" id="infoOut">信息保留率 = 0%</div>
+  <div class="tip">💡 记忆：PCA = 协方差矩阵的正交对角化。λ 大的方向"信息多"，优先保留；λ 小的方向"噪声/冗余"，可丢掉。</div>
+</section>
+
+<!-- 应用速览 -->
+<section class="card">
+  <h2><span class="num">4</span>PCA 的真实工程应用</h2>
+  <table>
+    <tr><th>场景</th><th>做法</th><th>效果</th></tr>
+    <tr><td>人脸识别 Eigenface</td><td>人脸展成高维向量 → PCA 取前数百主成分</td><td>压缩存储 + 识别</td></tr>
+    <tr><td>金融风控</td><td>几十个经济指标 → PCA 提 3~5 个主因子</td><td>去相关、降维</td></tr>
+    <tr><td>传感器物联网</td><td>100 路振动信号 → PCA 压到 5 路主成分</td><td>实时低带宽传输</td></tr>
+    <tr><td>图像压缩</td><td>类 JPEG/DCT 思路（正交变换去相关）</td><td>保主要信息、去冗余</td></tr>
+    <tr><td>基因/蛋白质数据</td><td>上万维表达量 → PCA 降到 2D 画图</td><td>看聚类结构</td></tr>
+  </table>
+  <div class="tip">📌 边界提醒：PCA 是<b>线性</b>方法，抓不了非线性结构（马蹄形/瑞士卷要用 t-SNE、UMAP）；量纲不同时要先 z-score 标准化。</div>
+</section>
+
+</main>
+
+<script>
+/* ---------- 工具 ---------- */
+function fit(cv,h){
+  const dpr=window.devicePixelRatio||1;
+  // 兜底宽度链：getBoundingClientRect -> clientWidth -> 父级 clientWidth -> 320
+  // 防止 grid/flex 布局下 getBoundingClientRect().width 为 0 导致画布空白
+  let w=cv.getBoundingClientRect().width;
+  if(!w) w=cv.clientWidth;
+  if(!w && cv.parentElement) w=cv.parentElement.clientWidth;
+  if(!w) w=320;
+  if(w<10) w=320;
+  cv.width=Math.round(w*dpr);(cv.height=Math.round((h||cv.height)*dpr));
+  const ctx=cv.getContext('2d');
+  ctx.setTransform(1,0,0,1,0,0);ctx.scale(dpr,dpr);
+  ctx.font='15px "Cambria Math","Noto Sans Math","STIX Two Math",sans-serif';
+  return {ctx,w,h:h||cv.height/dpr};
+}
+function det2(M){return M[0][0]*M[1][1]-M[0][1]*M[1][0];}
+function inv2(M){const d=det2(M);return [[M[1][1]/d,-M[0][1]/d],[-M[1][0]/d,M[0][0]/d]];}
+function matMul(A,B){const n=A.length,m=B[0].length,p=B.length;const C=Array.from({length:n},()=>Array(m).fill(0));
+  for(let i=0;i<n;i++)for(let j=0;j<m;j++)for(let k=0;k<p;k++)C[i][j]+=A[i][k]*B[k][j];return C;}
+// 2x2 实对称矩阵特征分解（解析解，稳定）
+function eig2(C){
+  const a=C[0][0],b=C[0][1],c=C[1][1];
+  const tr=a+c, det=a*c-b*b;
+  const disc=Math.sqrt(Math.max(tr*tr/4-det,0));
+  const l1=tr/2+disc, l2=tr/2-disc;
+  let v1,v2;
+  if(Math.abs(b)>1e-9){v1=[b,l1-a];v2=[b,l2-a];}
+  else{v1=[1,0];v2=[0,1];if(a<c){v1=[0,1];v2=[1,0];}}
+  function norm(v){const n=Math.hypot(v[0],v[1]);return [v[0]/n,v[1]/n];}
+  v1=norm(v1);v2=norm(v2);
+  // 保证正交定向
+  if(v1[0]*v2[0]+v1[1]*v2[1]>0.5){v2=[-v2[0],-v2[1]];}
+  return {l1,l2,v1,v2};
+}
+// 确定性伪随机（可复现）
+let seed=12345;
+function rnd(){seed=(seed*9301+49297)%233280;return seed/233280;}
+function genData(tiltDeg,spread){
+  const t=tiltDeg*Math.PI/180, c=Math.cos(t),s=Math.sin(t);
+  const n=60, pts=[];
+  for(let i=0;i<n;i++){
+    const u=(rnd()-0.5)*spread, v=(rnd()-0.5)*spread*0.6;
+    const x=c*u-s*v, y=s*u+c*v;
+    pts.push([x,y]);
+  }
+  return pts;
+}
+function mean(a){return a.reduce((s,v)=>s+v,0)/a.length;}
+function covMat(pts){
+  const mx=mean(pts.map(p=>p[0])), my=mean(pts.map(p=>p[1]));
+  let cxx=0,cyy=0,cxy=0;
+  for(const [x,y] of pts){cxx+=(x-mx)**2;cyy+=(y-my)**2;cxy+=(x-mx)*(y-my);}
+  const m=pts.length;
+  return [[[cxx/m, cxy/m],[cxy/m, cyy/m]],[mx,my]];
+}
+let DATA=null, STAT=null;
+function rebuild(){DATA=genData(+tilt.value,+spread.value);drawAll();}
+
+/* ---------- 画布绘制 ---------- */
+function drawCovCloud(){
+  if(!DATA) return;
+  const r=fit(covCanvas,300);if(!r)return;
+  const {ctx,w,h}=r;
+  ctx.clearRect(0,0,w,h);
+  const mx=mean(DATA.map(p=>p[0])),my=mean(DATA.map(p=>p[1]));
+  const xs=DATA.map(p=>p[0]),ys=DATA.map(p=>p[1]);
+  const rx=Math.max(...xs.map(v=>Math.abs(v-mx))),ry=Math.max(...ys.map(v=>Math.abs(v-my)));
+  const sc=Math.min((w-60)/(2*rx||1),(h-60)/(2*ry||1));
+  const cx=w/2,cy=h/2;
+  ctx.fillStyle='#94a3b8';
+  for(const [x,y] of DATA){ctx.beginPath();ctx.arc(cx+(x-mx)*sc,cy-(y-my)*sc,4,0,7);ctx.fill();}
+  // 均值中心
+  ctx.strokeStyle='#ea580c';ctx.lineWidth=2;ctx.setLineDash([4,4]);
+  ctx.beginPath();ctx.moveTo(0,cy);ctx.lineTo(w,cy);ctx.moveTo(cx,0);ctx.lineTo(cx,h);ctx.stroke();ctx.setLineDash([]);
+  // 主成分轴
+  const {v1,v2}=eigCache;
+  ctx.strokeStyle='#ef4444';ctx.lineWidth=3;
+  ctx.beginPath();ctx.moveTo(cx-v1[0]*sc*40,cy+v1[1]*sc*40);ctx.lineTo(cx+v1[0]*sc*40,cy-v1[1]*sc*40);ctx.stroke();
+  ctx.strokeStyle='#10b981';ctx.lineWidth=3;
+  ctx.beginPath();ctx.moveTo(cx-v2[0]*sc*40,cy+v2[1]*sc*40);ctx.lineTo(cx+v2[0]*sc*40,cy-v2[1]*sc*40);ctx.stroke();
+  ctx.fillStyle='#5b6b7b';ctx.font='13px sans-serif';ctx.fillText('PC1(λ1最大方差方向)',cx+v1[0]*sc*42,cy-v1[1]*sc*42);
+  ctx.fillText('PC2(与PC1正交)',cx+v2[0]*sc*42,cy-v2[1]*sc*42);
+}
+let eigCache={v1:[1,0],v2:[0,1],l1:0,l2:0};
+function drawMatC(){
+  const r=fit(matC,180);if(!r)return;
+  const {ctx,w,h}=r;ctx.clearRect(0,0,w,h);
+  if(!STAT) return;
+  const C=STAT.C;
+  ctx.fillStyle='#1a202c';ctx.font='18px "Cambria Math",serif';
+  const txt=`C = [[ ${C[0][0].toFixed(2)} , ${C[0][1].toFixed(2)} ],[ ${C[1][0].toFixed(2)} , ${C[1][1].toFixed(2)} ]]`;
+  ctx.fillText(txt,15,40);
+  ctx.font='15px sans-serif';ctx.fillStyle='#5b6b7b';
+  ctx.fillText('对角=各自方差 Var(X),Var(Y)',15,70);
+  ctx.fillText('非对角=Cov(X,Y)（对称 C=Cᵀ）',15,95);
+  ctx.fillText('实对称 + 半正定 → 可正交对角化',15,120);
+}
+function drawEig(){
+  const r=fit(eigCanvas,180);if(!r)return;
+  const {ctx,w,h}=r;ctx.clearRect(0,0,w,h);
+  const {l1,l2,v1,v2}=eigCache;
+  ctx.fillStyle='#1a202c';ctx.font='16px "Cambria Math",serif';
+  ctx.fillText('λ1 = '+l1.toFixed(2)+'  (PC1 信息量)',15,35);
+  ctx.fillText('λ2 = '+l2.toFixed(2)+'  (PC2 信息量)',15,60);
+  ctx.fillText('v1·v2 = '+((v1[0]*v2[0]+v1[1]*v2[1]).toFixed(4))+'  (应≈0,正交)',15,90);
+  ctx.fillText('λ1≥λ2≥0  (半正定)',15,115);
+  ctx.fillStyle='#5b6b7b';ctx.font='13px sans-serif';
+  ctx.fillText('信息保留率 k=1: '+(l1/(l1+l2)*100).toFixed(1)+'%',15,145);
+}
+function drawPCA(){
+  if(!DATA) return;
+  const r=fit(pcaCanvas,260);if(!r)return;
+  const {ctx,w,h}=r;ctx.clearRect(0,0,w,h);
+  const mx=mean(DATA.map(p=>p[0])),my=mean(DATA.map(p=>p[1]));
+  const xs=DATA.map(p=>p[0]),ys=DATA.map(p=>p[1]);
+  const rx=Math.max(...xs.map(v=>Math.abs(v-mx))),ry=Math.max(...ys.map(v=>Math.abs(v-my)));
+  const sc=Math.min((w-60)/(2*rx||1),(h-60)/(2*ry||1));
+  const cx=w/2,cy=h/2;
+  // 灰：原始
+  ctx.fillStyle='#cbd5e1';
+  for(const [x,y] of DATA){ctx.beginPath();ctx.arc(cx+(x-mx)*sc,cy-(y-my)*sc,3.5,0,7);ctx.fill();}
+  // 主成分轴
+  const {v1,v2}=eigCache;const k=+kdim.value;
+  ctx.strokeStyle='#ef4444';ctx.lineWidth=3;
+  ctx.beginPath();ctx.moveTo(cx-v1[0]*sc*45,cy+v1[1]*sc*45);ctx.lineTo(cx+v1[0]*sc*45,cy-v1[1]*sc*45);ctx.stroke();
+  if(k===2){ctx.strokeStyle='#10b981';ctx.lineWidth=3;
+    ctx.beginPath();ctx.moveTo(cx-v2[0]*sc*45,cy+v2[1]*sc*45);ctx.lineTo(cx+v2[0]*sc*45,cy-v2[1]*sc*45);ctx.stroke();}
+  ctx.fillStyle='#5b6b7b';ctx.font='13px sans-serif';ctx.fillText('k='+k+(k===1?' (只留PC1)':'(留PC1+PC2)'),10,18);
+}
+function drawRecon(){
+  if(!DATA) return;
+  const r=fit(reconCanvas,260);if(!r)return;
+  const {ctx,w,h}=r;ctx.clearRect(0,0,w,h);
+  const mx=mean(DATA.map(p=>p[0])),my=mean(DATA.map(p=>p[1]));
+  const xs=DATA.map(p=>p[0]),ys=DATA.map(p=>p[1]);
+  const rx=Math.max(...xs.map(v=>Math.abs(v-mx))),ry=Math.max(...ys.map(v=>Math.abs(v-my)));
+  const sc=Math.min((w-60)/(2*rx||1),(h-60)/(2*ry||1));
+  const cx=w/2,cy=h/2;const k=+kdim.value;
+  const {v1,v2,l1,l2}=eigCache;
+  // 灰：原始
+  ctx.fillStyle='#cbd5e1';
+  for(const [x,y] of DATA){ctx.beginPath();ctx.arc(cx+(x-mx)*sc,cy-(y-my)*sc,3,0,7);ctx.fill();}
+  // 重建：投影到前 k 个主成分再反投影
+  let err=0;let n=0;
+  ctx.fillStyle='#2563eb';
+  for(const [x,y] of DATA){n++;
+    const dx=x-mx,dy=y-my;
+    let rx2=0,ry2=0;
+    if(k>=1){rx2=(dx*v1[0]+dy*v1[1])*v1[0];ry2=(dx*v1[0]+dy*v1[1])*v1[1];}
+    if(k===2){rx2+=(dx*v2[0]+dy*v2[1])*v2[0];ry2+=(dx*v2[0]+dy*v2[1])*v2[1];}
+    const err2=Math.hypot(dx-rx2,dy-ry2);err+=err2;
+    ctx.beginPath();ctx.arc(cx+rx2*sc,cy-ry2*sc,4,0,7);ctx.fill();
+  }
+  const {l1:ll1,l2:ll2}=eigCache;
+  const info=k===1?ll1/(ll1+ll2):1;
+  infoOut.textContent='信息保留率 = '+(info*100).toFixed(1)+'%  |  平均重建误差 = '+(err/n).toFixed(2);
+}
+function updateAll(){
+  if(!DATA) return;
+  const C=STAT.C, [mx,my]=STAT.mean;
+  covOut.textContent='Cov(X,Y) = '+C[0][1].toFixed(2)+'  |  Var(X)='+C[0][0].toFixed(2)+' , Var(Y)='+C[1][1].toFixed(2)+'  |  Corr ρ = '+(C[0][1]/Math.sqrt(C[0][0]*C[1][1]+1e-12)).toFixed(2);
+  const {l1,l2,v1,v2}=eigCache;
+  eigOut.textContent='特征分解：λ1='+l1.toFixed(2)+' (PC1方向 ['+v1[0].toFixed(2)+','+v1[1].toFixed(2)+']) ; λ2='+l2.toFixed(2)+' (PC2 ['+v2[0].toFixed(2)+','+v2[1].toFixed(2)+']) ; v1·v2='+(v1[0]*v2[0]+v1[1]*v2[1]).toFixed(4);
+}
+function drawAll(){
+  if(!DATA){requestAnimationFrame(drawAll);return;}
+  if(drawAll._pending){cancelAnimationFrame(drawAll._pending);}
+  drawAll._pending=requestAnimationFrame(()=>{
+    const [C,mean]=covMat(DATA);STAT={C,mean};
+    eigCache=eig2(STAT.C);
+    updateAll();drawCovCloud();drawMatC();drawEig();drawPCA();drawRecon();
+  });
+}
+const tilt=document.getElementById('tilt'),spread=document.getElementById('spread');
+const kdim=document.getElementById('kdim');
+const covCanvas=document.getElementById('covCloud'),matC=document.getElementById('matC'),eigCanvas=document.getElementById('eig');
+const pcaCanvas=document.getElementById('pcaCloud'),reconCanvas=document.getElementById('recon');
+const covOut=document.getElementById('covOut'),eigOut=document.getElementById('eigOut'),infoOut=document.getElementById('infoOut');
+[tilt,spread].forEach(x=>x.oninput=()=>{document.getElementById('tiltv').textContent=tilt.value+'°';document.getElementById('spreadv').textContent=spread.value;rebuild();});
+kdim.oninput=()=>{document.getElementById('kdimv').textContent=kdim.value;drawPCA();drawRecon();};
+document.getElementById('randBtn').onclick=()=>{seed=Math.floor(Math.random()*1e6);rebuild();};
+window.addEventListener('DOMContentLoaded',()=>{rebuild();});
+window.addEventListener('resize',()=>{if(DATA)drawAll();});
+</script>
+</body>
+</html>
