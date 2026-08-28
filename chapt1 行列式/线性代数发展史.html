@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>线性代数：从历史到课本</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: "Segoe UI", "Microsoft YaHei", sans-serif; }
+body { background: #f4f7f9; color: #333; line-height: 1.6; }
+
+header { background: linear-gradient(135deg, #1a237e, #283593); color: white; padding: 2rem 1rem; text-align: center; }
+header h1 { font-size: 1.8rem; margin-bottom: 0.5rem; }
+header p { opacity: 0.85; max-width: 800px; margin: auto; }
+
+.container { max-width: 1100px; margin: 2rem auto; padding: 0 1rem; }
+
+.legend { text-align: center; margin-bottom: 1rem; font-size: 0.9rem; color: #555; }
+.legend span { margin: 0 12px; }
+.dot-inline { display: inline-block; width: 12px; height: 12px; border-radius: 50%; vertical-align: middle; margin-right: 4px; }
+
+.chapters { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 2.5rem; justify-content: center; }
+.chapter-btn {
+    padding: 10px 18px;
+    border: 2px solid #3949ab;
+    background: white;
+    color: #3949ab;
+    border-radius: 25px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 0.95rem;
+}
+.chapter-btn:hover { background: #e8eaf6; }
+.chapter-btn.active { background: #3949ab; color: white; }
+
+.timeline-wrapper { overflow-x: auto; padding-bottom: 1rem; }
+.timeline { display: flex; min-width: 900px; position: relative; padding: 40px 0; }
+.timeline::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 0; right: 0;
+    height: 4px;
+    background: #c5cae9;
+    z-index: 0;
+}
+.event {
+    flex: 1;
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    cursor: pointer;
+    padding: 0 5px;
+}
+.event .dot {
+    width: 20px; height: 20px;
+    background: white;
+    border: 4px solid #9fa8da;
+    border-radius: 50%;
+    margin: auto;
+}
+.event:hover .dot, .event.active .dot {
+    border-color: #1a237e;
+    background: #1a237e;
+}
+.event .year { font-size: 0.85rem; color: #666; margin-top: 8px; }
+.event .title { font-size: 0.95rem; font-weight: bold; margin-top: 5px; }
+.event.active .year, .event.active .title { color: #1a237e; }
+
+.panel {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    margin-top: 2rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    min-height: 220px;
+}
+.panel h2 { color: #1a237e; border-left: 4px solid #3949ab; padding-left: 10px; margin-bottom: 1rem; }
+.achievement { color: #555; }
+.achievement ul { padding-left: 20px; margin: 8px 0; }
+.achievement li { margin-bottom: 6px; }
+.link-tip {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: #e8eaf6;
+    border-radius: 8px;
+    font-size: 0.95rem;
+}
+.link-tip strong { color: #283593; }
+
+footer { text-align: center; padding: 1.5rem; color: #777; font-size: 0.9rem; }
+</style>
+</head>
+<body>
+
+<header>
+<h1>线性代数发展史 · 同济教材溯源</h1>
+<p>从《九章算术》的"方程术"，到西尔维斯特命名"Matrix"，再到现代AI的基石。探索课本第1-5章在数学史上的真实坐标。</p>
+</header>
+
+<div class="container">
+
+<div class="legend">
+<span><span class="dot-inline" style="background:#e53935;"></span>古代起源</span>
+<span><span class="dot-inline" style="background:#fb8c00;"></span>经典时期</span>
+<span><span class="dot-inline" style="background:#43a047;"></span>现代抽象</span>
+<span><span class="dot-inline" style="background:#1e88e5;"></span>应用高峰</span>
+</div>
+
+<div style="text-align:center; margin-bottom:10px; color:#555;">📘 同济《线性代数》核心章节（点击切换）</div>
+<div class="chapters" id="chapterBar">
+<button class="chapter-btn" data-era="system">第4章 线性方程组</button>
+<button class="chapter-btn" data-era="determinant">第1章 行列式</button>
+<button class="chapter-btn" data-era="matrix">第2章 矩阵</button>
+<button class="chapter-btn" data-era="vector">第3章 向量</button>
+<button class="chapter-btn" data-era="eigen">第5章 特征值与二次型</button>
+</div>
+
+<div style="text-align:center; margin-bottom:10px; color:#555;">📜 历史时间轴（点击节点查看）</div>
+<div class="timeline-wrapper">
+<div class="timeline" id="timelineBar">
+<div class="event" data-era="system">
+<div class="dot" style="border-color:#e53935;"></div>
+<div class="year">约前200年</div>
+<div class="title">《九章算术》</div>
+</div>
+<div class="event" data-era="determinant">
+<div class="dot" style="border-color:#fb8c00;"></div>
+<div class="year">1750</div>
+<div class="title">克莱姆法则</div>
+</div>
+<div class="event" data-era="system">
+<div class="dot" style="border-color:#fb8c00;"></div>
+<div class="year">1809</div>
+<div class="title">高斯消元法</div>
+</div>
+<div class="event" data-era="matrix">
+<div class="dot" style="border-color:#43a047;"></div>
+<div class="year">1850</div>
+<div class="title">矩阵诞生</div>
+</div>
+<div class="event" data-era="vector">
+<div class="dot" style="border-color:#43a047;"></div>
+<div class="year">1844–1900</div>
+<div class="title">向量空间公理化</div>
+</div>
+<div class="event" data-era="eigen">
+<div class="dot" style="border-color:#1e88e5;"></div>
+<div class="year">19世纪</div>
+<div class="title">特征值·二次型</div>
+</div>
+</div>
+</div>
+
+<div class="panel" id="infoPanel">
+<h2>欢迎探索线性代数的历史</h2>
+<div class="achievement">
+<p>👆 请点击上方的<strong>课本章节按钮</strong>或下方的<strong>时间轴节点</strong>，查看对应的历史背景与标志性成就。</p>
+</div>
+<div class="link-tip">
+💡 <strong>设计思路：</strong>同济教材的章节顺序是 行列式→矩阵→向量→方程组→特征值，但历史上人们<strong>先会解方程组</strong>（中国古算），然后才发明了行列式作为判别工具，再发现矩阵本身值得研究，最后抽象成向量空间。课本顺序 ≠ 历史顺序！
+</div>
+</div>
+
+</div>
+
+<footer>
+设计参考：同济大学《工程数学——线性代数》（第七版）| 数学史：Katz《数学史通论》
+</footer>
+
+<script>
+// ======== 数据 ========
+var historyData = {};
+
+historyData["system"] = {
+    title: "第4章 线性方程组 —— 一切的起点",
+    html: '<p><strong>标志性成就：</strong></p>'
+        + '<ul>'
+        + '<li><strong>公元前200年（中国）</strong>：《九章算术》"方程章"用算筹排列系数，行互减——这是世界上最早的矩阵行变换思想。</li>'
+        + '<li><strong>1809年（高斯）</strong>：提出高斯消元法，用于计算天体轨道；同时发展最小二乘法。</li>'
+        + '</ul>'
+        + '<p style="margin-top:10px;"><strong>课本地位：</strong>同济教材把"线性方程组"放在第4章，但在历史上它是最先被研究的。你学的 <em>解的存在性定理（r(A)=r(A&#770;)</em>、<em>齐次/非齐次方程组的解结构</em>，正是两千年消元经验的结晶。</p>'
+        + '<div class="link-tip">🔗 关联时间轴节点：《九章算术》(前200年) → 高斯消元法(1809)</div>'
+};
+
+historyData["determinant"] = {
+    title: "第1章 行列式 —— 18世纪的判官",
+    html: '<p><strong>标志性成就：</strong></p>'
+        + '<ul>'
+        + '<li><strong>17世纪</strong>：关孝和（日本）与莱布尼茨（德国）独立发现行列式思想。</li>'
+        + '<li><strong>1750年</strong>：克莱姆（Cramer）发表克莱姆法则，用行列式直接表示方程组的解。</li>'
+        + '<li><strong>1812年</strong>：柯西系统研究行列式性质（乘积公式、转置不变性等）。</li>'
+        + '<li><strong>1841年</strong>：雅可比建立行列式求导公式。</li>'
+        + '</ul>'
+        + '<p style="margin-top:10px;"><strong>课本地位：</strong>第1章的 <em>n阶行列式定义、按行展开、范德蒙行列式</em>，正是19世纪数学家们为了"不解方程就能判断解的情况"发明的。现在它是工具，不是目的——但历史上它曾是主角。</p>'
+        + '<div class="link-tip">🔗 关联时间轴节点：克莱姆法则(1750)</div>'
+};
+
+historyData["matrix"] = {
+    title: "第2章 矩阵 —— 19世纪的独立概念",
+    html: '<p><strong>标志性成就：</strong></p>'
+        + '<ul>'
+        + '<li><strong>1850年</strong>：西尔维斯特（Sylvester）创造"Matrix"一词，意为"子宫、母体"。</li>'
+        + '<li><strong>1858年</strong>：凯莱（Cayley）发表《矩阵论报告》，定义矩阵加法、乘法，甚至写出了特征方程 det(A-λI)=0。</li>'
+        + '<li><strong>1879年</strong>：弗罗贝尼乌斯（Frobenius）定义矩阵秩、引入初等因子。</li>'
+        + '</ul>'
+        + '<p style="margin-top:10px;"><strong>课本地位：</strong>同济第2章的 <em>矩阵乘法、逆矩阵、初等变换、分块矩阵</em>，标志着线性代数从"解具体方程"走向"研究代数结构"。矩阵不再是行列式的附属，而是独立的主角。</p>'
+        + '<div class="link-tip">🔗 关联时间轴节点：矩阵诞生(1850)</div>'
+};
+
+historyData["vector"] = {
+    title: "第3章 向量组 —— 从几何直觉到抽象公理",
+    html: '<p><strong>标志性成就：</strong></p>'
+        + '<ul>'
+        + '<li><strong>1844年</strong>：格拉斯曼（Grassmann）出版《线性扩张论》，提出多维空间与线性无关思想。</li>'
+        + '<li><strong>1888年</strong>：皮亚诺（Peano）首次给出向量空间的严格公理定义。</li>'
+        + '<li><strong>20世纪初</strong>：希尔伯特、施密特发展内积空间与正交化方法。</li>'
+        + '</ul>'
+        + '<p style="margin-top:10px;"><strong>课本地位：</strong>第3章的 <em>线性组合、线性相关/无关、秩、极大无关组、基与维数</em>，是全书最"抽象"的部分。这其实是数学从"计算"转向"公理化"的关键——不再只关心具体的x,y,z，而是关心它们所在的空间结构。</p>'
+        + '<div class="link-tip">🔗 关联时间轴节点：向量空间公理化(1844–1900)</div>'
+};
+
+historyData["eigen"] = {
+    title: "第5章 特征值与二次型 —— 几何与代数的交汇",
+    html: '<p><strong>标志性成就：</strong></p>'
+        + '<ul>'
+        + '<li><strong>18世纪</strong>：欧拉、拉格朗日研究刚体转动，自然引出主轴变换问题。</li>'
+        + '<li><strong>1829年</strong>：柯西证明实对称矩阵的特征值为实数，研究二次型正定性。</li>'
+        + '<li><strong>19世纪后期</strong>：若尔当（Jordan）提出若尔当标准形，完成矩阵相似分类。</li>'
+        + '<li><strong>20世纪</strong>：主成分分析(PCA)、量子力学中的本征态、Google PageRank算法，都依赖特征值。</li>'
+        + '</ul>'
+        + '<p style="margin-top:10px;"><strong>课本地位：</strong>第5章的 <em>相似对角化、正交变换化二次型为标准形、正定二次型</em>，本质是寻找坐标系的最佳旋转。你在解析几何中见过的椭圆、双曲面，正是二次型的直观体现。</p>'
+        + '<div class="link-tip">🔗 关联时间轴节点：特征值·二次型(19世纪)</div>'
+};
+
+// ======== 核心函数 ========
+function activate(era) {
+    if (!historyData[era]) { return; }
+
+    // 1. 时间轴节点高亮
+    var timelineBar = document.getElementById("timelineBar");
+    var events = timelineBar.getElementsByClassName("event");
+    for (var i = 0; i < events.length; i++) {
+        var ev = events[i];
+        if (ev.getAttribute("data-era") === era) {
+            ev.className = "event active";
+        } else {
+            ev.className = "event";
+        }
+    }
+
+    // 2. 章节按钮高亮
+    var chapterBar = document.getElementById("chapterBar");
+    var buttons = chapterBar.getElementsByClassName("chapter-btn");
+    for (var j = 0; j < buttons.length; j++) {
+        var btn = buttons[j];
+        if (btn.getAttribute("data-era") === era) {
+            btn.className = "chapter-btn active";
+        } else {
+            btn.className = "chapter-btn";
+        }
+    }
+
+    // 3. 立即更新面板内容（不用 setTimeout）
+    var panel = document.getElementById("infoPanel");
+    var d = historyData[era];
+    panel.innerHTML =
+        "<h2>" + d.title + "</h2>" +
+        "<div class=\"achievement\">" + d.html + "</div>";
+}
+
+// ======== 事件绑定 ========
+function init() {
+    var timelineBar = document.getElementById("timelineBar");
+    var events = timelineBar.getElementsByClassName("event");
+    for (var i = 0; i < events.length; i++) {
+        events[i].onclick = function() {
+            var era = this.getAttribute("data-era");
+            activate(era);
+        };
+    }
+
+    var chapterBar = document.getElementById("chapterBar");
+    var buttons = chapterBar.getElementsByClassName("chapter-btn");
+    for (var j = 0; j < buttons.length; j++) {
+        buttons[j].onclick = function() {
+            var era = this.getAttribute("data-era");
+            activate(era);
+        };
+    }
+}
+
+// 初始化
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+} else {
+    init();
+}
+</script>
+
+</body>
+</html>

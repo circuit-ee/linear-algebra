@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+<title>行列式的几何意义 · 3D 交互演示</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { width: 100%; height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f0f9ff; color: #1e293b; user-select: none; -webkit-user-select: none; }
+#app { position: relative; width: 100vw; height: 100vh; }
+#scene { width: 100%; height: 100%; display: block; touch-action: none; position: absolute; top: 0; left: 0; z-index: 1; }
+.panel { position: relative; background: rgba(255,255,255,0.93); border: 1px solid rgba(59,130,246,0.22); border-radius: 16px; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); padding: 14px 16px; box-shadow: 0 8px 32px rgba(59,130,246,0.08); }
+.panel-title { font-size: 14px; font-weight: 700; color: #1e3a5f; margin-bottom: 8px; border-bottom: 2px solid #dbeafe; padding-bottom: 6px; }
+#left-sidebar { top: 10px; left: 10px; width: 310px; max-height: calc(100vh - 120px); overflow-y: auto; display: flex; flex-direction: column; gap: 10px; position: absolute; z-index: 10; }
+#right-sidebar { top: 10px; right: 10px; width: 290px; max-height: calc(100vh - 120px); overflow-y: auto; display: flex; flex-direction: column; gap: 10px; position: absolute; z-index: 10; }
+#title-bar h1 { font-size: 18px; color: #1e3a5f; margin-bottom: 4px; }
+.subtitle { font-size: 12px; color: #64748b; margin-bottom: 8px; }
+.desc { font-size: 13px; line-height: 1.6; color: #334155; }
+.desc b { color: #1e3a5f; }
+.key-box { background: linear-gradient(135deg,#eff6ff,#dbeafe); border-radius: 10px; padding: 10px 12px; margin: 8px 0; text-align: center; }
+.key-val { font-size: 28px; font-weight: 800; color: #2563eb; }
+.key-label { font-size: 11px; color: #64748b; }
+.matrix-display { display: flex; align-items: center; justify-content: center; gap: 4px; margin: 8px 0; }
+.matrix-bracket { font-size: 36px; color: #475569; font-weight: 300; }
+.matrix-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 2px; }
+.mcell { width: 42px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-family: "Cambria Math", serif; border-radius: 4px; background: #f8fafc; }
+.mcell.pos { background: #dbeafe; color: #1e40af; }
+.mcell.neg { background: #fee2e2; color: #dc2626; }
+.mcell.zero { background: #f1f5f9; color: #94a3b8; }
+.prop-btn { padding: 10px 8px; font-size: 12px; background: #fff; border: 1.5px solid #c7d2fe; border-radius: 10px; color: #334155; cursor: pointer; text-align: left; transition: all 0.2s; width: 100%; margin-bottom: 5px; }
+.prop-btn:hover { border-color: #7c3aed; background: #f5f3ff; }
+.prop-btn.active { background: #3b82f6; color: #fff; border-color: #2563eb; }
+.prop-btn b { font-size: 13px; }
+.slider-row { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; }
+.slider-row label { font-size: 12px; color: #475569; width: 32px; flex-shrink: 0; font-family: "Cambria Math", serif; }
+.slider-row input[type=range] { flex: 1; height: 4px; accent-color: #3b82f6; }
+.slider-row .val { font-size: 12px; color: #1e40af; width: 36px; text-align: right; font-family: monospace; }
+.toggle-row { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #334155; margin-bottom: 4px; }
+.toggle-row input { width: 16px; height: 16px; accent-color: #3b82f6; }
+.ctrl-group { margin-bottom: 10px; }
+.ctrl-label { font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 4px; display: block; }
+#toolbar { bottom: 54px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; position: absolute; z-index: 10; }
+.btn { padding: 8px 16px; font-size: 13px; font-weight: 600; background: rgba(255,255,255,0.95); border: 1.5px solid #c7d2fe; border-radius: 10px; color: #1e3a5f; cursor: pointer; transition: all 0.15s; box-shadow: 0 4px 16px rgba(59,130,246,0.1); }
+.btn:hover { border-color: #7c3aed; background: #f5f3ff; }
+#preset-bar { bottom: 8px; left: 8px; right: 8px; display: flex; align-items: center; gap: 8px; position: absolute; z-index: 10; background: rgba(255,255,255,0.95); border: 1px solid rgba(59,130,246,0.2); border-radius: 12px; padding: 5px 10px; box-shadow: 0 4px 20px rgba(59,130,246,0.15); backdrop-filter: blur(12px); }
+.preset-bar-label { font-size: 13px; font-weight: 700; color: #1e3a5f; white-space: nowrap; flex-shrink: 0; }
+.preset-bar-scroll { display: flex; gap: 5px; overflow-x: auto; flex: 1; padding: 2px 0; scrollbar-width: thin; }
+.preset-bar-scroll::-webkit-scrollbar { height: 4px; }
+.preset-bar-scroll::-webkit-scrollbar-thumb { background: rgba(59,130,246,0.3); border-radius: 2px; }
+.pbar-btn { padding: 6px 12px; font-size: 13px; background: #f1f5f9; border: 1.5px solid #cbd5e1; border-radius: 16px; color: #334155; cursor: pointer; white-space: nowrap; transition: all 0.2s; flex-shrink: 0; }
+.pbar-btn:hover { background: #e0e7ff; border-color: #818cf8; }
+.pbar-btn.active { background: #3b82f6; color: #fff; border-color: #2563eb; font-weight: 600; }
+#loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 100; text-align: center; color: #64748b; font-size: 14px; }
+.spinner { width: 32px; height: 32px; border: 3px solid #dbeafe; border-top-color: #3b82f6; border-radius: 50%; margin: 0 auto 10px; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+#analysis-content { font-size: 13px; line-height: 1.6; color: #334155; }
+#analysis-content b { color: #1e3a5f; }
+#analysis-content .pos { color: #16a34a; font-weight: 600; }
+#analysis-content .neg { color: #dc2626; font-weight: 600; }
+#analysis-content .highlight { background: #fef3c7; padding: 1px 4px; border-radius: 3px; }
+.prop-desc { font-size: 12px; color: #475569; margin-top: 4px; line-height: 1.5; }
+.legend-row { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #475569; margin-bottom: 3px; }
+.legend-dot { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+@media (max-width: 900px) {
+  #left-sidebar { width: 200px; font-size: 12px; max-height: calc(100vh - 130px); }
+  #right-sidebar { width: 220px; max-height: calc(100vh - 130px); display: none; }
+  #right-sidebar.show { display: flex; }
+  .pbar-btn { font-size: 12px; padding: 5px 10px; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <canvas id="scene"></canvas>
+
+  <div id="left-sidebar">
+    <div class="panel" id="title-bar">
+      <h1>📐 行列式的几何意义</h1>
+      <div class="subtitle">体积 = 有向平行六面体体积</div>
+      <div class="desc">
+        <b>核心思想:</b> det(A) = 由列向量张成的<b>有向体积</b><br>
+        <b>符号:</b> 正 = 右手系, 负 = 左手系, 零 = 退化(共面)<br>
+        <b>维度:</b> 2阶=面积, 3阶=体积, n阶=超体积
+      </div>
+    </div>
+    <div class="panel" id="analysis-panel">
+      <div class="panel-title">实时分析</div>
+      <div id="analysis-content"></div>
+    </div>
+  </div>
+
+  <div id="right-sidebar">
+    <div class="panel">
+      <div class="panel-title">矩阵 A (3x3)</div>
+      <div class="matrix-display">
+        <span class="matrix-bracket">|</span>
+        <div class="matrix-grid" id="matrix-grid"></div>
+        <span class="matrix-bracket">|</span>
+      </div>
+      <div class="key-box">
+        <div class="key-label">det(A) = 有向体积</div>
+        <div class="key-val" id="det-val">1.00</div>
+      </div>
+      <div style="text-align:center;font-size:12px;color:#64748b;margin-top:4px">
+        <span id="det-sign">右手系 (正)</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">列向量 (平行六面体棱)</div>
+      <div class="ctrl-group">
+        <span class="ctrl-label" style="color:#dc2626">v1 = 第1列 (红)</span>
+        <div class="slider-row"><label>x</label><input type="range" id="s-a11" min="-2.5" max="2.5" step="0.1" value="1"><span class="val" id="v-a11">1.0</span></div>
+        <div class="slider-row"><label>y</label><input type="range" id="s-a21" min="-2.5" max="2.5" step="0.1" value="0"><span class="val" id="v-a21">0.0</span></div>
+        <div class="slider-row"><label>z</label><input type="range" id="s-a31" min="-2.5" max="2.5" step="0.1" value="0"><span class="val" id="v-a31">0.0</span></div>
+      </div>
+      <div class="ctrl-group">
+        <span class="ctrl-label" style="color:#16a34a">v2 = 第2列 (绿)</span>
+        <div class="slider-row"><label>x</label><input type="range" id="s-a12" min="-2.5" max="2.5" step="0.1" value="0"><span class="val" id="v-a12">0.0</span></div>
+        <div class="slider-row"><label>y</label><input type="range" id="s-a22" min="-2.5" max="2.5" step="0.1" value="1"><span class="val" id="v-a22">1.0</span></div>
+        <div class="slider-row"><label>z</label><input type="range" id="s-a32" min="-2.5" max="2.5" step="0.1" value="0"><span class="val" id="v-a32">0.0</span></div>
+      </div>
+      <div class="ctrl-group">
+        <span class="ctrl-label" style="color:#7c3aed">v3 = 第3列 (紫)</span>
+        <div class="slider-row"><label>x</label><input type="range" id="s-a13" min="-2.5" max="2.5" step="0.1" value="0"><span class="val" id="v-a13">0.0</span></div>
+        <div class="slider-row"><label>y</label><input type="range" id="s-a23" min="-2.5" max="2.5" step="0.1" value="0"><span class="val" id="v-a23">0.0</span></div>
+        <div class="slider-row"><label>z</label><input type="range" id="s-a33" min="-2.5" max="2.5" step="0.1" value="1"><span class="val" id="v-a33">1.0</span></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">显示选项</div>
+      <div class="toggle-row"><input type="checkbox" id="show-box" checked><label for="show-box">平行六面体</label></div>
+      <div class="toggle-row"><input type="checkbox" id="show-axes" checked><label for="show-axes">坐标轴+基向量</label></div>
+      <div class="toggle-row"><input type="checkbox" id="show-unit"><label for="show-unit">单位立方体 (参考)</label></div>
+      <div class="toggle-row"><input type="checkbox" id="show-decomp"><label for="show-decomp">分解投影</label></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">图例</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#ef4444"></div>v1 (第1列, 红)</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#16a34a"></div>v2 (第2列, 绿)</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#7c3aed"></div>v3 (第3列, 紫)</div>
+      <div class="legend-row"><div class="legend-dot" style="background:rgba(59,130,246,0.25)"></div>平行六面体 (体积=|det|)</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#cbd5e1"></div>单位立方体 (体积=1)</div>
+    </div>
+  </div>
+
+  <div id="toolbar">
+    <button class="btn" id="btn-play">▶ 动画</button>
+    <button class="btn" id="btn-reset">重置</button>
+    <button class="btn" id="btn-toggle-right">📋 参数</button>
+  </div>
+
+  <div id="preset-bar">
+    <div class="preset-bar-label">行列式性质 ▸</div>
+    <div class="preset-bar-scroll">
+      <button class="pbar-btn active" data-prop="identity">单位矩阵</button>
+      <button class="pbar-btn" data-prop="scale2">k倍乘 (k=2)</button>
+      <button class="pbar-btn" data-prop="swap">行交换</button>
+      <button class="pbar-btn" data-prop="shear">倍加</button>
+      <button class="pbar-btn" data-prop="rank2">降秩 (共面)</button>
+      <button class="pbar-btn" data-prop="rank1">秩1 (共线)</button>
+      <button class="pbar-btn" data-prop="rot">旋转</button>
+      <button class="pbar-btn" data-prop="negdet">负行列式</button>
+    </div>
+  </div>
+
+  <div id="loading"><div class="spinner"></div><div>加载 3D 引擎...</div></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function() {
+  'use strict';
+
+  var A = [[1,0,0],[0,1,0],[0,0,1]];
+  var animProgress = 1;
+  var isPlaying = false;
+  var playDir = 1;
+  var showBox = true, showAxes = true, showUnit = false, showDecomp = false;
+  var currentProp = 'identity';
+
+  var scene, camera, renderer, canvas;
+  var sceneGroup;
+  var camTheta = 0.5, camPhi = 0.55, camRadius = 10;
+
+  var PROPS = {
+    identity: { A: [[1,0,0],[0,1,0],[0,0,1]], name: '单位矩阵 I', desc: 'det(I)=1, 体积=1, 不变' },
+    scale2: { A: [[2,0,0],[0,1,0],[0,0,1]], name: 'k倍乘某行', desc: '某行乘k=2, det变为2倍' },
+    swap: { A: [[0,1,0],[1,0,0],[0,0,1]], name: '行交换', desc: '交换两行, det变号(正→负)' },
+    shear: { A: [[1,1,0],[0,1,0],[0,0,1]], name: '倍加(剪切)', desc: '某行加到另一行, det不变' },
+    rank2: { A: [[1,0,1],[0,1,1],[0,0,0]], name: '降秩(共面)', desc: '第3列=v1+v2, 共面, det=0' },
+    rank1: { A: [[1,2,3],[0,0,0],[0,0,0]], name: '秩1(共线)', desc: '所有列共线, det=0' },
+    rot: { A: [[0.87,0.5,0],[-0.5,0.87,0],[0,0,1]], name: '旋转', desc: '绕z轴旋转30度, det=1(保体积)' },
+    negdet: { A: [[1,0,0],[0,1,0],[0,0,-1]], name: '反射(负det)', desc: 'z轴翻转, det=-1(变号)' }
+  };
+
+  function vec(x,y,z) { return [x,y,z]; }
+  function add(a,b) { return [a[0]+b[0], a[1]+b[1], a[2]+b[2]]; }
+  function sub(a,b) { return [a[0]-b[0], a[1]-b[1], a[2]-b[2]]; }
+  function scale(a,s) { return [a[0]*s, a[1]*s, a[2]*s]; }
+  function cross(a,b) { return [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]]; }
+  function dot(a,b) { return a[0]*b[0]+a[1]*b[1]+a[2]*b[2]; }
+  function len(a) { return Math.sqrt(dot(a,a)); }
+
+  function computeDet(m) {
+    return m[0][0]*(m[1][1]*m[2][2]-m[1][2]*m[2][1])
+         - m[0][1]*(m[1][0]*m[2][2]-m[1][2]*m[2][0])
+         + m[0][2]*(m[1][0]*m[2][1]-m[1][1]*m[2][0]);
+  }
+
+  function matLerp(from, to, t) {
+    var r = [[0,0,0],[0,0,0],[0,0,0]];
+    for (var i = 0; i < 3; i++)
+      for (var j = 0; j < 3; j++)
+        r[i][j] = from[i][j] + (to[i][j] - from[i][j]) * t;
+    return r;
+  }
+
+  function getCols(m) {
+    return [
+      [m[0][0], m[1][0], m[2][0]],
+      [m[0][1], m[1][1], m[2][1]],
+      [m[0][2], m[1][2], m[2][2]]
+    ];
+  }
+
+  function init() {
+    canvas = document.getElementById('scene');
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf0f9ff);
+    scene.fog = new THREE.FogExp2(0xf0f9ff, 0.02);
+
+    camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 100);
+    renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio || 1);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+    var dl = new THREE.DirectionalLight(0xffffff, 0.8);
+    dl.position.set(5, 8, 5); scene.add(dl);
+    var fl = new THREE.DirectionalLight(0xbfdbfe, 0.4);
+    fl.position.set(-5, 3, -5); scene.add(fl);
+
+    var floor = new THREE.Mesh(
+      new THREE.PlaneGeometry(20, 20),
+      new THREE.MeshStandardMaterial({ color: 0xe0e7ff, transparent: true, opacity: 0.15 })
+    );
+    floor.rotation.x = -Math.PI/2;
+    floor.position.y = -3;
+    scene.add(floor);
+
+    sceneGroup = new THREE.Group();
+    scene.add(sceneGroup);
+
+    setupControls();
+    document.getElementById('loading').style.display = 'none';
+    refresh();
+    animate();
+  }
+
+  function updateCam() {
+    camera.position.set(
+      camRadius * Math.cos(camPhi) * Math.cos(camTheta),
+      camRadius * Math.sin(camPhi),
+      camRadius * Math.cos(camPhi) * Math.sin(camTheta)
+    );
+    camera.lookAt(0, 0, 0);
+  }
+
+  function createArrow(from, to, color, radius) {
+    var group = new THREE.Group();
+    var start = new THREE.Vector3(from[0], from[1], from[2]);
+    var end = new THREE.Vector3(to[0], to[1], to[2]);
+    var dir = new THREE.Vector3().subVectors(end, start);
+    var l = dir.length();
+    if (l < 0.01) return group;
+    var mat = new THREE.MeshStandardMaterial({ color: color, emissive: color, emissiveIntensity: 0.2, metalness: 0.3, roughness: 0.5 });
+    var shaftLen = l * 0.82;
+    var shaftGeo = new THREE.CylinderGeometry(radius, radius, shaftLen, 10);
+    var shaft = new THREE.Mesh(shaftGeo, mat);
+    shaft.position.copy(start.clone().add(dir.clone().multiplyScalar(shaftLen / 2 / l)));
+    shaft.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.clone().normalize());
+    group.add(shaft);
+    var tipLen = l * 0.18;
+    var tipGeo = new THREE.ConeGeometry(radius * 2.2, tipLen, 10);
+    var tip = new THREE.Mesh(tipGeo, mat);
+    tip.position.copy(start.clone().add(dir.clone().multiplyScalar((shaftLen + tipLen/2) / l)));
+    tip.quaternion.copy(shaft.quaternion);
+    group.add(tip);
+    return group;
+  }
+
+  function createPointMarker(pos, color, size) {
+    var geo = new THREE.SphereGeometry(size, 16, 12);
+    var mat = new THREE.MeshStandardMaterial({ color: color, emissive: color, emissiveIntensity: 0.3 });
+    var m = new THREE.Mesh(geo, mat);
+    m.position.set(pos[0], pos[1], pos[2]);
+    return m;
+  }
+
+  function createLine(from, to, color, opacity, dashed) {
+    var geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute([from[0],from[1],from[2], to[0],to[1],to[2]], 3));
+    var matOpts = { color: color, transparent: true, opacity: opacity || 0.5 };
+    if (dashed) { matOpts.dashSize = 0.15; matOpts.gapSize = 0.08; }
+    var mat = dashed ? new THREE.LineDashedMaterial(matOpts) : new THREE.LineBasicMaterial(matOpts);
+    var line = new THREE.Line(geo, mat);
+    if (dashed) line.computeLineDistances();
+    return line;
+  }
+
+  function clearGroup(g) {
+    if (!g) return;
+    while (g.children.length > 0) {
+      var c = g.children[0];
+      g.remove(c);
+      if (c.geometry) c.geometry.dispose();
+      if (c.material) c.material.dispose();
+    }
+  }
+
+  function buildScene() {
+    clearGroup(sceneGroup);
+    var identity = [[1,0,0],[0,1,0],[0,0,1]];
+    var M = matLerp(identity, A, animProgress);
+    var cols = getCols(M);
+    var v1 = cols[0], v2 = cols[1], v3 = cols[2];
+    var det = computeDet(M);
+    var absDet = Math.abs(det);
+
+    // Coordinate axes
+    if (showAxes) {
+      sceneGroup.add(createArrow([0,0,0], [3,0,0], 0xfca5a5, 0.015));
+      sceneGroup.add(createArrow([0,0,0], [0,3,0], 0x86efac, 0.015));
+      sceneGroup.add(createArrow([0,0,0], [0,0,3], 0xc4b5fd, 0.015));
+    }
+
+    // Unit cube reference
+    if (showUnit) {
+      var uc = [
+        [0,0,0],[1,0,0],[1,1,0],[0,1,0],
+        [0,0,1],[1,0,1],[1,1,1],[0,1,1]
+      ];
+      var ue = [[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
+      ue.forEach(function(e) {
+        sceneGroup.add(createLine(uc[e[0]], uc[e[1]], 0x94a3b8, 0.2, true));
+      });
+    }
+
+    // Basis vectors (columns of M)
+    if (showAxes) {
+      sceneGroup.add(createArrow([0,0,0], v1, 0xef4444, 0.03));
+      sceneGroup.add(createArrow([0,0,0], v2, 0x16a34a, 0.03));
+      sceneGroup.add(createArrow([0,0,0], v3, 0x7c3aed, 0.03));
+      sceneGroup.add(createPointMarker(v1, 0xef4444, 0.07));
+      sceneGroup.add(createPointMarker(v2, 0x16a34a, 0.07));
+      sceneGroup.add(createPointMarker(v3, 0x7c3aed, 0.07));
+    }
+
+    // Parallelepiped
+    if (showBox) {
+      var o = [0,0,0];
+      var p1 = v1;
+      var p2 = v2;
+      var p3 = v3;
+      var p12 = add(v1, v2);
+      var p13 = add(v1, v3);
+      var p23 = add(v2, v3);
+      var p123 = add(add(v1, v2), v3);
+
+      var verts = [o, p1, p12, p2, p3, p13, p123, p23];
+      var edges = [[0,1],[1,2],[2,3],[3,0], [4,5],[5,6],[6,7],[7,4], [0,4],[1,5],[2,6],[3,7]];
+      var boxColor = det >= 0 ? 0x3b82f6 : 0xf97316;
+      edges.forEach(function(e) {
+        sceneGroup.add(createLine(verts[e[0]], verts[e[1]], boxColor, 0.5));
+      });
+
+      // Fill faces
+      var faces = [
+        [0,1,2,3], [4,5,6,7], [0,1,5,4], [2,3,7,6], [1,2,6,5], [0,3,7,4]
+      ];
+      faces.forEach(function(f) {
+        var fv = [];
+        for (var k = 0; k < f.length; k++) {
+          fv.push(verts[f[k]][0], verts[f[k]][1], verts[f[k]][2]);
+        }
+        var geo = new THREE.BufferGeometry();
+        geo.setAttribute('position', new THREE.Float32BufferAttribute(fv, 3));
+        geo.setIndex([0,1,2, 0,2,3]);
+        geo.computeVertexNormals();
+        var mat = new THREE.MeshStandardMaterial({
+          color: boxColor, transparent: true, opacity: 0.12,
+          side: THREE.DoubleSide, depthWrite: false
+        });
+        sceneGroup.add(new THREE.Mesh(geo, mat));
+      });
+
+      // Volume label at center
+      var center = scale(add(add(v1, v2), v3), 1/3);
+      if (absDet > 0.05) {
+        var sprite = createTextSprite('V=' + det.toFixed(2), det >= 0 ? '#2563eb' : '#ea580c', 40);
+        sprite.position.set(center[0], center[1] + 0.4, center[2]);
+        sceneGroup.add(sprite);
+      }
+    }
+
+    // Decomposition: project v3 onto cross(v1,v2) to show height
+    if (showDecomp) {
+      var cr = cross(v1, v2);
+      var crLen = len(cr);
+      if (crLen > 0.02 && absDet > 0.02) {
+        // Height of parallelepiped = |det| / |v1 x v2|
+        var height = absDet / crLen;
+        var crN = scale(cr, 1/crLen);
+        // Base center
+        var baseCenter = scale(add(v1, v2), 0.5);
+        // Draw height line
+        var topPt = add(baseCenter, scale(crN, height));
+        sceneGroup.add(createLine(baseCenter, topPt, 0xf59e0b, 0.6, true));
+        // Label
+        var hSprite = createTextSprite('h=' + height.toFixed(2), '#d97706', 30);
+        hSprite.position.set((baseCenter[0]+topPt[0])/2 + 0.3, (baseCenter[1]+topPt[1])/2, (baseCenter[2]+topPt[2])/2);
+        sceneGroup.add(hSprite);
+        // Base area label
+        var baseArea = crLen;
+        var aSprite = createTextSprite('S=' + baseArea.toFixed(2), '#7c3aed', 30);
+        aSprite.position.set(baseCenter[0], baseCenter[1] - 0.3, baseCenter[2]);
+        sceneGroup.add(aSprite);
+      }
+    }
+
+    updateCam();
+  }
+
+  function createTextSprite(text, color, fontSize) {
+    var canvas2 = document.createElement('canvas');
+    canvas2.width = 256; canvas2.height = 64;
+    var ctx = canvas2.getContext('2d');
+    ctx.fillStyle = color;
+    ctx.font = 'bold ' + (fontSize || 36) + 'px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, 128, 32);
+    var tex = new THREE.CanvasTexture(canvas2);
+    var mat = new THREE.SpriteMaterial({ map: tex, transparent: true });
+    var s = new THREE.Sprite(mat);
+    s.scale.set(1.5, 0.38, 1);
+    return s;
+  }
+
+  function refresh() {
+    buildScene();
+    updateMatrixDisplay();
+    updateAnalysis();
+  }
+
+  function updateMatrixDisplay() {
+    var grid = document.getElementById('matrix-grid');
+    grid.innerHTML = '';
+    for (var i = 0; i < 3; i++) {
+      for (var j = 0; j < 3; j++) {
+        var div = document.createElement('div');
+        div.className = 'mcell';
+        var v = A[i][j];
+        if (Math.abs(v) < 0.01) { div.classList.add('zero'); div.textContent = '0'; }
+        else if (v < 0) { div.classList.add('neg'); div.textContent = v.toFixed(1); }
+        else { div.classList.add('pos'); div.textContent = v.toFixed(1); }
+        grid.appendChild(div);
+      }
+    }
+    var det = computeDet(A);
+    document.getElementById('det-val').textContent = det.toFixed(2);
+    document.getElementById('det-val').style.color = Math.abs(det) < 0.01 ? '#dc2626' : (det > 0 ? '#2563eb' : '#ea580c');
+    var signEl = document.getElementById('det-sign');
+    if (Math.abs(det) < 0.01) signEl.textContent = '退化 (共面/共线), det=0';
+    else if (det > 0) signEl.textContent = '右手系 (正体积)';
+    else signEl.textContent = '左手系 (负体积, 反射)';
+
+    for (var i2 = 0; i2 < 3; i2++) {
+      for (var j2 = 0; j2 < 3; j2++) {
+        var sid = 's-a' + (i2+1) + (j2+1);
+        var vid = 'v-a' + (i2+1) + (j2+1);
+        var el = document.getElementById(sid);
+        if (el) { el.value = A[i2][j2]; }
+        var el2 = document.getElementById(vid);
+        if (el2) { el2.textContent = A[i2][j2].toFixed(1); }
+      }
+    }
+  }
+
+  function updateAnalysis() {
+    var det = computeDet(A);
+    var cols = getCols(A);
+    var v1 = cols[0], v2 = cols[1], v3 = cols[2];
+    var cr = cross(v1, v2);
+    var crLen = len(cr);
+    var v1Len = len(v1), v2Len = len(v2), v3Len = len(v3);
+    var absDet = Math.abs(det);
+    var height = crLen > 0.01 ? absDet / crLen : 0;
+    var baseArea = crLen;
+
+    var html = '';
+
+    // Property name
+    var prop = PROPS[currentProp];
+    if (prop) {
+      html += '<div style="background:#eff6ff;border-radius:8px;padding:8px 10px;margin-bottom:8px">';
+      html += '<b style="color:#2563eb">' + prop.name + '</b><br>';
+      html += '<span style="font-size:12px;color:#475569">' + prop.desc + '</span>';
+      html += '</div>';
+    }
+
+    // Volume decomposition
+    html += '<div style="margin-bottom:8px">';
+    html += '<b>体积分解:</b><br>';
+    html += '底面积 S = |v1 x v2| = ' + baseArea.toFixed(2) + '<br>';
+    html += '高 h = |det| / S = ' + height.toFixed(2) + '<br>';
+    html += '体积 V = S x h = <b>' + absDet.toFixed(2) + '</b><br>';
+    html += 'det = ' + (det >= 0 ? '+' : '') + det.toFixed(2) + ' (' + (Math.abs(det) < 0.01 ? '退化' : (det > 0 ? '右手系' : '左手系')) + ')';
+    html += '</div>';
+
+    // Property explanation
+    html += '<div style="margin-bottom:8px">';
+    html += '<b>行列式计算性质:</b><br>';
+
+    if (currentProp === 'identity') {
+      html += '<span class="pos">det(I) = 1</span> → 单位体积(不变)<br>';
+      html += '性质: 单位矩阵的行列式恒为1';
+    } else if (currentProp === 'scale2') {
+      html += '某行乘 k=2 → <span class="pos">det 变为 2 倍</span><br>';
+      html += '性质: |kA| = k<sup>n</sup>|A| (n=3阶, 这里k在某一行)<br>';
+      html += '几何: 一个方向拉伸2倍, 体积变2倍';
+    } else if (currentProp === 'swap') {
+      html += '交换两行 → <span class="neg">det 变号</span><br>';
+      html += '性质: 交换两行(列), det 乘 (-1)<br>';
+      html += '几何: 右手系 → 左手系, 有向体积变号';
+    } else if (currentProp === 'shear') {
+      html += '倍加(剪切) → <span class="pos">det 不变</span><br>';
+      html += '性质: 某行加到另一行, det 不变<br>';
+      html += '几何: 剪切变形不改变体积(等底等高)';
+    } else if (currentProp === 'rank2') {
+      html += '第3列 = v1+v2 → <span class="neg">det = 0</span><br>';
+      html += '性质: 行列式为0 → 矩阵不可逆<br>';
+      html += '几何: 三个向量共面, 平行六面体退化为平面, 体积=0';
+    } else if (currentProp === 'rank1') {
+      html += '所有列共线 → <span class="neg">det = 0</span><br>';
+      html += '性质: 秩 < n → det = 0<br>';
+      html += '几何: 退化为线, 体积=0';
+    } else if (currentProp === 'rot') {
+      html += '旋转矩阵 → <span class="pos">det = 1</span><br>';
+      html += '性质: 正交矩阵 det = +/-1, 旋转 det = +1<br>';
+      html += '几何: 旋转不改变体积(保距变换)';
+    } else if (currentProp === 'negdet') {
+      html += 'z轴翻转 → <span class="neg">det = -1</span><br>';
+      html += '性质: 反射变换 det = -1<br>';
+      html += '几何: 左手系, 有向体积变号(镜像)';
+    }
+    html += '</div>';
+
+    // General properties summary
+    html += '<div style="background:#fef3c7;border-radius:8px;padding:8px 10px;font-size:12px">';
+    html += '<b>三大基本性质:</b><br>';
+    html += '1. 交换两行 → det 变号<br>';
+    html += '2. 某行乘 k → det 乘 k<br>';
+    html += '3. 倍加(行加到另一行) → det 不变<br>';
+    html += '<br><b>重要推论:</b><br>';
+    html += '- det(A) = 0 → A 不可逆(行列式为零是奇异矩阵)<br>';
+    html += '- det(AB) = det(A) * det(B)<br>';
+    html += '- det(A<sup>T</sup>) = det(A)<br>';
+    html += '- det(kA) = k<sup>n</sup>det(A) (n阶)';
+    html += '</div>';
+
+    document.getElementById('analysis-content').innerHTML = html;
+  }
+
+  function setupControls() {
+    function bindSlider(id, valId, setter) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener('input', function(e) {
+        var val = parseFloat(e.target.value);
+        document.getElementById(valId).textContent = val.toFixed(1);
+        setter(val);
+        // Deselect preset buttons when manual editing
+        document.querySelectorAll('.pbar-btn').forEach(function(b) { b.classList.remove('active'); });
+        currentProp = 'custom';
+        refresh();
+      });
+    }
+
+    bindSlider('s-a11', 'v-a11', function(v) { A[0][0] = v; });
+    bindSlider('s-a21', 'v-a21', function(v) { A[1][0] = v; });
+    bindSlider('s-a31', 'v-a31', function(v) { A[2][0] = v; });
+    bindSlider('s-a12', 'v-a12', function(v) { A[0][1] = v; });
+    bindSlider('s-a22', 'v-a22', function(v) { A[1][1] = v; });
+    bindSlider('s-a32', 'v-a32', function(v) { A[2][1] = v; });
+    bindSlider('s-a13', 'v-a13', function(v) { A[0][2] = v; });
+    bindSlider('s-a23', 'v-a23', function(v) { A[1][2] = v; });
+    bindSlider('s-a33', 'v-a33', function(v) { A[2][2] = v; });
+
+    document.getElementById('show-box').addEventListener('change', function(e) { showBox = e.target.checked; refresh(); });
+    document.getElementById('show-axes').addEventListener('change', function(e) { showAxes = e.target.checked; refresh(); });
+    document.getElementById('show-unit').addEventListener('change', function(e) { showUnit = e.target.checked; refresh(); });
+    document.getElementById('show-decomp').addEventListener('change', function(e) { showDecomp = e.target.checked; refresh(); });
+
+    document.querySelectorAll('.pbar-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var name = btn.getAttribute('data-prop');
+        var p = PROPS[name];
+        if (!p) return;
+        A = p.A.map(function(r) { return r.slice(); });
+        currentProp = name;
+        animProgress = 1;
+        document.querySelectorAll('.pbar-btn').forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        refresh();
+      });
+    });
+
+    document.getElementById('btn-play').addEventListener('click', function() {
+      isPlaying = !isPlaying;
+      document.getElementById('btn-play').textContent = isPlaying ? '⏸ 暂停' : '▶ 动画';
+      if (isPlaying && animProgress >= 1) { animProgress = 0; playDir = 1; }
+    });
+
+    document.getElementById('btn-reset').addEventListener('click', function() {
+      A = [[1,0,0],[0,1,0],[0,0,1]];
+      currentProp = 'identity';
+      animProgress = 1;
+      isPlaying = false;
+      document.getElementById('btn-play').textContent = '▶ 动画';
+      document.querySelectorAll('.pbar-btn').forEach(function(b) { b.classList.remove('active'); });
+      document.querySelector('.pbar-btn[data-prop="identity"]').classList.add('active');
+      refresh();
+    });
+
+    var toggleBtn = document.getElementById('btn-toggle-right');
+    if (toggleBtn) {
+      toggleBtn.addEventListener('click', function() {
+        document.getElementById('right-sidebar').classList.toggle('show');
+      });
+    }
+
+    // Camera controls
+    var drag = false, lx = 0, ly = 0, pinch = 0;
+    canvas.addEventListener('mousedown', function(e) { drag = true; lx = e.clientX; ly = e.clientY; });
+    window.addEventListener('mousemove', function(e) {
+      if (!drag) return;
+      camTheta -= (e.clientX - lx) * 0.007;
+      camPhi += (e.clientY - ly) * 0.007;
+      camPhi = Math.max(-1.4, Math.min(1.4, camPhi));
+      lx = e.clientX; ly = e.clientY;
+      updateCam();
+    });
+    window.addEventListener('mouseup', function() { drag = false; });
+    canvas.addEventListener('wheel', function(e) {
+      e.preventDefault();
+      camRadius += e.deltaY * 0.01;
+      camRadius = Math.max(4, Math.min(20, camRadius));
+      updateCam();
+    }, { passive: false });
+    canvas.addEventListener('touchstart', function(e) {
+      if (e.touches.length === 1) { drag = true; lx = e.touches[0].clientX; ly = e.touches[0].clientY; }
+      else if (e.touches.length === 2) {
+        var dx = e.touches[0].clientX - e.touches[1].clientX;
+        var dy = e.touches[0].clientY - e.touches[1].clientY;
+        pinch = Math.sqrt(dx*dx + dy*dy);
+      }
+    }, { passive: false });
+    canvas.addEventListener('touchmove', function(e) {
+      e.preventDefault();
+      if (e.touches.length === 1 && drag) {
+        camTheta -= (e.touches[0].clientX - lx) * 0.007;
+        camPhi += (e.touches[0].clientY - ly) * 0.007;
+        camPhi = Math.max(-1.4, Math.min(1.4, camPhi));
+        lx = e.touches[0].clientX; ly = e.touches[0].clientY;
+        updateCam();
+      } else if (e.touches.length === 2) {
+        var dx = e.touches[0].clientX - e.touches[1].clientX;
+        var dy = e.touches[0].clientY - e.touches[1].clientY;
+        var d = Math.sqrt(dx*dx + dy*dy);
+        if (pinch > 0) camRadius += (pinch - d) * 0.03;
+        camRadius = Math.max(4, Math.min(20, camRadius));
+        pinch = d; updateCam();
+      }
+    }, { passive: false });
+    canvas.addEventListener('touchend', function() { drag = false; pinch = 0; });
+  }
+
+  function animate() {
+    requestAnimationFrame(animate);
+    if (isPlaying) {
+      animProgress += 0.012 * playDir;
+      if (animProgress > 1) { animProgress = 1; playDir = -1; }
+      if (animProgress < 0) { animProgress = 0; playDir = 1; }
+      buildScene();
+    }
+    renderer.render(scene, camera);
+  }
+
+  function tryStart() {
+    if (typeof THREE === 'undefined') { setTimeout(tryStart, 50); return; }
+    try { init(); } catch(e) {
+      document.getElementById('loading').innerHTML =
+        '<div style="color:#dc2626">加载失败<br><span style="font-size:12px;color:#64748b">' + e.message + '</span></div>';
+      console.error(e);
+    }
+  }
+  tryStart();
+})();
+</script>
+</body>
+</html>

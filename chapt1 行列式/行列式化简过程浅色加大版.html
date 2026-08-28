@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>行列式计算动画演示（行/列变换）</title>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            svg: {
+                fontCache: 'global'
+            }
+        };
+    </script>
+    <style>
+        body {
+            font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+            background: linear-gradient(135deg, #ffffff 0%, #f5f7fa 100%);
+            color: #1a1a1a;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1500px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            border: 1px solid rgba(200, 200, 200, 0.2);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #000000;
+            font-size: 3em;
+            margin-bottom: 30px;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .mode-selector {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .mode-btn {
+            background: linear-gradient(135deg, #0066cc 0%, #004499 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.4em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            flex: 0 0 auto;
+        }
+        
+        .mode-btn.active {
+            background: linear-gradient(135deg, #00aa44 0%, #008833 100%);
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(0, 136, 51, 0.4);
+        }
+        
+        .legend {
+            background: rgba(240, 242, 245, 0.9);
+            border-radius: 12px;
+            padding: 25px;
+            margin: 25px 0;
+            border: 2px solid #0066cc;
+            backdrop-filter: blur(5px);
+        }
+        
+        .legend-title {
+            font-weight: 700;
+            color: #000000;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 12px 0;
+            color: #000000;
+            font-size: 1.2em;
+            font-weight: 600;
+        }
+        
+        .legend-color {
+            width: 25px;
+            height: 25px;
+            border-radius: 4px;
+            margin-right: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .demo-area {
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-start;
+            margin: 40px 0;
+            gap: 40px;
+            flex-wrap: wrap;
+        }
+        
+        .matrix-container {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            transition: all 0.4s ease;
+            border: 2px solid #0066cc;
+            backdrop-filter: blur(5px);
+            flex: 1 1 300px;
+            max-width: 450px;
+        }
+        
+        .matrix-container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 24px rgba(0, 102, 204, 0.2);
+        }
+        
+        .matrix-title {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: #000000;
+            margin-bottom: 20px;
+            text-align: center;
+            letter-spacing: 0.5px;
+        }
+        
+        .determinant-display {
+            background: linear-gradient(135deg, rgba(0, 102, 204, 0.1) 0%, rgba(0, 68, 153, 0.1) 100%);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            text-align: center;
+            border: 2px solid #0066cc;
+        }
+        
+        .det-value {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: #0066cc;
+            margin: 12px 0;
+        }
+        
+        .det-calculation {
+            font-size: 1.2em;
+            color: #333333;
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+        }
+        
+        .warning {
+            background: linear-gradient(135deg, rgba(255, 193, 7, 0.2) 0%, rgba(255, 160, 0, 0.2) 100%);
+            border-left: 6px solid #ffc107;
+            color: #333333;
+            padding: 15px;
+            margin: 12px 0;
+            border-radius: 6px;
+            font-size: 1.1em;
+            font-weight: 600;
+        }
+        
+        .error {
+            background: linear-gradient(135deg, rgba(244, 67, 54, 0.2) 0%, rgba(211, 47, 47, 0.2) 100%);
+            border-left: 6px solid #f44336;
+            color: #d32f2f;
+            padding: 15px;
+            margin: 12px 0;
+            border-radius: 6px;
+            font-size: 1.1em;
+            font-weight: 700;
+        }
+        
+        .matrix {
+            display: inline-block;
+            position: relative;
+            margin: 10px auto;
+            display: block;
+        }
+        
+        .matrix-brackets {
+            font-size: 4.5em;
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #000000;
+            font-weight: 700;
+        }
+        
+        .left-bracket {
+            left: -25px;
+        }
+        
+        .right-bracket {
+            right: -25px;
+        }
+        
+        .matrix-content {
+            display: inline-block;
+            padding: 0 35px;
+        }
+        
+        .matrix-row {
+            display: flex;
+            justify-content: center;
+        }
+        
+        .matrix-cell {
+            width: 75px;
+            height: 75px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8em;
+            font-weight: 700;
+            margin: 5px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 8px;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            color: #000000;
+            border: 2px solid #0066cc;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .matrix-cell.pivot {
+            background: linear-gradient(135deg, #00aa44 0%, #008833 100%);
+            color: white;
+            transform: scale(1.15);
+            box-shadow: 0 6px 16px rgba(0, 136, 51, 0.4);
+            z-index: 2;
+            border: 2px solid #00aa44;
+        }
+        
+        .matrix-cell.changing {
+            background: linear-gradient(135deg, #0066cc 0%, #004499 100%);
+            color: white;
+            animation: pulse 0.7s ease-in-out;
+            box-shadow: 0 6px 16px rgba(0, 102, 204, 0.4);
+            border: 2px solid #0066cc;
+        }
+        
+        .matrix-cell.eliminating {
+            background: linear-gradient(135deg, #ff6d00 0%, #ff3d00 100%);
+            color: white;
+            animation: fade 0.7s ease-in-out;
+            box-shadow: 0 6px 16px rgba(255, 109, 0, 0.4);
+            border: 2px solid #ff6d00;
+        }
+        
+        .matrix-cell.new-zero {
+            background: linear-gradient(135deg, #00c853 0%, #009624 100%);
+            color: white;
+            animation: zeroTransform 0.7s ease-in-out;
+            box-shadow: 0 6px 16px rgba(0, 200, 83, 0.4);
+            border: 2px solid #00c853;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.25); box-shadow: 0 8px 24px rgba(0, 102, 204, 0.5); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes fade {
+            0% { opacity: 0.7; }
+            50% { opacity: 0.4; transform: translateY(8px); }
+            100% { opacity: 1; }
+        }
+        
+        @keyframes zeroTransform {
+            0% { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(180deg) scale(1.3); box-shadow: 0 8px 24px rgba(0, 200, 83, 0.5); }
+            100% { transform: rotate(360deg) scale(1); }
+        }
+        
+        .controls {
+            text-align: center;
+            margin: 30px 0;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #0066cc 0%, #004499 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            margin: 0 10px;
+            border-radius: 12px;
+            font-size: 1.4em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0, 102, 204, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(1px);
+        }
+        
+        .btn:disabled {
+            background: linear-gradient(135deg, #cccccc 0%, #aaaaaa 100%);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .step-info {
+            background: rgba(240, 242, 245, 0.95);
+            border-left: 8px solid #0066cc;
+            padding: 25px;
+            margin: 25px 0;
+            border-radius: 10px;
+            min-height: 100px;
+            backdrop-filter: blur(5px);
+            border: 2px solid #0066cc;
+        }
+        
+        .step-title {
+            font-weight: 700;
+            color: #000000;
+            font-size: 1.5em;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .step-title::before {
+            content: "→";
+            margin-right: 12px;
+            color: #0066cc;
+            font-size: 1.8em;
+            font-weight: 700;
+        }
+        
+        .step-description {
+            color: #000000;
+            line-height: 1.8;
+            font-size: 1.3em;
+            font-weight: 600;
+        }
+        
+        .operation-effect {
+            background: linear-gradient(135deg, rgba(0, 102, 204, 0.1) 0%, rgba(0, 68, 153, 0.1) 100%);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border-left: 6px solid #0066cc;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 15px;
+            background: rgba(200, 200, 200, 0.3);
+            border-radius: 8px;
+            margin: 25px 0;
+            overflow: hidden;
+            border: 2px solid #0066cc;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00aa44 0%, #0066cc 100%);
+            width: 0%;
+            transition: width 0.6s cubic-bezier(0.22, 0.61, 0.36, 1);
+            border-radius: 6px;
+        }
+        
+        .phase-indicator {
+            display: inline-block;
+            background: linear-gradient(135deg, #ff6d00 0%, #ff3d00 100%);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            font-weight: 700;
+            margin-left: 8px;
+            box-shadow: 0 4px 10px rgba(255, 109, 0, 0.3);
+        }
+
+        .shortcut-hint {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 1.2em;
+            font-weight: 700;
+            color: #0066cc;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>行列式计算动画演示（行/列变换）</h1>
+        
+        <div class="mode-selector">
+            <button class="mode-btn active" id="upperRow" onclick="switchMode('upperRow')">上三角（行变换）</button>
+            <button class="mode-btn" id="lowerRow" onclick="switchMode('lowerRow')">下三角（行变换）</button>
+            <button class="mode-btn" id="upperCol" onclick="switchMode('upperCol')">上三角（列变换）</button>
+            <button class="mode-btn" id="lowerCol" onclick="switchMode('lowerCol')">下三角（列变换）</button>
+        </div>
+        
+        <div class="legend">
+            <div class="legend-title">行列式初等变换规则（行/列相同）：</div>
+            <div class="legend-item">
+                <div class="legend-color changing"></div>
+                <span><strong>交换两行/列</strong>：行列式变号（乘以-1）</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color eliminating"></div>
+                <span><strong>某行/列乘以k</strong>：行列式变为k倍</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color new-zero"></div>
+                <span><strong>某行/列加上另一行/列的倍数</strong>：行列式不变</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color pivot"></div>
+                <span><strong>主元</strong>：当前用于消元的基准元素</span>
+            </div>
+        </div>
+
+        <div class="shortcut-hint">💡 快捷键：按数字键 1-4 快速切换不同模式</div>
+        
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        
+        <div class="demo-area">
+            <div class="matrix-container">
+                <div class="matrix-title">原始行列式</div>
+                <div class="matrix" id="initialMatrix"></div>
+                <div class="determinant-display" id="initialDet">
+                    <div class="det-value">|A| = <span id="initialValue">0</span></div>
+                </div>
+            </div>
+            
+            <div class="matrix-container">
+                <div class="matrix-title" id="targetTitle">上三角行列式 <span class="phase-indicator" id="phaseIndicator"></span></div>
+                <div class="matrix" id="targetMatrix"></div>
+                <div class="determinant-display" id="targetDet">
+                    <div class="det-value">|A'| = <span id="targetValue">0</span></div>
+                    <div class="det-calculation" id="calculation"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="step-info" id="stepInfo">
+            <div class="step-title">准备开始</div>
+            <div class="step-description">点击"开始演示"按钮开始行列式化简过程。<br>当前模式：<strong>上三角化简（行变换）</strong>：通过行变换消去主对角线下方的元素</div>
+        </div>
+        
+        <div class="controls">
+            <button class="btn" id="startBtn" onclick="startDemo()">开始演示</button>
+            <button class="btn" id="pauseBtn" onclick="togglePause()" disabled>暂停</button>
+            <button class="btn" id="resetBtn" onclick="resetDemo()">重置</button>
+            <button class="btn" id="nextBtn" onclick="nextStep()" disabled>下一步</button>
+        </div>
+    </div>
+
+    <script>
+        class DeterminantAnimation {
+            constructor(mode = 'upperRow') {
+                this.mode = mode; // 'upperRow', 'lowerRow', 'upperCol', 'lowerCol'
+                this.currentStep = 0;
+                this.isPaused = false;
+                this.isRunning = false;
+                this.steps = [];
+                this.determinant = {
+                    initial: null,
+                    current: null,
+                    target: null,
+                    multiplier: 1
+                };
+                this.phases = ['化简过程', '计算结果'];
+                this.currentPhase = 0;
+                
+                // 初始 4x4 行列式
+                this.initialMatrix = [
+                    [2, 3, 1, 4],
+                    [1, 2, 3, 2],
+                    [3, 1, 2, 1],
+                    [2, 4, 2, 3]
+                ];
+                
+                this.init();
+            }
+            
+            init() {
+                this.determinant.initial = this.cloneMatrix(this.initialMatrix);
+                this.determinant.current = this.cloneMatrix(this.initialMatrix);
+                this.determinant.target = null;
+                this.determinant.multiplier = 1;
+                this.generateSteps();
+                this.renderMatrix('initialMatrix', this.determinant.initial);
+                this.renderMatrix('targetMatrix', this.determinant.current);
+                this.updateDeterminantValue();
+                this.updateProgress();
+            }
+            
+            cloneMatrix(matrix) {
+                return matrix.map(row => [...row]);
+            }
+            
+            calculateDeterminant(matrix) {
+                const n = matrix.length;
+                if (n === 1) return matrix[0][0];
+                if (n === 2) return matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0];
+                
+                let det = 0;
+                for (let j = 0; j < n; j++) {
+                    det += matrix[0][j] * this.cofactor(matrix, 0, j);
+                }
+                return det;
+            }
+            
+            cofactor(matrix, i, j) {
+                const n = matrix.length;
+                const subMatrix = [];
+                for (let k = 0; k < n; k++) {
+                    if (k === i) continue;
+                    const row = [];
+                    for (let l = 0; l < n; l++) {
+                        if (l === j) continue;
+                        row.push(matrix[k][l]);
+                    }
+                    subMatrix.push(row);
+                }
+                const sign = ((i + j) % 2 === 0) ? 1 : -1;
+                return sign * this.calculateDeterminant(subMatrix);
+            }
+            
+            calculateDiagonalProduct(matrix) {
+                let product = 1;
+                for (let i = 0; i < matrix.length; i++) {
+                    product *= matrix[i][i];
+                }
+                return product;
+            }
+            
+            generateSteps() {
+                this.steps = [];
+                let matrix = this.cloneMatrix(this.initialMatrix);
+                let det_sign = 1;
+                let det_scale = 1;
+                
+                // 修正：正确解析模式
+                const isUpper = this.mode.startsWith('upper');
+                const isRow = this.mode.endsWith('Row');
+                const transformName = isRow ? '行' : '列';
+                const n = matrix.length;
+                
+                this.steps.push({
+                    phase: 0,
+                    title: `阶段1：${isUpper ? '上' : '下'}三角化简（${transformName}变换）`,
+                    description: `目标：通过${transformName}变换，使行列式呈现${isUpper ? '上' : '下'}三角形式`,
+                    opType: 'info',
+                    matrix: this.cloneMatrix(matrix)
+                });
+                
+                if (isRow) {
+                    // ==================== 行变换逻辑 ====================
+                    if (isUpper) {
+                        // 上三角：从左到右，消去下方元素（row > col）
+                        for (let col = 0; col < n - 1; col++) {
+                            // a. 找主元行（从col行开始）
+                            let pivotRow = this.findPivotRow(matrix, col, col);
+                            if (pivotRow === -1) {
+                                // 该列全零，行列式为0
+                                this.steps.push({
+                                    phase: 0,
+                                    title: `步骤 ${this.steps.length}`,
+                                    description: `第${col + 1}列主元位置及下方全为零，行列式值为0！`,
+                                    opType: 'warning',
+                                    matrix: this.cloneMatrix(matrix)
+                                });
+                                continue;
+                            }
+                            
+                            // b. 交换行使主元到对角线
+                            if (pivotRow !== col) {
+                                this.steps.push({
+                                    phase: 0,
+                                    title: `步骤 ${this.steps.length}`,
+                                    description: `交换第${col + 1}行和第${pivotRow + 1}行<br><strong>行列式变号：|A'| = -|A|</strong>`,
+                                    opType: 'swap',
+                                    row1: col,
+                                    row2: pivotRow,
+                                    matrix: this.cloneMatrix(matrix)
+                                });
+                                this.swapRows(matrix, col, pivotRow);
+                                det_sign *= -1;
+                            }
+                            
+                            // c. 消元：对下方每行row
+                            for (let row = col + 1; row < n; row++) {
+                                if (Math.abs(matrix[row][col]) > 1e-10) {
+                                    let factor = matrix[row][col] / matrix[col][col];
+                                    this.steps.push({
+                                        phase: 0,
+                                        title: `步骤 ${this.steps.length}`,
+                                        description: `第${row + 1}行 ← 第${row + 1}行 - ${factor.toFixed(2)} × 第${col + 1}行<br><strong>行列式不变：|A'| = |A|</strong>`,
+                                        opType: 'row_add',
+                                        targetRow: row,
+                                        sourceRow: col,
+                                        sourceCol: col,
+                                        factor: factor,
+                                        matrix: this.cloneMatrix(matrix)
+                                    });
+                                    this.rowOperation(matrix, row, col, factor);
+                                }
+                            }
+                        }
+                    } else {
+                        // 下三角：从右到左，消去上方元素（row < col）
+                        for (let col = n - 1; col > 0; col--) {
+                            // a. 找主元行（从col行开始往上）
+                            let pivotRow = this.findPivotRow(matrix, 0, col);
+                            if (pivotRow === -1) {
+                                this.steps.push({
+                                    phase: 0,
+                                    title: `步骤 ${this.steps.length}`,
+                                    description: `第${col + 1}列主元位置及上方全为零，行列式值为0！`,
+                                    opType: 'warning',
+                                    matrix: this.cloneMatrix(matrix)
+                                });
+                                continue;
+                            }
+                            
+                            // b. 交换行使主元到对角线
+                            if (pivotRow !== col) {
+                                this.steps.push({
+                                    phase: 0,
+                                    title: `步骤 ${this.steps.length}`,
+                                    description: `交换第${col + 1}行和第${pivotRow + 1}行<br><strong>行列式变号：|A'| = -|A|</strong>`,
+                                    opType: 'swap',
+                                    row1: col,
+                                    row2: pivotRow,
+                                    matrix: this.cloneMatrix(matrix)
+                                });
+                                this.swapRows(matrix, col, pivotRow);
+                                det_sign *= -1;
+                            }
+                            
+                            // c. 消元：对上方每行row
+                            for (let row = col - 1; row >= 0; row--) {
+                                if (Math.abs(matrix[row][col]) > 1e-10) {
+                                    let factor = matrix[row][col] / matrix[col][col];
+                                    this.steps.push({
+                                        phase: 0,
+                                        title: `步骤 ${this.steps.length}`,
+                                        description: `第${row + 1}行 ← 第${row + 1}行 - ${factor.toFixed(2)} × 第${col + 1}行<br><strong>行列式不变：|A'| = |A|</strong>`,
+                                        opType: 'row_add',
+                                        targetRow: row,
+                                        sourceRow: col,
+                                        sourceCol: col,
+                                        factor: factor,
+                                        matrix: this.cloneMatrix(matrix)
+                                    });
+                                    this.rowOperation(matrix, row, col, factor);
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    // ==================== 列变换逻辑 ====================
+                    if (isUpper) {
+                        // 上三角：从下到上，消去左侧元素（targetCol < currentRow）
+                        for (let row = n - 1; row > 0; row--) {
+                            // a. 确保主元位置matrix[row][row]不为零，在左侧找主元列
+                            if (Math.abs(matrix[row][row]) < 1e-10) {
+                                let pivotCol = this.findPivotColInRow(matrix, row, 0, row - 1);
+                                if (pivotCol !== -1) {
+                                    this.steps.push({
+                                        phase: 0,
+                                        title: `步骤 ${this.steps.length}`,
+                                        description: `交换第${row + 1}列和第${pivotCol + 1}列<br><strong>行列式变号：|A'| = -|A|</strong>`,
+                                        opType: 'col_swap',
+                                        col1: row,
+                                        col2: pivotCol,
+                                        matrix: this.cloneMatrix(matrix)
+                                    });
+                                    this.swapCols(matrix, row, pivotCol);
+                                    det_sign *= -1;
+                                }
+                            }
+                            
+                            // b. 消元：对该行左侧每列targetCol
+                            for (let targetCol = row - 1; targetCol >= 0; targetCol--) {
+                                if (Math.abs(matrix[row][targetCol]) > 1e-10) {
+                                    let factor = matrix[row][targetCol] / matrix[row][row];
+                                    this.steps.push({
+                                        phase: 0,
+                                        title: `步骤 ${this.steps.length}`,
+                                        description: `第${targetCol + 1}列 ← 第${targetCol + 1}列 - ${factor.toFixed(2)} × 第${row + 1}列<br><strong>行列式不变：|A'| = |A|</strong>`,
+                                        opType: 'col_add',
+                                        targetCol: targetCol,
+                                        sourceCol: row,
+                                        pivotPos: {row: row, col: row},
+                                        factor: factor,
+                                        matrix: this.cloneMatrix(matrix)
+                                    });
+                                    this.colOperation(matrix, targetCol, row, factor);
+                                }
+                            }
+                        }
+                    } else {
+                        // 下三角：从上到下，消去右侧元素（targetCol > currentRow）
+                        for (let row = 0; row < n - 1; row++) {
+                            // a. 确保主元位置matrix[row][row]不为零，在右侧找主元列
+                            if (Math.abs(matrix[row][row]) < 1e-10) {
+                                let pivotCol = this.findPivotColInRow(matrix, row, row + 1, n - 1);
+                                if (pivotCol !== -1) {
+                                    this.steps.push({
+                                        phase: 0,
+                                        title: `步骤 ${this.steps.length}`,
+                                        description: `交换第${row + 1}列和第${pivotCol + 1}列<br><strong>行列式变号：|A'| = -|A|</strong>`,
+                                        opType: 'col_swap',
+                                        col1: row,
+                                        col2: pivotCol,
+                                        matrix: this.cloneMatrix(matrix)
+                                    });
+                                    this.swapCols(matrix, row, pivotCol);
+                                    det_sign *= -1;
+                                }
+                            }
+                            
+                            // b. 消元：对该行右侧每列targetCol
+                            for (let targetCol = row + 1; targetCol < n; targetCol++) {
+                                if (Math.abs(matrix[row][targetCol]) > 1e-10) {
+                                    let factor = matrix[row][targetCol] / matrix[row][row];
+                                    this.steps.push({
+                                        phase: 0,
+                                        title: `步骤 ${this.steps.length}`,
+                                        description: `第${targetCol + 1}列 ← 第${targetCol + 1}列 - ${factor.toFixed(2)} × 第${row + 1}列<br><strong>行列式不变：|A'| = |A|</strong>`,
+                                        opType: 'col_add',
+                                        targetCol: targetCol,
+                                        sourceCol: row,
+                                        pivotPos: {row: row, col: row},
+                                        factor: factor,
+                                        matrix: this.cloneMatrix(matrix)
+                                    });
+                                    this.colOperation(matrix, targetCol, row, factor);
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                this.determinant.target = this.cloneMatrix(matrix);
+                this.determinant.multiplier = det_sign * det_scale;
+                
+                this.steps.push({
+                    phase: 1,
+                    title: '化简完成',
+                    description: `行列式已化为${isUpper ? '上' : '下'}三角形式！<br>行列式的值 = ${det_sign > 0 ? '' : '-'}(对角线元素的乘积)`,
+                    opType: 'complete',
+                    matrix: this.cloneMatrix(matrix),
+                    multiplier: this.determinant.multiplier
+                });
+            }
+            
+            findPivotRow(matrix, startRow, col) {
+                for (let i = startRow; i < matrix.length; i++) {
+                    if (Math.abs(matrix[i][col]) > 1e-10) {
+                        return i;
+                    }
+                }
+                return -1;
+            }
+            
+            findPivotColInRow(matrix, row, startCol, endCol) {
+                for (let j = startCol; j <= endCol; j++) {
+                    if (Math.abs(matrix[row][j]) > 1e-10) {
+                        return j;
+                    }
+                }
+                return -1;
+            }
+            
+            swapRows(matrix, i, j) {
+                [matrix[i], matrix[j]] = [matrix[j], matrix[i]];
+            }
+            
+            swapCols(matrix, col1, col2) {
+                for (let i = 0; i < matrix.length; i++) {
+                    [matrix[i][col1], matrix[i][col2]] = [matrix[i][col2], matrix[i][col1]];
+                }
+            }
+            
+            rowOperation(matrix, targetRow, sourceRow, factor) {
+                for (let j = 0; j < matrix[targetRow].length; j++) {
+                    matrix[targetRow][j] -= factor * matrix[sourceRow][j];
+                    if (Math.abs(matrix[targetRow][j]) < 1e-10) {
+                        matrix[targetRow][j] = 0;
+                    }
+                }
+            }
+            
+            colOperation(matrix, targetCol, sourceCol, factor) {
+                for (let i = 0; i < matrix.length; i++) {
+                    matrix[i][targetCol] -= factor * matrix[i][sourceCol];
+                    if (Math.abs(matrix[i][targetCol]) < 1e-10) {
+                        matrix[i][targetCol] = 0;
+                    }
+                }
+            }
+            
+            renderMatrix(elementId, matrix, highlight = {}) {
+                const container = document.getElementById(elementId);
+                container.innerHTML = '';
+                
+                const matrixDiv = document.createElement('div');
+                matrixDiv.className = 'matrix';
+                
+                const leftBracket = document.createElement('div');
+                leftBracket.className = 'matrix-brackets left-bracket';
+                leftBracket.textContent = '|';
+                matrixDiv.appendChild(leftBracket);
+                
+                const content = document.createElement('div');
+                content.className = 'matrix-content';
+                
+                matrix.forEach((row, i) => {
+                    const rowDiv = document.createElement('div');
+                    rowDiv.className = 'matrix-row';
+                    
+                    row.forEach((cell, j) => {
+                        const cellDiv = document.createElement('div');
+                        cellDiv.className = 'matrix-cell';
+                        cellDiv.textContent = Math.abs(cell) < 1e-10 ? '0' : 
+                                           (Math.abs(cell - Math.round(cell)) < 1e-10 ? 
+                                            cell.toFixed(0) : 
+                                            (Math.abs(cell) < 10 ? cell.toFixed(1) : cell.toFixed(0)));
+                        cellDiv.id = `${elementId}-${i}-${j}`;
+                        
+                        if (highlight.pivot && highlight.pivot.row === i && highlight.pivot.col === j) {
+                            cellDiv.classList.add('pivot');
+                        } else if (highlight.changing && 
+                                 ((typeof highlight.changing.row === 'number' && highlight.changing.row === i) ||
+                                  (typeof highlight.changing.col === 'number' && highlight.changing.col === j))) {
+                            cellDiv.classList.add('changing');
+                        } else if (highlight.eliminating && 
+                                 highlight.eliminating.row === i && highlight.eliminating.col === j) {
+                            cellDiv.classList.add('eliminating');
+                        } else if (highlight.newZero && 
+                                 highlight.newZero.row === i && highlight.newZero.col === j) {
+                            cellDiv.classList.add('new-zero');
+                        }
+                        
+                        rowDiv.appendChild(cellDiv);
+                    });
+                    
+                    content.appendChild(rowDiv);
+                });
+                
+                matrixDiv.appendChild(content);
+                
+                const rightBracket = document.createElement('div');
+                rightBracket.className = 'matrix-brackets right-bracket';
+                rightBracket.textContent = '|';
+                matrixDiv.appendChild(rightBracket);
+                
+                container.appendChild(matrixDiv);
+            }
+            
+            updateDeterminantValue() {
+                const initialDet = this.calculateDeterminant(this.determinant.initial);
+                
+                if (!this.determinant.target) {
+                    document.getElementById('initialValue').textContent = this.formatNumber(initialDet);
+                    document.getElementById('targetValue').textContent = '化简中...';
+                    document.getElementById('calculation').innerHTML = '正在通过初等变换化简行列式...';
+                    return;
+                }
+                
+                // 检查矩阵形状是否正确
+                const isUpper = this.mode.startsWith('upper');
+                const isRow = this.mode.endsWith('Row');
+                const shapeError = this.checkMatrixShape(this.determinant.target, isUpper, isRow);
+                
+                const diagProduct = this.calculateDiagonalProduct(this.determinant.target);
+                const finalDet = diagProduct * this.determinant.multiplier;
+                
+                document.getElementById('initialValue').textContent = this.formatNumber(initialDet);
+                document.getElementById('targetValue').textContent = this.formatNumber(finalDet);
+                
+                const diagElements = [];
+                for (let i = 0; i < this.determinant.target.length; i++) {
+                    diagElements.push(this.determinant.target[i][i].toFixed(1));
+                }
+                
+                const transformName = isRow ? '行' : '列';
+                const multiplierStr = this.determinant.multiplier === -1 ? '-' : 
+                                     (this.determinant.multiplier === 1 ? '' : 
+                                      this.determinant.multiplier.toFixed(2) + ' × ');
+                
+                let calculationHTML = `|A'| = ${multiplierStr}(${diagElements.join(' × ')}) = ${this.formatNumber(finalDet)}`;
+                
+                if (this.determinant.multiplier === -1) {
+                    calculationHTML += `<br><small>（因为交换了${transformName}，行列式变号）</small>`;
+                } else if (this.determinant.multiplier !== 1) {
+                    calculationHTML += `<br><small>（因为${transformName}倍乘，行列式乘以${this.determinant.multiplier}）</small>`;
+                }
+                
+                const tolerance = 0.01;
+                const diff = Math.abs(initialDet - finalDet);
+                
+                if (diff > tolerance) {
+                    calculationHTML += `<br><div class="error">❌ 结果错误：与原始行列式值不符（误差${diff.toFixed(3)}）</div>`;
+                } else if (shapeError) {
+                    calculationHTML += `<br><div class="error">❌ 形状错误：${shapeError}</div>`;
+                } else {
+                    calculationHTML += `<br><div style="color: #00aa44; font-weight: 700;">✅ 验证通过：结果正确，形状正确</div>`;
+                }
+                
+                document.getElementById('calculation').innerHTML = calculationHTML;
+            }
+            
+            checkMatrixShape(matrix, shouldBeUpper, isRowTransform) {
+                const n = matrix.length;
+                const checkPositions = [];
+                
+                if (shouldBeUpper) {
+                    // 上三角：row > col的位置应为0
+                    for (let row = 0; row < n; row++) {
+                        for (let col = 0; col < row; col++) {
+                            if (Math.abs(matrix[row][col]) > 1e-9) {
+                                checkPositions.push(`(${row + 1},${col + 1})=${matrix[row][col].toFixed(1)}`);
+                            }
+                        }
+                    }
+                    if (checkPositions.length > 0) {
+                        return `主对角线下方应有更多零元素，位置 ${checkPositions.join(', ')} 非零`;
+                    }
+                } else {
+                    // 下三角：row < col的位置应为0
+                    for (let row = 0; row < n; row++) {
+                        for (let col = row + 1; col < n; col++) {
+                            if (Math.abs(matrix[row][col]) > 1e-9) {
+                                checkPositions.push(`(${row + 1},${col + 1})=${matrix[row][col].toFixed(1)}`);
+                            }
+                        }
+                    }
+                    if (checkPositions.length > 0) {
+                        return `主对角线上方应有更多零元素，位置 ${checkPositions.join(', ')} 非零`;
+                    }
+                }
+                return null;
+            }
+            
+            formatNumber(num) {
+                const absNum = Math.abs(num);
+                if (absNum < 1e-10) return '0';
+                if (absNum < 0.01) return num.toExponential(3);
+                if (absNum < 10) return num.toFixed(3);
+                if (absNum < 100) return num.toFixed(2);
+                return num.toFixed(1);
+            }
+            
+            async executeStep(step) {
+                const stepInfo = document.getElementById('stepInfo');
+                const phaseIndicator = document.getElementById('phaseIndicator');
+                
+                phaseIndicator.textContent = this.phases[this.currentPhase];
+                
+                stepInfo.innerHTML = `
+                    <div class="step-title">步骤 ${this.currentStep + 1}/${this.steps.length}</div>
+                    <div class="step-description">${step.description}</div>
+                    ${step.opType ? `<div class="operation-effect"><strong>操作类型：</strong> ${this.getOperationName(step.opType)}</div>` : ''}
+                `;
+                
+                switch (step.opType) {
+                    case 'swap':
+                    case 'row_add':
+                        await this.animateRowStep(step);
+                        break;
+                    case 'col_swap':
+                    case 'col_add':
+                        await this.animateColStep(step);
+                        break;
+                    case 'complete':
+                        this.animateComplete(step);
+                        break;
+                    case 'info':
+                        this.renderMatrix('targetMatrix', step.matrix);
+                        this.determinant.current = this.cloneMatrix(step.matrix);
+                        this.updateDeterminantValue();
+                        await this.delay(1500);
+                        return;
+                    case 'warning':
+                        this.renderMatrix('targetMatrix', this.determinant.current);
+                        this.updateDeterminantValue();
+                        await this.delay(1500);
+                        return;
+                }
+                
+                this.updateProgress();
+                await this.delay(2000);
+            }
+            
+            getOperationName(opType) {
+                const isRow = this.mode.endsWith('Row');
+                const transformName = isRow ? '行' : '列';
+                
+                const names = {
+                    'swap': `交换两${transformName}（行列式变号）`,
+                    'row_add': `倍加变换（行列式不变）`,
+                    'col_swap': `交换两${transformName}（行列式变号）`,
+                    'col_add': `倍加变换（行列式不变）`,
+                    'complete': '化简完成',
+                    'warning': '警告',
+                    'info': '信息'
+                };
+                return names[opType] || '未知操作';
+            }
+            
+            async animateRowStep(step) {
+                if (step.opType === 'swap') {
+                    this.swapRows(this.determinant.current, step.row1, step.row2);
+                    this.renderMatrix('targetMatrix', this.determinant.current);
+                    
+                    // 高亮被交换的行
+                    for (let j = 0; j < this.determinant.current[0].length; j++) {
+                        const cell1 = document.getElementById(`targetMatrix-${step.row1}-${j}`);
+                        const cell2 = document.getElementById(`targetMatrix-${step.row2}-${j}`);
+                        if (cell1) cell1.classList.add('changing');
+                        if (cell2) cell2.classList.add('changing');
+                    }
+                } else if (step.opType === 'row_add') {
+                    // 动画：先显示消元位置和主元
+                    this.renderMatrix('targetMatrix', this.determinant.current, {
+                        eliminating: { row: step.targetRow, col: step.sourceCol },
+                        changing: { row: step.sourceRow }
+                    });
+                    
+                    this.rowOperation(this.determinant.current, step.targetRow, step.sourceRow, step.factor);
+                    
+                    await this.delay(1000);
+                    
+                    // 然后显示结果
+                    this.renderMatrix('targetMatrix', this.determinant.current, {
+                        pivot: { row: step.sourceRow, col: step.sourceCol },
+                        changing: { row: step.sourceRow }
+                    });
+                }
+                
+                this.updateDeterminantValue();
+            }
+            
+            async animateColStep(step) {
+                if (step.opType === 'col_swap') {
+                    this.swapCols(this.determinant.current, step.col1, step.col2);
+                    this.renderMatrix('targetMatrix', this.determinant.current);
+                    
+                    // 高亮被交换的列
+                    for (let i = 0; i < this.determinant.current.length; i++) {
+                        const cell1 = document.getElementById(`targetMatrix-${i}-${step.col1}`);
+                        const cell2 = document.getElementById(`targetMatrix-${i}-${step.col2}`);
+                        if (cell1) cell1.classList.add('changing');
+                        if (cell2) cell2.classList.add('changing');
+                    }
+                } else if (step.opType === 'col_add') {
+                    // 动画：先显示消元位置和主元
+                    this.renderMatrix('targetMatrix', this.determinant.current, {
+                        eliminating: { row: step.pivotPos.row, col: step.targetCol },
+                        changing: { col: step.sourceCol }
+                    });
+                    
+                    this.colOperation(this.determinant.current, step.targetCol, step.sourceCol, step.factor);
+                    
+                    await this.delay(1000);
+                    
+                    // 然后显示结果
+                    this.renderMatrix('targetMatrix', this.determinant.current, {
+                        pivot: step.pivotPos,
+                        changing: { col: step.sourceCol }
+                    });
+                }
+                
+                this.updateDeterminantValue();
+            }
+            
+            animateComplete(step) {
+                this.determinant.target = this.cloneMatrix(step.matrix);
+                if (step.multiplier !== undefined) {
+                    this.determinant.multiplier = step.multiplier;
+                }
+                
+                this.renderMatrix('targetMatrix', this.determinant.target);
+                this.determinant.current = this.cloneMatrix(this.determinant.target);
+                
+                // 高亮所有对角线主元
+                for (let i = 0; i < this.determinant.target.length; i++) {
+                    const cell = document.getElementById(`targetMatrix-${i}-${i}`);
+                    if (cell) cell.classList.add('pivot');
+                }
+                
+                this.updateDeterminantValue();
+            }
+            
+            updateProgress() {
+                const progress = ((this.currentStep + 1) / this.steps.length) * 100;
+                document.getElementById('progressFill').style.width = progress + '%';
+            }
+            
+            delay(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+        }
+        
+        let animation = new DeterminantAnimation('upperRow');
+        let isPaused = false;
+        let isRunning = false;
+        let currentMode = 'upperRow';
+
+        // 添加键盘快捷键监听
+        document.addEventListener('keydown', function(event) {
+            // 只响应数字键1-4，不区分大小写
+            const key = event.key;
+            if (key === '1' || key === '2' || key === '3' || key === '4') {
+                event.preventDefault(); // 防止浏览器默认行为
+                
+                const modeMap = {
+                    '1': 'upperRow',
+                    '2': 'lowerRow',
+                    '3': 'upperCol',
+                    '4': 'lowerCol'
+                };
+                
+                const targetMode = modeMap[key];
+                
+                // 如果当前不在该模式，则切换
+                if (currentMode !== targetMode) {
+                    // 如果正在演示，先重置
+                    if (isRunning) {
+                        resetDemo();
+                    }
+                    switchMode(targetMode);
+                }
+            }
+        });
+        
+        function switchMode(mode) {
+            currentMode = mode;
+            animation = new DeterminantAnimation(mode);
+            
+            // 更新按钮状态
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(mode).classList.add('active');
+            
+            // 更新标题和描述
+            const isUpper = mode.startsWith('upper');
+            const isRow = mode.endsWith('Row');
+            const transformName = isRow ? '行' : '列';
+            const targetTitle = document.getElementById('targetTitle');
+            targetTitle.innerHTML = `${isUpper ? '上' : '下'}三角行列式 <span class="phase-indicator" id="phaseIndicator"></span>`;
+            
+            const description = `当前模式：<strong>${isUpper ? '上' : '下'}三角化简（${transformName}变换）</strong>：通过${transformName}变换消去主对角线${isUpper ? '下方' : '上方'}的元素`;
+            
+            document.getElementById('targetMatrix').innerHTML = '';
+            document.getElementById('stepInfo').innerHTML = `
+                <div class="step-title">准备开始</div>
+                <div class="step-description">${description}</div>
+            `;
+            document.getElementById('progressFill').style.width = '0%';
+            
+            // 重置控制按钮
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('pauseBtn').disabled = true;
+            document.getElementById('nextBtn').disabled = true;
+            
+            animation.updateDeterminantValue();
+        }
+        
+        async function startDemo() {
+            if (isRunning) return;
+            
+            isRunning = true;
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('pauseBtn').disabled = false;
+            document.getElementById('nextBtn').disabled = true;
+            
+            animation.currentStep = 0;
+            animation.determinant.multiplier = 1;
+            
+            while (animation.currentStep < animation.steps.length) {
+                if (!isRunning) break;
+                
+                if (isPaused) {
+                    await new Promise(resolve => {
+                        const checkPause = setInterval(() => {
+                            if (!isPaused || !isRunning) {
+                                clearInterval(checkPause);
+                                resolve();
+                            }
+                        }, 100);
+                    });
+                }
+                
+                await animation.executeStep(animation.steps[animation.currentStep]);
+                animation.currentStep++;
+                
+                if (!isRunning && animation.currentStep < animation.steps.length) {
+                    document.getElementById('nextBtn').disabled = false;
+                    break;
+                }
+            }
+            
+            if (animation.currentStep >= animation.steps.length) {
+                const isUpper = currentMode.startsWith('upper');
+                const isRow = currentMode.endsWith('Row');
+                const transformName = isRow ? '行' : '列';
+                document.getElementById('stepInfo').innerHTML = `
+                    <div class="step-title">演示完成！</div>
+                    <div class="step-description">行列式已成功化为${isUpper ? '上' : '下'}三角形式。<br>
+                    <strong>关键原理：</strong>初等${transformName}变换对行列式的影响：<br>
+                    1. <strong>交换两${transformName}</strong>：行列式变号（乘以-1）<br>
+                    2. <strong>某${transformName}乘以k</strong>：行列式变为k倍<br>
+                    3. <strong>某${transformName}加上另一${transformName}的倍数</strong>：行列式不变</div>
+                `;
+            }
+            
+            isRunning = false;
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('pauseBtn').disabled = true;
+            document.getElementById('nextBtn').disabled = true;
+        }
+        
+        function togglePause() {
+            isPaused = !isPaused;
+            document.getElementById('pauseBtn').textContent = isPaused ? '继续' : '暂停';
+            if (!isPaused && !isRunning) {
+                nextStep();
+            }
+        }
+        
+        async function nextStep() {
+            if (animation.currentStep < animation.steps.length) {
+                isRunning = true;
+                document.getElementById('startBtn').disabled = true;
+                document.getElementById('pauseBtn').disabled = false;
+                document.getElementById('nextBtn').disabled = true;
+                
+                await animation.executeStep(animation.steps[animation.currentStep]);
+                animation.currentStep++;
+                
+                if (animation.currentStep >= animation.steps.length) {
+                    const isUpper = currentMode.startsWith('upper');
+                    document.getElementById('stepInfo').innerHTML = `
+                        <div class="step-title">演示完成！</div>
+                        <div class="step-description">行列式已成功化为${isUpper ? '上' : '下'}三角形式。<br>
+                        <strong>计算结果验证：</strong>化简后的值与原始行列式值一致！</div>
+                    `;
+                    isRunning = false;
+                    document.getElementById('startBtn').disabled = false;
+                    document.getElementById('pauseBtn').disabled = true;
+                    document.getElementById('nextBtn').disabled = true;
+                } else {
+                    isRunning = false;
+                    document.getElementById('startBtn').disabled = false;
+                    document.getElementById('pauseBtn').disabled = true;
+                    document.getElementById('nextBtn').disabled = false;
+                }
+            }
+        }
+        
+        function resetDemo() {
+            isRunning = false;
+            isPaused = false;
+            animation = new DeterminantAnimation(currentMode);
+            animation.updateDeterminantValue();
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('pauseBtn').disabled = true;
+            document.getElementById('nextBtn').disabled = true;
+            document.getElementById('pauseBtn').textContent = '暂停';
+            document.getElementById('targetMatrix').innerHTML = '';
+            document.getElementById('stepInfo').innerHTML = `
+                <div class="step-title">准备开始</div>
+                <div class="step-description">点击"开始演示"按钮开始行列式化简过程</div>
+            `;
+            document.getElementById('progressFill').style.width = '0%';
+        }
+        
+        // 初始化显示
+        animation.updateDeterminantValue();
+    </script>
+</body>
+</html>

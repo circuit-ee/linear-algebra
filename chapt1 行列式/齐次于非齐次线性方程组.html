@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>齐次 vs 非齐次线性方程组 · 工程意义（3D 交互）</title>
+<style>
+  :root{
+    --bg:#eef3f9; --card:#ffffff; --ink:#1f2937; --muted:#5b6472;
+    --line:#d9e2ec; --hom:#2563eb; --inhom:#dc2626; --acc:#059669; --warn:#d97706;
+    --shadow:0 6px 22px rgba(30,50,80,.10);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:"PingFang SC","Microsoft YaHei","Helvetica Neue",Arial,sans-serif;
+    background:linear-gradient(180deg,#eef3f9 0%,#f7f9fc 100%);
+    color:var(--ink);font-size:19px;line-height:1.85;min-height:100vh;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:34px 22px 60px;}
+  header.hero{text-align:center;margin-bottom:26px;}
+  header.hero h1{font-size:2.7rem;margin:0 0 10px;letter-spacing:.5px;color:#14315c;}
+  header.hero p.sub{font-size:1.15rem;color:var(--muted);margin:0 auto;max-width:860px;}
+  .legend{display:flex;justify-content:center;gap:22px;margin-top:16px;flex-wrap:wrap;}
+  .chip{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);
+    padding:7px 14px;border-radius:30px;font-size:1rem;box-shadow:var(--shadow);}
+  .dot{width:13px;height:13px;border-radius:50%;display:inline-block;}
+  .dot.h{background:var(--hom);} .dot.ih{background:var(--inhom);} .dot.a{background:var(--acc);}
+  nav.tabs{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:26px 0 22px;}
+  nav.tabs button{flex:1 1 200px;max-width:260px;padding:13px 14px;border:1px solid var(--line);
+    background:#fff;color:var(--ink);font-size:1.08rem;font-weight:600;border-radius:12px;
+    cursor:pointer;transition:.2s;box-shadow:var(--shadow);}
+  nav.tabs button:hover{transform:translateY(-2px);border-color:#b9c8de;}
+  nav.tabs button.active{background:#14315c;color:#fff;border-color:#14315c;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:26px 28px;
+    box-shadow:var(--shadow);margin-bottom:22px;}
+  .card h2{font-size:1.55rem;margin:0 0 8px;color:#14315c;}
+  .card h3{font-size:1.2rem;margin:18px 0 6px;color:#23457a;}
+  .card p{margin:8px 0;}
+  .eq{font-family:"Cambria Math","Times New Roman",serif;font-size:1.25rem;color:#14315c;
+    background:#f2f6fb;padding:10px 16px;border-radius:10px;border:1px dashed #c3d3e6;display:inline-block;}
+  .row{display:flex;gap:20px;flex-wrap:wrap;align-items:stretch;}
+  .row>.pane{flex:1 1 460px;min-width:340px;}
+  .stage{position:relative;width:100%;height:420px;background:#eef2f7;border-radius:14px;
+    border:1px solid var(--line);overflow:hidden;}
+  .stage canvas{display:block;width:100%!important;height:100%!important;}
+  .badge{position:absolute;top:10px;left:12px;font-size:.95rem;font-weight:700;padding:5px 11px;
+    border-radius:8px;color:#fff;background:rgba(20,49,92,.82);z-index:5;pointer-events:none;}
+  .ctrl{margin-top:12px;display:flex;flex-wrap:wrap;gap:14px;align-items:center;}
+  .ctrl label{font-weight:600;color:#23457a;}
+  input[type=range]{flex:1;min-width:180px;accent-color:var(--hom);}
+  .val{font-family:"Cambria Math",monospace;color:var(--inhom);font-weight:700;min-width:46px;}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:1.02rem;}
+  th,td{padding:10px 12px;border:1px solid var(--line);text-align:left;vertical-align:top;}
+  th{background:#eef4fb;color:#14315c;}
+  tr:nth-child(even) td{background:#f8fbfe;}
+  .note{background:#fff8ec;border:1px solid #f3dcae;color:#7a5320;padding:12px 16px;border-radius:10px;margin:12px 0;}
+  .tip{background:#eefaf1;border:1px solid #bfe9cd;color:#1f5c34;padding:12px 16px;border-radius:10px;margin:12px 0;}
+  .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px;}
+  .stat{font-size:1rem;color:var(--muted);}
+  #status{text-align:center;font-size:1rem;color:var(--muted);margin:6px 0 14px;min-height:1.4em;}
+  #status.ok{color:var(--acc);} #status.bad{color:var(--inhom);}
+  .eqblock{background:#f2f6fb;border:1px dashed #c3d3e6;border-radius:10px;padding:14px 18px;margin:10px 0;font-size:1.15rem;line-height:1.9;}
+  .eqblock b{color:#14315c;}
+  .small{font-size:.98rem;color:var(--muted);}
+  .geo3d{height:580px;}
+  @media(max-width:700px){
+    header.hero h1{font-size:2rem;} body{font-size:17px;}
+    .stage{height:340px;} .geo3d{height:460px;} .card{padding:20px 16px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hero">
+    <h1>齐次 vs 非齐次线性方程组</h1>
+    <p class="sub">面向大一新生：从几何直觉看懂两类方程组的定义、解的结构与工程意义（无源 = 齐次 · 有源/受迫 = 非齐次）</p>
+    <div class="legend">
+      <span class="chip"><span class="dot h"></span>齐次 Ax=0（无源/自由响应）</span>
+      <span class="chip"><span class="dot ih"></span>非齐次 Ax=b（有源/受迫响应）</span>
+      <span class="chip"><span class="dot a"></span>关键点 / 交点</span>
+    </div>
+  </header>
+
+  <div id="status">⏳ 正在加载 3D 引擎（jsDelivr 主用 / unpkg 备用）…</div>
+
+  <nav class="tabs" id="tabs">
+    <button data-i="0" class="active">① 定义对比</button>
+    <button data-i="1">② 几何意义</button>
+    <button data-i="2">③ 解的结构</button>
+    <button data-i="3">④ 工程意义（有源/无源）</button>
+  </nav>
+
+  <!-- ① 定义 -->
+  <section class="card" id="sec0">
+    <h2>① 定义对比：有没有"源"（外部激励）</h2>
+    <div class="row">
+      <div class="pane">
+        <h3>齐次线性方程组 Ax = 0</h3>
+        <div class="eqblock">A 是系数矩阵，x 是未知向量，<b>右端恒为 0</b>。<br>例（2 元）：
+          <span class="eq">2x + y = 0<br>x − y = 0</span></div>
+        <p>✅ <b>必有零解 x=0</b>（无源时系统可"静止"）。解的集合对加法、数乘封闭 → 构成<b>向量空间（解空间）</b>。</p>
+        <h3>非齐次线性方程组 Ax = b</h3>
+        <div class="eqblock">右端 <b>b ≠ 0</b>（至少一个分量非零），代表外部激励/载荷。<br>例：
+          <span class="eq">2x + y = 3<br>x − y = 0</span></div>
+        <p>❌ 不一定有零解；解集 = 一个特解 xₚ + 齐次通解 xₕ，是<b>解空间平移</b>后的一族，一般不构成向量空间。</p>
+      </div>
+      <div class="pane">
+        <h3>3D 演示：b 改变 → 平面平移（是否过原点）</h3>
+        <p class="small">平面族 2x + y − z = b。b=0 时过原点（齐次）；b≠0 时不过原点（非齐次）。拖动滑块改变 b。</p>
+        <div class="stage" id="stageDef" data-w="560" data-h="420"><span class="badge">定义·平面平移</span></div>
+        <div class="ctrl">
+          <label>b =</label>
+          <input id="defB" type="range" min="-4" max="4" step="0.1" value="0">
+          <span class="val" id="defBv">0.0</span>
+        </div>
+        <p class="stat" id="defStat">b=0：平面过原点（齐次 Ax=0）。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ② 几何 -->
+  <section class="card" id="sec1" style="display:none">
+    <h2>② 几何意义：解 = 直线 / 平面的交点</h2>
+    <div class="row">
+      <div class="pane">
+        <h3>2D 两直线交点（齐次 vs 非齐次对照）</h3>
+        <div class="eqblock"><b>齐次（过原点）：</b><br>
+          L₁: x + y = 0　　L₂: x − y = 0<br>
+          <b>交点 = (0,0) 原点</b>（无源时唯一"静止"交点）</div>
+        <div class="eqblock"><b>非齐次（平移后）：</b><br>
+          L₁: x + y = 2　　L₂: x − y = 0<br>
+          <b>交点 = (1,1)</b>（有源时交点离开原点）</div>
+        <div class="stage" id="stage2D" data-w="560" data-h="360" style="height:360px"><span class="badge">2D·齐次(蓝) vs 非齐次(红)</span></div>
+        <p class="tip">👉 两族直线画在同一坐标系：<b>蓝色</b>为齐次方程组（两线交于原点），<b>红色</b>为非齐次方程组（两线交于 (1,1)）。一目了然——齐次交点是原点，非齐次交点因"源"而偏移。</p>
+      </div>
+      <div class="pane">
+        <h3>3D：两组平面的交线（大画布，可拖拽旋转/滚轮缩放）</h3>
+        <p class="small">齐次组 x+y−z=0 与 x−y=0 的交线（过原点）；非齐次组平移后 x+y−z=2 与 x−y=0 的交线。</p>
+        <div class="stage geo3d" id="stageGeo" data-w="900" data-h="580"><span class="badge">几何·两组交线（大画布）</span></div>
+        <p class="stat" id="geoStat">蓝色交线过原点；红色交线由非齐次方程给出，整体平移。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ③ 解结构 -->
+  <section class="card" id="sec2" style="display:none">
+    <h2>③ 解的结构：非齐次通解 = 齐次通解 + 一个特解</h2>
+    <div class="eqblock">
+      <b>具体方程组（3 元示例）：</b><br>
+      齐次　x + y − z = 0　（解直线 x=t, y=t, z=2t）<br>
+      非齐次　x + y − z = 2　（解直线 = 特解 (1,0,−1) + t(1,1,2)）
+    </div>
+    <div class="row">
+      <div class="pane">
+        <h3>3D：拖动 t，看齐次解直线 + 非齐次解直线</h3>
+        <div class="stage" id="stageSol" data-w="560" data-h="420"><span class="badge">解结构·xₚ + t·xₕ</span></div>
+        <div class="ctrl">
+          <label>t =</label>
+          <input id="solT" type="range" min="-2" max="2" step="0.05" value="0">
+          <span class="val" id="solTv">0.00</span>
+        </div>
+        <p class="stat" id="solStat">蓝点=齐次解 xₕ(t)；红点=非齐次解 xₚ+xₕ(t)。</p>
+      </div>
+      <div class="pane">
+        <h3>t 的调节意义是什么？</h3>
+        <p>齐次方程 x+y−z=0 的解是一条<b>过原点的直线</b>，方向向量为 (1,1,2)。参数 <b>t</b> 表示"沿这条解直线走了多远"：</p>
+        <div class="eqblock">xₕ(t) = (t, t, 2t)　（t 任意实数）</div>
+        <p>非齐次方程的通解 = <b>一个特解</b> xₚ 加上齐次通解：</p>
+        <div class="eqblock">x(t) = xₚ + xₕ(t) = (1,0,−1) + (t, t, 2t)</div>
+        <p>👉 拖动滑块改变 <b>t</b>，相当于在解直线上<b>连续取不同的解点</b>。t 每取一个值，就得到一个满足方程的具体解；蓝点遍历齐次解直线，红点遍历非齐次解直线（整体由特解平移得到）。</p>
+        <div class="tip"><b>记忆口诀：</b>齐次给"方向/形状"（解空间），特解给"位置"（因源而平移）。两者相加 = 非齐次全部解。</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ④ 工程 -->
+  <section class="card" id="sec3" style="display:none">
+    <h2>④ 工程意义：无源（齐次） vs 有源（非齐次）</h2>
+    <p>工程上最本质的区别：<b>齐次描述"无源/自由响应"（无外部激励，系统按自身特性演化）；非齐次描述"有源/受迫响应"（存在外部载荷、电源、边界驱动等"源"）</b>。</p>
+    <div class="grid2">
+      <div>
+        <h3>核心对比</h3>
+        <table>
+          <tr><th>维度</th><th>齐次 Ax=0</th><th>非齐次 Ax=b (b≠0)</th></tr>
+          <tr><td>右端 b</td><td>b=0（无源）</td><td>b≠0（有源/受迫）</td></tr>
+          <tr><td>物理含义</td><td>无外力/无电源/零边界</td><td>有外载 f / 电源 V / 非零边界</td></tr>
+          <tr><td>力学类比</td><td>自由振动、固有模态</td><td>受迫振动、静力加载</td></tr>
+          <tr><td>电路类比</td><td>零输入响应（电源置零）</td><td>含独立源电路（节点电压）</td></tr>
+          <tr><td>解的意义</td><td>解空间（零解必存在）</td><td>特解=源产生的响应+齐次通解</td></tr>
+        </table>
+        <h3>工程应用场景一览</h3>
+        <table>
+          <tr><th>工程领域</th><th>齐次（无源）场景</th><th>非齐次（有源）场景</th></tr>
+          <tr><td>结构力学（有限元）</td><td>Ku=0：零载荷下的刚体模态/自由振动</td><td>Ku=f：外载作用下的结构变形位移</td></tr>
+          <tr><td>机械振动</td><td>Mẍ+Cẋ+Kx=0：自由衰减振动</td><td>Mẍ+Cẋ+Kx=F(t)：受迫/基座激励响应</td></tr>
+          <tr><td>电路分析</td><td>Gu=0：零输入响应（电源置零）</td><td>Gu=i：含独立源时的节点电压求解</td></tr>
+          <tr><td>热传导/流体</td><td>Ku=0：零边界下的稳态温度分布</td><td>Ku=q：有热源/对流边界的温度场</td></tr>
+          <tr><td>控制/稳定性</td><td>ẋ=Ax：判断系统自身是否稳定</td><td>ẋ=Ax+Bu：外加控制输入下的响应</td></tr>
+          <tr><td>经济学/网络</td><td>Ax=0：均衡态/零外部冲击</td><td>Ax=b：外部冲击/需求变动后的新均衡</td></tr>
+        </table>
+        <p class="small">👉 规律：把"源/载荷/电源/边界"全部置零 → 齐次（无源）；保留它们 → 非齐次（有源）。齐次刻画系统<b>自身特性</b>（模态、稳定性），非齐次刻画系统在源驱动下的<b>实际响应</b>。</p>
+      </div>
+      <div>
+        <h3>弹簧-质量系统 Ku = f（有限元原型）</h3>
+        <div class="eqblock">K = [[2,−1,0],[−1,2,−1],[0,−1,2]],　u = 竖直位移,　f = 竖直外力</div>
+        <p>弹簧刚度均为 k=1。三质量块由四根弹簧<b>竖直串联</b>于上下两固定墙之间（下墙—⚙—m₁—⚙—m₂—⚙—m₃—⚙—上墙），蓝色方块为质量块，灰弹簧两端明确锚在块面/墙面上。<br>
+        f=(0,b,0)（仅中间受<b>竖直</b>外力 b，方向与弹簧/位移同轴）→ 竖直位移解 u=(b/2, b, b/2)：中间块位移最大，两端为一半，拖动 b 可看到三块随弹簧伸缩同步升降，红箭头示外力方向。<br>
+        <span class="small">已验证 K·[b/2,b,b/2]ᵀ = [0,b,0]ᵀ 对任意 b 成立 ✓（外力方向=位移方向=弹簧轴方向，符合实际受力）</span></p>
+        <div class="stage" id="stageEng" data-w="560" data-h="460"><span class="badge">工程·弹簧-质量受载</span></div>
+        <div class="ctrl">
+          <label>外载 b =</label>
+          <input id="engB" type="range" min="-5" max="5" step="0.1" value="3">
+          <span class="val" id="engBv">3.0</span>
+        </div>
+        <p class="stat" id="engStat">b=0 为齐次（无源，三块静止）；b≠0 为非齐次（有源受迫，中间块位移最大）。</p>
+      </div>
+    </div>
+
+    <h3>关于"齐次无源场景的稳定性分析"</h3>
+    <div class="note"><b>澄清：</b>齐次系统的稳定性，指的是<b>系统"自身的自由运动"是否衰减回平衡</b>（如阻尼振动最终停下），它刻画的是<b>系统内部特性（质量/刚度/阻尼）</b>，而不是"有没有外部输入"。</div>
+    <p>✅ 正确表述：<b>稳定性与外部输入无关</b>——无论外加激励多复杂，只要系统本身的齐次（零输入）响应是稳定的，受迫响应就"可控"。换句话说：</p>
+    <ul>
+      <li><b>齐次（无源）研究的是"系统自己稳不稳"</b>：给一个初始扰动后，系统能否自行回到平衡（如 u(t)→0）。这是稳定性的定义。</li>
+      <li><b>非齐次（有源）研究的是"在外部源驱动下，系统如何响应"</b>：稳态解由源 b 决定，而暂态是否发散仍由齐次部分的稳定性决定。</li>
+      <li>因此工程上先分析齐次（无源）的稳定性，再叠加非齐次（有源）的特解——这与"非齐次通解 = 齐次通解 + 特解"在结构上完全对应。</li>
+    </ul>
+    <div class="tip"><b>一句话总结：</b>齐次 = 系统"关掉所有源"后的自由行为（据此判断稳不稳）；非齐次 = 打开源后系统被驱动的行为。稳定性是系统<b>内禀属性</b>，确实与外部输入无关。</div>
+  </section>
+</div>
+
+<!-- Three.js r128：用 Promise 链动态加载，jsDelivr 失败自动回退 unpkg -->
+<script>
+(function(){
+  var CDN1='https://cdn.jsdelivr.net/npm/three@0.128.0';
+  var CDN2='https://unpkg.com/three@0.128.0';
+  function setStatus(msg,cls){var el=document.getElementById('status');if(el){el.textContent=msg;el.className=cls||'';}}
+  function loadScript(src){return new Promise(function(res,rej){var s=document.createElement('script');s.src=src;s.async=false;s.onload=function(){setTimeout(res,0);};s.onerror=function(e){rej(e);};document.head.appendChild(s);});}
+  function tryBoot(){
+    if(window.THREE&&window.THREE.OrbitControls){setStatus('✅ 3D 引擎就绪','ok');boot();}
+    else{setStatus('⚠ 3D 引擎加载失败（教育网可能限制 CDN，请切换热点或下载离线包）','bad');}
+  }
+  function loadFrom(cdn){
+    return Promise.all([
+      loadScript(cdn+'/build/three.min.js'),
+      loadScript(cdn+'/examples/js/controls/OrbitControls.js')
+    ]);
+  }
+  // 依次尝试两个 CDN，都失败则降级提示
+  loadFrom(CDN1).then(tryBoot).catch(function(){return loadFrom(CDN2);}).then(tryBoot).catch(tryBoot);
+  // 12 秒超时兜底：若两个 CDN 都未触发 onload/onerror（极严格网络），给出降级提示
+  setTimeout(function(){if(!window.THREE||!window.THREE.OrbitControls)tryBoot();},12000);
+})();
+</script>
+
+<script>
+/* ============ 工具 ============ */
+var HOM=0x2563eb, INHOM=0xdc2626, ACC=0x059669;
+function makeScene(stage){
+  var w=stage.clientWidth||parseInt(stage.getAttribute('data-w')||'560',10)||460;
+  var h=stage.clientHeight||parseInt(stage.getAttribute('data-h')||'420',10)||420;
+  var scene=new THREE.Scene();scene.background=new THREE.Color(0xeef2f7);
+  var camera=new THREE.PerspectiveCamera(45,w/h,0.1,100);camera.position.set(5,4,7);
+  var renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));renderer.setSize(w,h,false);
+  stage.appendChild(renderer.domElement);
+  var controls=new THREE.OrbitControls(camera,renderer.domElement);controls.enableDamping=true;
+  scene.add(new THREE.AmbientLight(0xffffff,0.65));var dl=new THREE.DirectionalLight(0xffffff,0.6);dl.position.set(5,8,6);scene.add(dl);
+  var grid=new THREE.GridHelper(8,8,0x9db3c7,0xc7d2dd);grid.position.y=-0.01;scene.add(grid);
+  var axes=new THREE.AxesHelper(3.2);scene.add(axes);
+  function onR(){var nw=stage.clientWidth||w,nh=stage.clientHeight||h;if(nw>0&&nh>0){renderer.setSize(nw,nh,false);camera.aspect=nw/nh;camera.updateProjectionMatrix();}}
+  window.addEventListener('resize',onR);
+  return {scene:scene,camera:camera,renderer:renderer,controls:controls,onR:onR,stage:stage};
+}
+function buildPlaneEq(a,b,c,d){ // ax+by+cz+d=0 -> z=(-a x - b y - d)/c
+  var g=new THREE.PlaneGeometry(8,8,40,40),pos=g.attributes.position;
+  for(var i=0;i<pos.count;i++){var x=pos.getX(i),y=pos.getY(i);var z=c!==0?(-a*x-b*y-d)/c:0;pos.setZ(i,z);}
+  pos.needsUpdate=true;g.computeVertexNormals();return g;
+}
+function buildSurface(fn){
+  var g=new THREE.PlaneGeometry(6,6,50,50),pos=g.attributes.position;
+  for(var i=0;i<pos.count;i++){var x=pos.getX(i),y=pos.getY(i);pos.setZ(i,fn(x,y));}
+  pos.needsUpdate=true;g.computeVertexNormals();return g;
+}
+function mat(color,op){return new THREE.MeshLambertMaterial({color:color,transparent:true,opacity:op,side:THREE.DoubleSide,depthWrite:false});}
+function point(color){return new THREE.Mesh(new THREE.SphereGeometry(0.12,20,20),new THREE.MeshBasicMaterial({color:color}));}
+var rafs=[];
+function loop(fn){rafs.push(fn);if(rafs.length===1)(function tick(){requestAnimationFrame(tick);for(var i=0;i<rafs.length;i++)rafs[i]();})();}
+
+/* ============ 标签页（懒初始化 + 切换时重设尺寸） ============ */
+var tabInited=[false,false,false,false]; // 四个 section 是否已初始化
+var tabScenes=[]; // 各页需重设尺寸的 scene 对象集合
+function onShowTab(idx){
+  // 首次切换到该 tab 时初始化对应 3D 场景
+  if(idx===0 && !tabInited[0]){try{initDef();setDef(+document.getElementById('defB').value);}catch(e){console.error(e);}tabInited[0]=true;}
+  if(idx===1 && !tabInited[1]){try{initGeo2D();initGeo3D();}catch(e){console.error(e);}tabInited[1]=true;}
+  if(idx===2 && !tabInited[2]){try{initSol();setSol(+document.getElementById('solT').value);}catch(e){console.error(e);}tabInited[2]=true;}
+  if(idx===3 && !tabInited[3]){try{initEng();setEng(+document.getElementById('engB').value);}catch(e){console.error(e);}tabInited[3]=true;}
+  // 切换显示后，对当前页所有场景重设尺寸（修复 display:none 期间 clientWidth=0 的问题）
+  setTimeout(function(){
+    var sec=document.getElementById('sec'+idx);if(!sec)return;
+    sec.querySelectorAll('.stage').forEach(function(stage){
+      // 触发内部 onR：直接 dispatch resize（makeScene 的 onR 读取 stage.clientWidth）
+      window.dispatchEvent(new Event('resize'));
+    });
+  },60);
+}
+var tabs=document.querySelectorAll('nav.tabs button'),sections=[document.getElementById('sec0'),document.getElementById('sec1'),document.getElementById('sec2'),document.getElementById('sec3')];
+tabs.forEach(function(btn){btn.addEventListener('click',function(){
+  var i=+btn.getAttribute('data-i');
+  tabs.forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  sections.forEach(function(s,si){s.style.display=si===i?'block':'none';});
+  onShowTab(i);
+});});
+
+/* ============ ① 定义：平面随 b 平移 ============ */
+var def,defMesh,defInited=false;
+function initDef(){var stage=document.getElementById('stageDef');def=makeScene(stage);}
+function setDef(b){
+  if(!def)return;
+  if(defMesh){def.scene.remove(defMesh);}
+  // 用 buildPlaneEq(2,1,-1,0) 构造平面 2x+y-z=0，再按 b 平移：z=2x+y-b -> 2x+y-z=b
+  var g=buildPlaneEq(2,1,-1,0);
+  if(b!==0){var pos=g.attributes.position;for(var i=0;i<pos.count;i++){pos.setZ(i,pos.getZ(i)-b);}pos.needsUpdate=true;g.computeVertexNormals();}
+  defMesh=new THREE.Mesh(g,mat(b===0?HOM:INHOM,0.6));def.scene.add(defMesh);
+  document.getElementById('defStat').textContent=b===0?'b=0：平面过原点（齐次 Ax=0，无源）':'b='+b.toFixed(1)+'：平面不过原点（非齐次 Ax=b，有源/受迫）';
+  if(!defInited){loop(function(){def.controls.update();def.renderer.render(def.scene,def.camera);});defInited=true;}
+}
+document.getElementById('defB').addEventListener('input',function(){var b=+this.value;document.getElementById('defBv').textContent=b.toFixed(1);setDef(b);});
+
+/* ============ ② 几何：2D 同坐标系 + 3D 两组交线 ============ */
+function initGeo2D(){
+  var c=document.createElement('canvas'),stage=document.getElementById('stage2D');stage.appendChild(c);
+  function draw(){var W=stage.clientWidth||parseInt(stage.getAttribute('data-w')||'560',10)||460,H=stage.clientHeight||parseInt(stage.getAttribute('data-h')||'360',10)||360;c.width=W;c.height=H;var ctx=c.getContext('2d');ctx.clearRect(0,0,W,H);
+    ctx.strokeStyle='#d9e2ec';ctx.lineWidth=1;for(var gx=-4;gx<=4;gx++){var px=W/2+gx*W/9;ctx.beginPath();ctx.moveTo(px,0);ctx.lineTo(px,H);ctx.stroke();var py=H/2-gx*H/9;ctx.beginPath();ctx.moveTo(0,py);ctx.lineTo(W,py);ctx.stroke();}
+    ctx.font='13px sans-serif';ctx.fillStyle='#5b6472';ctx.fillText('x',W-16,H/2+18);ctx.fillText('y',W/2+6,16);ctx.fillText('O',W/2-16,H/2+16);
+    function line(m,bb,color,label){ctx.strokeStyle=color;ctx.lineWidth=2.6;ctx.beginPath();
+      var x0=-4,y0=m*x0+bb,x1=4,y1=m*x1+bb;var sx=W/2+x0*W/9,sy=H/2-y0*H/9,ex=W/2+x1*W/9,ey=H/2-y1*H/9;
+      ctx.moveTo(sx,sy);ctx.lineTo(ex,ey);ctx.stroke();
+      ctx.fillStyle=color;ctx.fillText(label,(sx+ex)/2+8,(sy+ey)/2-8);
+    }
+    line(-1,0,'#2563eb','x+y=0');line(1,0,'#1d4ed8','x−y=0');
+    line(-1,2,'#dc2626','x+y=2');line(1,0,'#b91c1c','x−y=0');
+    [['(0,0)',0,0,ACC],['(1,1)',1,1,0xd97706]].forEach(function(p){var px=W/2+p[1]*W/9,py=H/2-p[2]*H/9;ctx.beginPath();ctx.arc(px,py,6,0,Math.PI*2);ctx.fillStyle='#'+p[3].toString(16);ctx.fill();ctx.fillStyle='#1f2937';ctx.fillText(p[0],px+9,py+4);});
+  }
+  draw();window.addEventListener('resize',draw);
+}
+function initGeo3D(){
+  var stage=document.getElementById('stageGeo');var g=makeScene(stage);
+  g.scene.add(new THREE.Mesh(buildPlaneEq(1,1,-1,0),mat(0x93c5fd,0.35)));
+  g.scene.add(new THREE.Mesh(buildPlaneEq(1,-1,0,0),mat(0x60a5fa,0.35)));
+  g.scene.add(new THREE.Mesh(buildPlaneEq(1,1,-1,-2),mat(0xfca5a5,0.35)));
+  g.scene.add(new THREE.Mesh(buildPlaneEq(1,-1,0,0),mat(0xf87171,0.35)));
+  function lineGen(fn,color){var pts=[];for(var t=-2;t<=2;t+=0.08)pts.push(new THREE.Vector3(fn(t)[0],fn(t)[1],fn(t)[2]));return new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:color,linewidth:3}));}
+  g.scene.add(lineGen(function(t){return [t,t,2*t];},HOM));
+  g.scene.add(lineGen(function(t){return [t+1,t,2*t-1];},INHOM));
+  g.scene.add(point(ACC)).position.set(0,0,0);
+  loop(function(){g.controls.update();g.renderer.render(g.scene,g.camera);});
+}
+
+/* ============ ③ 解的结构 ============ */
+var sol,homPt,inhomPt;
+function initSol(){
+  var stage=document.getElementById('stageSol');sol=makeScene(stage);
+  function mkLine(fn,color){var pts=[];for(var t=-2;t<=2;t+=0.05)pts.push(new THREE.Vector3(fn(t)[0],fn(t)[1],fn(t)[2]));return new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:color,linewidth:3}));}
+  sol.scene.add(mkLine(function(t){return [t,t,2*t];},HOM));
+  sol.scene.add(mkLine(function(t){return [t+1,t,2*t-1];},INHOM));
+  homPt=point(HOM);inhomPt=point(INHOM);sol.scene.add(homPt);sol.scene.add(inhomPt);
+  var xp=point(ACC);xp.position.set(1,0,-1);sol.scene.add(xp);
+  loop(function(){sol.controls.update();sol.renderer.render(sol.scene,sol.camera);});
+}
+function setSol(t){
+  if(!sol||!homPt||!inhomPt)return;
+  homPt.position.set(t,t,2*t);
+  inhomPt.position.set(t+1,t,2*t-1);
+  document.getElementById('solStat').textContent='t='+t.toFixed(2)+'：齐次解('+t.toFixed(2)+','+t.toFixed(2)+','+(2*t).toFixed(2)+')；非齐次解('+(t+1).toFixed(2)+','+t.toFixed(2)+','+(2*t-1).toFixed(2)+')';
+}
+document.getElementById('solT').addEventListener('input',function(){var t=+this.value;document.getElementById('solTv').textContent=t.toFixed(2);setSol(t);});
+
+/* ============ ④ 工程：弹簧-质量（墙—弹簧—m1—弹簧—m2—弹簧—m3—弹簧—墙，竖直链） ============ */
+var eng,blocks=[],springs=[],walls=[],forceArrow,engGroup;
+function makeSpringTube(len,color){
+  // 沿 Y 轴从 y=0 到 y=len 的螺旋曲线，再用 TubeGeometry 生成粗管状弹簧（可见度高）
+  var seg=64,turns=6,r=0.22;
+  var pts=[];
+  for(var i=0;i<=seg;i++){var t=i/seg,y=t*len,a=t*turns*Math.PI*2;pts.push(new THREE.Vector3(Math.cos(a)*r,y,Math.sin(a)*r));}
+  var curve=new THREE.CatmullRomCurve3(pts);
+  return new THREE.Mesh(new THREE.TubeGeometry(curve,seg,0.055,10,false),new THREE.MeshLambertMaterial({color:color}));
+}
+function initEng(){
+  var stage=document.getElementById('stageEng');eng=makeScene(stage);eng.camera.position.set(0.6,0.2,9.5);
+  engGroup=new THREE.Group();eng.scene.add(engGroup);
+  var wallMat=new THREE.MeshLambertMaterial({color:0x8a95a3});
+  // 下墙（固定）与上墙（固定），构成竖直链的两端
+  var wD=new THREE.Mesh(new THREE.BoxGeometry(2.6,0.6,1.6),wallMat);wD.position.set(0,-4.0,0);engGroup.add(wD);walls.push(wD);
+  var wU=new THREE.Mesh(new THREE.BoxGeometry(2.6,0.6,1.6),wallMat);wU.position.set(0,4.0,0);engGroup.add(wU);walls.push(wU);
+  // 三质量块（蓝），初始等距竖直排列
+  var ys=[-2.5,0,2.5];
+  for(var i=0;i<3;i++){var m=new THREE.Mesh(new THREE.BoxGeometry(1.1,1.1,1.1),new THREE.MeshLambertMaterial({color:0x3b82f6}));m.position.set(0,ys[i],0);engGroup.add(m);blocks.push(m);}
+  // 四根粗管状弹簧：下墙—m1, m1—m2, m2—m3, m3—上墙（沿 Y 串联，与位移方向一致）
+  for(var k=0;k<4;k++){var sp=makeSpringTube(2.4,0x475569);engGroup.add(sp);springs.push(sp);}
+  // 外力箭头（作用在中间质量块上，沿 +Y 竖直，与弹簧伸缩轴/位移方向同轴，符合实际受力）
+  var arrowDir=new THREE.Vector3(0,1,0),arrowOrigin=new THREE.Vector3(1.15,0,0),arrowLen=1.2,arrowColor=0xdc2626;
+  forceArrow=new THREE.ArrowHelper(arrowDir,arrowOrigin,arrowLen,arrowColor,0.5,0.32);engGroup.add(forceArrow);
+  loop(function(){eng.controls.update();eng.renderer.render(eng.scene,eng.camera);});
+}
+function setEng(b){
+  if(!eng||!blocks.length)return;
+  var u1=b/2,u2=b,u3=b/2;
+  // 质量块沿 Y 位移（弹簧也沿 Y 串联 → 位移方向与弹簧伸缩方向一致，直观对应）
+  blocks[0].position.y=-2.5+u1;blocks[1].position.y=0+u2;blocks[2].position.y=2.5+u3;
+  // 四段连接点（下墙顶/m1/m2/m3/上墙底），弹簧锚在相邻两点之间
+  var yPos=[-3.7,-2.5+u1,0+u2,2.5+u3,3.7];
+  for(var k=0;k<4;k++){
+    var sp=springs[k],y0=yPos[k],y1=yPos[k+1],mid=(y0+y1)/2,len=Math.abs(y1-y0);
+    sp.position.set(0,mid,0);
+    // 按实际段长重新生成对应长度的弹簧网格（保证线圈填满整段、两端锚在块/墙面）
+    if(sp.userData.len!==len){
+      var seg=Math.max(32,Math.round(len*22)),turns=Math.max(3,Math.round(len*2.2)),r=0.22;
+      var pts=[];for(var i=0;i<=seg;i++){var t=i/seg,y=t*len,a=t*turns*Math.PI*2;pts.push(new THREE.Vector3(Math.cos(a)*r,y,Math.sin(a)*r));}
+      var curve=new THREE.CatmullRomCurve3(pts);
+      sp.geometry.dispose();sp.geometry=new THREE.TubeGeometry(curve,seg,0.055,10,false);sp.userData.len=len;
+    }
+  }
+  // 外力箭头跟随中间块、长度随 |b| 变化、方向沿 Y 随 b 正负翻转（与位移/弹簧同轴）
+  forceArrow.position.set(1.15,u2,0);forceArrow.setLength(Math.max(0.5,Math.abs(b)*0.5),0.5,0.32);
+  forceArrow.setDirection(b>=0?new THREE.Vector3(0,1,0):new THREE.Vector3(0,-1,0));
+  forceArrow.visible=(b!==0);
+  document.getElementById('engStat').textContent='b='+b.toFixed(1)+'：位移 ('+u1.toFixed(2)+', '+u2.toFixed(2)+', '+u3.toFixed(2)+') —— '+(b===0?'齐次·无源（全部静止，弹簧原长）':'非齐次·有源受迫（中间受载最大，红箭头示外力方向）');
+}
+document.getElementById('engB').addEventListener('input',function(){var b=+this.value;document.getElementById('engBv').textContent=b.toFixed(1);setEng(b);});
+
+/* ============ boot（引擎就绪后主动调用；只初始化默认可见页） ============ */
+function boot(){
+  try{onShowTab(0);}catch(e){console.error(e);document.getElementById('status').textContent='⚠ 初始化报错：'+e.message;document.getElementById('status').className='bad';}
+}
+</script>
+</body>
+</html>

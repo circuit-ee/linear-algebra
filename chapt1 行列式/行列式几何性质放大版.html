@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8" />
+    <title>行列式几何意义——右手螺旋/绕行圆圈</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px;
+            background: #f5f5f5;
+            color: #333;
+            font-size: 20px; /* 基础字体加大 */
+        }
+
+        .container {
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, .1);
+            padding: 35px;
+            margin-bottom: 25px;
+        }
+
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            border-bottom: 4px solid #3498db;
+            padding-bottom: 15px;
+            font-size: 2.8em;
+            font-weight: 700;
+            margin-bottom: 25px;
+        }
+
+        h2 {
+            color: #3498db;
+            margin-top: 35px;
+            font-size: 2em;
+            font-weight: 700;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 25px;
+            border-bottom: 3px solid #ddd;
+        }
+
+        .tab {
+            padding: 15px 30px;
+            cursor: pointer;
+            background: #f1f1f1;
+            border: 2px solid #ddd;
+            border-bottom: none;
+            margin-right: 8px;
+            border-radius: 8px 8px 0 0;
+            transition: .3s;
+            font-size: 1.4em;
+            font-weight: 700;
+        }
+
+        .tab.active {
+            background: #3498db;
+            color: #fff;
+            border-color: #3498db;
+        }
+
+        .content {
+            display: none;
+            padding: 30px;
+            border: 2px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 10px 10px;
+            animation: fadeIn .5s;
+        }
+
+        .content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .canvas-container {
+            position: relative;
+            margin: 30px 0;
+            display: flex;
+            justify-content: center;
+            min-height: 520px;
+        }
+
+        canvas {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, .1);
+            background: #fafafa;
+        }
+
+        .controls {
+            margin: 30px 0;
+            padding: 25px;
+            background: #f9f9f9;
+            border-radius: 10px;
+            border: 2px solid #e0e0e0;
+        }
+
+        .controls label {
+            display: inline-block;
+            width: 180px;
+            margin-right: 15px;
+            font-weight: 700;
+            font-size: 1.3em;
+        }
+
+        .controls input[type=range],
+        .controls input[type=number] {
+            margin-right: 15px;
+            transform: scale(1.3);
+            margin-left: 10px;
+        }
+
+        .controls button {
+            font-size: 1.3em;
+            font-weight: 700;
+            padding: 12px 25px;
+            border-radius: 8px;
+            background: #3498db;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .controls button:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        .info-panel {
+            margin-top: 25px;
+            padding: 25px;
+            background: #f0f7ff;
+            border-left: 8px solid #3498db;
+            border-radius: 8px;
+            font-size: 1.4em;
+            font-weight: 700;
+            line-height: 1.6;
+        }
+
+        .vector-info {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            font-size: 1.2em;
+            font-weight: 700;
+        }
+
+        /* 右手螺旋/绕行圆圈 */
+        .normal-circle {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            border: 3px solid #fff;
+            z-index: 10;
+        }
+
+        .out {
+            background: #3498db;
+        }
+
+        /* 逆时针（+z） */
+        .in {
+            background: #e74c3c;
+        }
+
+        /* 顺时针（-z） */
+        .arc {
+            position: absolute;
+            width: 36px;
+            height: 36px;
+            transform: translate(-50%, -50%) rotate(0deg);
+            pointer-events: none;
+        }
+
+        .arc::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border-top: 4px solid rgba(255, 255, 255, .9);
+            border-right: 4px solid transparent;
+            border-bottom: 4px solid transparent;
+            border-left: 4px solid transparent;
+            animation: rotate .8s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* 动画大小控制 */
+        .size-control {
+            background: #fff3cd;
+            border: 3px solid #ffc107;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 25px 0;
+            text-align: center;
+        }
+
+        .size-control label {
+            font-size: 1.5em;
+            font-weight: 700;
+            margin-right: 20px;
+            color: #856404;
+        }
+
+        .size-control input[type=range] {
+            width: 300px;
+            transform: scale(1.5);
+            margin: 0 20px;
+        }
+
+        .size-value {
+            display: inline-block;
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #0066cc;
+            min-width: 60px;
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+    <h1>行列式几何意义——右手螺旋/绕行圆圈</h1>
+    <p style="font-size: 1.4em; font-weight: 600; text-align: center; margin-bottom: 25px;">
+        二阶行列式 = 两向量张成平行四边形的"有向面积"。<br>
+        用右手螺旋法则显示方向：蓝色●逆时针（+z，出纸面），红色●顺时针（-z，入纸面）。
+    </p>
+
+    <!-- 新增动画大小控制 -->
+    <div class="size-control">
+        <label>动画大小：</label>
+        <input type="range" id="sizeSlider" min="0.5" max="2.0" step="0.1" value="1.0" 
+               oninput="updateAnimationSize(this.value)">
+        <span class="size-value" id="sizeValue">1.0x</span>
+    </div>
+
+    <div class="tabs">
+        <div class="tab active" onclick="openTab(event,'basic')">基本行列式</div>
+        <div class="tab" onclick="openTab(event,'swap')">列互换</div>
+        <div class="tab" onclick="openTab(event,'scalar')">标量乘法</div>
+        <div class="tab" onclick="openTab(event,'addition')">可加性</div>
+    </div>
+
+    <!-- 1. 基本 -->
+    <div id="basic" class="content active">
+        <h2>基本行列式</h2>
+        <div class="canvas-container">
+            <canvas id="basicCanvas" width="500" height="500"></canvas>
+            <div class="normal-circle out" id="basicCircle">
+                <div class="arc"></div>
+            </div>
+        </div>
+        <div class="controls">
+            <label>u:</label>
+            <input type="range" id="u1b" min="-4" max="4" step=".1" value="2" oninput="updateBasic()">
+            <input type="range" id="u2b" min="-4" max="4" step=".1" value="1" oninput="updateBasic()">
+            <span id="ub" style="font-weight: 700; font-size: 1.2em;">(2,1)</span><br><br>
+            <label>v:</label>
+            <input type="range" id="v1b" min="-4" max="4" step=".1" value="1" oninput="updateBasic()">
+            <input type="range" id="v2b" min="-4" max="4" step=".1" value="3" oninput="updateBasic()">
+            <span id="vb" style="font-weight: 700; font-size: 1.2em;">(1,3)</span>
+        </div>
+        <div class="info-panel">
+            det=<span id="detb">5.00</span>，面积=<span id="areab">5.00</span>，
+            法向量方向：<span id="dirb">+z（出纸面）</span>
+        </div>
+    </div>
+
+    <!-- 2. 列互换 -->
+    <div id="swap" class="content">
+        <h2>列互换</h2>
+        <div class="canvas-container">
+            <canvas id="swapCanvas" width="500" height="500"></canvas>
+            <div class="normal-circle out" id="swapCircle">
+                <div class="arc"></div>
+            </div>
+        </div>
+        <div class="controls">
+            <label>u:</label>
+            <input type="range" id="u1s" min="-4" max="4" step=".1" value="2" oninput="updateSwap()">
+            <input type="range" id="u2s" min="-4" max="4" step=".1" value="1" oninput="updateSwap()">
+            <span id="us" style="font-weight: 700; font-size: 1.2em;">(2,1)</span><br><br>
+            <label>v:</label>
+            <input type="range" id="v1s" min="-4" max="4" step=".1" value="1" oninput="updateSwap()">
+            <input type="range" id="v2s" min="-4" max="4" step=".1" value="3" oninput="updateSwap()">
+            <span id="vs" style="font-weight: 700; font-size: 1.2em;">(1,3)</span><br><br>
+            <button onclick="swapIt()" style="font-size: 1.3em; padding: 12px 25px;">交换向量</button>
+        </div>
+        <div class="info-panel">
+            原det=<span id="dets1">5.00</span>，交换后det=<span id="dets2">-5.00</span>，
+            法向量方向：<span id="dirs">+z → -z</span>
+        </div>
+    </div>
+
+    <!-- 3. 标量乘法 -->
+    <div id="scalar" class="content">
+        <h2>标量乘法（自定义常数）</h2>
+        <div class="canvas-container">
+            <canvas id="scalarCanvas" width="500" height="500"></canvas>
+            <div class="normal-circle out" id="scalarCircle">
+                <div class="arc"></div>
+            </div>
+        </div>
+        <div class="controls">
+            <label>u:</label>
+            <input type="range" id="u1k" min="-4" max="4" step=".1" value="2" oninput="updateScalar()">
+            <input type="range" id="u2k" min="-4" max="4" step=".1" value="1" oninput="updateScalar()">
+            <span id="uk" style="font-weight: 700; font-size: 1.2em;">(2,1)</span><br><br>
+            <label>v:</label>
+            <input type="range" id="v1k" min="-4" max="4" step=".1" value="1" oninput="updateScalar()">
+            <input type="range" id="v2k" min="-4" max="4" step=".1" value="3" oninput="updateScalar()">
+            <span id="vk" style="font-weight: 700; font-size: 1.2em;">(1,3)</span><br><br>
+            <label>常数 k:</label>
+            <input type="number" id="k" value="2" min="-3" max="3" step=".1" oninput="updateScalar()"
+                   style="font-size: 1.2em; width: 80px;">
+        </div>
+        <div class="info-panel">
+            原det=<span id="detk1">5.00</span>，新det=<span id="detk2">10.00</span>，
+            面积×=<span id="areaFac">2.00</span>
+        </div>
+    </div>
+
+    <!-- 4. 可加性 -->
+    <div id="addition" class="content">
+        <h2>可加性（v2 方向已调整）</h2>
+        <div class="canvas-container">
+            <canvas id="addCanvas" width="500" height="500"></canvas>
+            <div class="normal-circle out" id="addCircle">
+                <div class="arc"></div>
+            </div>
+        </div>
+        <div class="controls">
+            <label>u:</label>
+            <input type="range" id="u1a" min="-4" max="4" step=".1" value="2" oninput="updateAddition()">
+            <input type="range" id="u2a" min="-4" max="4" step=".1" value="1" oninput="updateAddition()">
+            <span id="ua" style="font-weight: 700; font-size: 1.2em;">(2,1)</span><br><br>
+            <label>v1:</label>
+            <input type="range" id="v11a" min="-4" max="4" step=".1" value="1" oninput="updateAddition()">
+            <input type="range" id="v12a" min="-4" max="4" step=".1" value="2" oninput="updateAddition()">
+            <span id="v1a" style="font-weight: 700; font-size: 1.2em;">(1,2)</span><br><br>
+            <label>v2:</label>
+            <input type="range" id="v21a" min="-4" max="4" step=".1" value="2" oninput="updateAddition()">
+            <input type="range" id="v22a" min="-4" max="4" step=".1" value="0.5" oninput="updateAddition()">
+            <span id="v2a" style="font-weight: 700; font-size: 1.2em;">(2,0.5)</span>
+        </div>
+        <div class="info-panel">
+            det(u,v1)=<span id="detv1">3.00</span>，
+            det(u,v2)=<span id="detv2">1.00</span>，
+            det(u,v1+v2)=<span id="detvSum">4.00</span>，
+            验证：<span id="verify">3.00+1.00=4.00 ✓</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    /* === 通用常量 === */
+    const baseScale = 50; /* 基础缩放比例 */
+    const orig = [250, 250]; /* 原点位置 */
+    let scaleMultiplier = 1.0; /* 动画大小缩放倍数 */
+    function $(id) { return document.getElementById(id); }
+
+    /* 更新动画大小 */
+    function updateAnimationSize(value) {
+        scaleMultiplier = parseFloat(value);
+        $('sizeValue').textContent = value + 'x';
+        // 重新渲染当前激活的标签
+        if ($('basic').classList.contains('active')) updateBasic();
+        if ($('swap').classList.contains('active')) updateSwap();
+        if ($('scalar').classList.contains('active')) updateScalar();
+        if ($('addition').classList.contains('active')) updateAddition();
+    }
+
+    /* === 画布底层 === */
+    function drawGrid(ctx, w, h) {
+        const currentScale = baseScale * scaleMultiplier;
+        ctx.strokeStyle = '#ddd'; 
+        ctx.lineWidth = 0.5;
+        for (let x = 0; x <= w; x += currentScale) { 
+            ctx.beginPath(); 
+            ctx.moveTo(x, 0); 
+            ctx.lineTo(x, h); 
+            ctx.stroke(); 
+        }
+        for (let y = 0; y <= h; y += currentScale) { 
+            ctx.beginPath(); 
+            ctx.moveTo(0, y); 
+            ctx.lineTo(w, y); 
+            ctx.stroke(); 
+        }
+        ctx.strokeStyle = '#000'; 
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); 
+        ctx.moveTo(0, orig[1]); 
+        ctx.lineTo(w, orig[1]); 
+        ctx.stroke();
+        ctx.beginPath(); 
+        ctx.moveTo(orig[0], 0); 
+        ctx.lineTo(orig[0], h); 
+        ctx.stroke();
+    }
+
+    function drawVec(ctx, x, y, color, label) {
+        const currentScale = baseScale * scaleMultiplier;
+        const px = orig[0] + x * currentScale, py = orig[1] - y * currentScale;
+        ctx.beginPath(); 
+        ctx.moveTo(orig[0], orig[1]); 
+        ctx.lineTo(px, py);
+        ctx.strokeStyle = color; 
+        ctx.lineWidth = 3.5; 
+        ctx.stroke();
+        const ang = Math.atan2(orig[1] - py, px - orig[0]), hl = 12 * scaleMultiplier;
+        ctx.beginPath();
+        ctx.moveTo(px, py);
+        ctx.lineTo(px - hl * Math.cos(ang - Math.PI / 6), py + hl * Math.sin(ang - Math.PI / 6));
+        ctx.lineTo(px - hl * Math.cos(ang + Math.PI / 6), py + hl * Math.sin(ang + Math.PI / 6));
+        ctx.closePath(); 
+        ctx.fillStyle = color; 
+        ctx.fill();
+        if (label) { 
+            ctx.font = `bold ${Math.max(14, 14 * scaleMultiplier)}px Arial`; 
+            ctx.fillText(label, px + 8, py - 8); 
+        }
+    }
+
+    function drawPara(ctx, u1, u2, v1, v2, color = 'rgba(0,0,255,.25)') {
+        const currentScale = baseScale * scaleMultiplier;
+        const pts = [
+            [orig[0], orig[1]],
+            [orig[0] + u1 * currentScale, orig[1] - u2 * currentScale],
+            [orig[0] + (u1 + v1) * currentScale, orig[1] - (u2 + v2) * currentScale],
+            [orig[0] + v1 * currentScale, orig[1] - v2 * currentScale]
+        ];
+        ctx.beginPath(); 
+        pts.forEach(p => ctx.lineTo(p[0], p[1])); 
+        ctx.closePath();
+        ctx.fillStyle = color; 
+        ctx.fill(); 
+        ctx.strokeStyle = color.replace('25', '55'); 
+        ctx.lineWidth = 1.5; 
+        ctx.stroke();
+    }
+
+    function det(u1, u2, v1, v2) { 
+        return u1 * v2 - u2 * v1; 
+    }
+
+    /* === 右手螺旋圆圈 === */
+    function setCircle(id, d) {
+        const el = $(id);
+        el.className = 'normal-circle ' + (d >= 0 ? 'out' : 'in');
+        el.style.left = (orig[0] + 40 * scaleMultiplier) + 'px';
+        el.style.top = (orig[1] - 40 * scaleMultiplier) + 'px';
+        el.style.width = (30 * scaleMultiplier) + 'px';
+        el.style.height = (30 * scaleMultiplier) + 'px';
+    }
+
+    /* === 标签切换 === */
+    function openTab(e, name) {
+        document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        $(name).classList.add('active'); 
+        e.currentTarget.classList.add('active');
+    }
+
+    /* === 各面板更新 === */
+    function updateBasic() {
+        const u1 = +$('u1b').value, u2 = +$('u2b').value, v1 = +$('v1b').value, v2 = +$('v2b').value;
+        const c = $('basicCanvas'), ctx = c.getContext('2d');
+        ctx.clearRect(0, 0, 500, 500); 
+        drawGrid(ctx, 500, 500);
+        drawVec(ctx, u1, u2, '#0078d4', 'u'); 
+        drawVec(ctx, v1, v2, '#e81123', 'v');
+        drawPara(ctx, u1, u2, v1, v2);
+        const d = det(u1, u2, v1, v2);
+        $('detb').textContent = d.toFixed(2); 
+        $('areab').textContent = Math.abs(d).toFixed(2);
+        $('dirb').textContent = d >= 0 ? '+z（出纸面）' : '-z（入纸面）'; 
+        setCircle('basicCircle', d);
+        $('ub').textContent = `(${u1},${u2})`; 
+        $('vb').textContent = `(${v1},${v2})`;
+    }
+
+    function updateSwap() {
+        const u1 = +$('u1s').value, u2 = +$('u2s').value, v1 = +$('v1s').value, v2 = +$('v2s').value;
+        const c = $('swapCanvas'), ctx = c.getContext('2d');
+        ctx.clearRect(0, 0, 500, 500); 
+        drawGrid(ctx, 500, 500);
+        drawVec(ctx, u1, u2, '#0078d4', 'u'); 
+        drawVec(ctx, v1, v2, '#e81123', 'v');
+        drawPara(ctx, u1, u2, v1, v2);
+        const d = det(u1, u2, v1, v2);
+        $('dets1').textContent = d.toFixed(2); 
+        $('dets2').textContent = (-d).toFixed(2);
+        $('dirs').textContent = d >= 0 ? '+z → -z' : '-z → +z'; 
+        setCircle('swapCircle', d);
+        $('us').textContent = `(${u1},${u2})`; 
+        $('vs').textContent = `(${v1},${v2})`;
+    }
+
+    let swapped = false;
+    function swapIt() {
+        const u1 = $('u1s'), u2 = $('u2s'), v1 = $('v1s'), v2 = $('v2s');
+        [u1.value, u2.value, v1.value, v2.value] = [v1.value, v2.value, u1.value, u2.value];
+        updateSwap();
+    }
+
+    function updateScalar() {
+        const u1 = +$('u1k').value, u2 = +$('u2k').value, v1 = +$('v1k').value, v2 = +$('v2k').value, k = +$('k').value;
+        const c = $('scalarCanvas'), ctx = c.getContext('2d');
+        ctx.clearRect(0, 0, 500, 500); 
+        drawGrid(ctx, 500, 500);
+        drawVec(ctx, u1, u2, '#0078d4', 'u');
+        drawVec(ctx, v1, v2, 'rgba(232,17,35,.45)', 'v');
+        drawVec(ctx, k * v1, k * v2, '#e81123', 'kv');
+        drawPara(ctx, u1, u2, k * v1, k * v2);
+        const d1 = det(u1, u2, v1, v2), d2 = d1 * k;
+        $('detk1').textContent = d1.toFixed(2); 
+        $('detk2').textContent = d2.toFixed(2);
+        $('areaFac').textContent = '× ' + k.toFixed(2); 
+        setCircle('scalarCircle', d2);
+        $('uk').textContent = `(${u1},${u2})`; 
+        $('vk').textContent = `(${v1},${v2})`;
+    }
+
+    function updateAddition() {
+        const u1 = +$('u1a').value, u2 = +$('u2a').value,
+            v11 = +$('v11a').value, v12 = +$('v12a').value,
+            v21 = +$('v21a').value, v22 = +$('v22a').value;
+        const v1 = v11 + v21, v2 = v12 + v22;
+        const c = $('addCanvas'), ctx = c.getContext('2d');
+        ctx.clearRect(0, 0, 500, 500); 
+        drawGrid(ctx, 500, 500);
+        drawVec(ctx, u1, u2, '#0078d4', 'u');
+        drawVec(ctx, v11, v12, 'rgba(232,17,35,.5)', 'v1');
+        drawVec(ctx, v21, v22, 'rgba(0,128,0,.5)', 'v2');
+        drawVec(ctx, v1, v2, '#e81123', 'v1+v2');
+        drawPara(ctx, u1, u2, v11, v12, 'rgba(232,17,35,.15)');
+        drawPara(ctx, u1, u2, v21, v22, 'rgba(0,128,0,.15)');
+        drawPara(ctx, u1, u2, v1, v2, 'rgba(128,0,128,.25)');
+        const d1 = det(u1, u2, v11, v12), d2 = det(u1, u2, v21, v22), ds = det(u1, u2, v1, v2);
+        $('detv1').textContent = d1.toFixed(2); 
+        $('detv2').textContent = d2.toFixed(2);
+        $('detvSum').textContent = ds.toFixed(2);
+        $('verify').textContent = `${d1.toFixed(2)}+${d2.toFixed(2)}=${ds.toFixed(2)} ✓`; 
+        setCircle('addCircle', ds);
+        $('ua').textContent = `(${u1},${u2})`; 
+        $('v1a').textContent = `(${v11},${v12})`; 
+        $('v2a').textContent = `(${v21},${v22})`;
+    }
+
+    /* === 绑定 & 初始渲染 === */
+    ['u1b', 'u2b', 'v1b', 'v2b', 'u1s', 'u2s', 'v1s', 'v2s', 'u1k', 'u2k', 'v1k', 'v2k', 'u1a', 'u2a', 'v11a', 'v12a', 'v21a', 'v22a'].forEach(id => {
+        $(id).addEventListener('input', () => {
+            if ($('basic').classList.contains('active')) updateBasic();
+            if ($('swap').classList.contains('active')) updateSwap();
+            if ($('scalar').classList.contains('active')) updateScalar();
+            if ($('addition').classList.contains('active')) updateAddition();
+        });
+    });
+    updateBasic(); updateSwap(); updateScalar(); updateAddition();
+</script>
+</body>
+</html>

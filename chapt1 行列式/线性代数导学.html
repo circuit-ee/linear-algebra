@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>线性代数 · 绪论导学</title>
+    <style>
+        :root {
+            --primary: #1a237e;
+            --accent: #ff6f00;
+            --bg: #ffffff;
+            --text: #1a1a2e;
+            --text-secondary: #4a4a6a;
+            --border: #e8e8e8;
+            --card-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            --ch1-color: #42a5f5;
+            --ch2-color: #ef5350;
+            --ch3-color: #66bb6a;
+            --ch4-color: #7e57c2;
+            --ch5-color: #78909c;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.8;
+        }
+
+        /* ===== 顶部导航 ===== */
+        .top-nav {
+            background: var(--primary);
+            color: white;
+            padding: 14px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        .top-nav .brand {
+            font-size: 1.1rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .top-nav .brand .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--accent);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+
+        .top-nav .nav-links {
+            display: flex;
+            gap: 4px;
+            list-style: none;
+        }
+
+        .top-nav .nav-links a {
+            color: rgba(255,255,255,0.75);
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            transition: all 0.25s;
+        }
+
+        .top-nav .nav-links a:hover,
+        .top-nav .nav-links a.active {
+            background: rgba(255,255,255,0.15);
+            color: white;
+        }
+
+        /* ===== 页面标题区 ===== */
+        .page-header {
+            background: linear-gradient(135deg, #e8eaf6 0%, #f5f5f5 100%);
+            padding: 50px 40px 40px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .page-header .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .page-header h1 {
+            font-size: 1.6rem;
+            color: var(--primary);
+            margin-bottom: 6px;
+            font-weight: 800;
+        }
+
+        .page-header .subtitle {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+        }
+
+        .page-header .subtitle strong {
+            color: var(--accent);
+        }
+
+        /* ===== 通用容器 ===== */
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* ===== 区块标题 ===== */
+        .section {
+            padding: 50px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .section-title {
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: var(--text);
+            margin-bottom: 28px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title .dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent);
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        /* ===== 核心问题卡片（4宫格）===== */
+        .core-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .core-card {
+            background: #fafbfc;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px 28px;
+            display: flex;
+            gap: 18px;
+            align-items: flex-start;
+            transition: all 0.3s;
+        }
+
+        .core-card:hover {
+            box-shadow: var(--card-shadow);
+            transform: translateY(-2px);
+        }
+
+        .core-card .card-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            flex-shrink: 0;
+        }
+
+        .core-card h3 {
+            font-size: 1.05rem;
+            color: var(--text);
+            margin-bottom: 6px;
+            font-weight: 700;
+        }
+
+        .core-card p {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+
+        /* 各卡片图标配色 */
+        .icon-blue { background: #e3f2fd; }
+        .icon-gray { background: #eceff1; }
+        .icon-green { background: #e8f5e9; }
+        .icon-pink { background: #fce4ec; }
+
+        /* ===== 章节卡片 ===== */
+        .chapter-box {
+            background: #fafbfc;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            margin-bottom: 16px;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .chapter-box:hover {
+            box-shadow: var(--card-shadow);
+        }
+
+        .chapter-header-bar {
+            display: flex;
+            align-items: center;
+            padding: 20px 28px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .chapter-num {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 800;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+            margin-right: 16px;
+        }
+
+        .chapter-title-area {
+            flex: 1;
+        }
+
+        .chapter-title-area h3 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .chapter-meta {
+            font-size: 0.8rem;
+            color: #999;
+            margin-top: 2px;
+        }
+
+        .chapter-toggle {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-size: 0.8rem;
+            transition: transform 0.3s;
+        }
+
+        .chapter-box.expanded .chapter-toggle {
+            transform: rotate(180deg);
+        }
+
+        .chapter-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease;
+        }
+
+        .chapter-box.expanded .chapter-body {
+            max-height: 800px;
+        }
+
+        .chapter-body-inner {
+            padding: 0 28px 24px 84px;
+        }
+
+        .chapter-body-inner .desc {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.8;
+            margin-bottom: 14px;
+        }
+
+        .tag-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .tag-row span {
+            background: #f0f0f5;
+            color: #555;
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 0.82rem;
+            font-weight: 500;
+        }
+
+        /* 章节颜色 */
+        .ch1-bg { background: var(--ch1-color); }
+        .ch2-bg { background: var(--ch2-color); }
+        .ch3-bg { background: var(--ch3-color); }
+        .ch4-bg { background: var(--ch4-color); }
+        .ch5-bg { background: var(--ch5-color); }
+
+        /* ===== 关系图 ===== */
+        .relation-diagram {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0;
+            padding: 20px 0;
+        }
+
+        .relation-row {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+
+        .relation-node {
+            border: 2px solid;
+            border-radius: 12px;
+            padding: 14px 22px;
+            text-align: center;
+            min-width: 160px;
+            background: white;
+            position: relative;
+        }
+
+        .relation-node .node-ch {
+            font-size: 0.78rem;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .relation-node .node-name {
+            font-size: 0.95rem;
+            font-weight: 700;
+        }
+
+        .relation-node.ch1-node { border-color: var(--ch1-color); color: var(--ch1-color); background: #e3f2fd; }
+        .relation-node.ch2-node { border-color: var(--ch2-color); color: var(--ch2-color); background: #ffebee; }
+        .relation-node.ch3-node { border-color: var(--ch3-color); color: #2e7d32; background: #e8f5e9; }
+        .relation-node.ch4-node { border-color: var(--ch4-color); color: #512da8; background: #ede7f6; }
+        .relation-node.ch5-node { border-color: var(--ch5-color); color: #37474f; background: #eceff1; }
+
+        .arrow-connector {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 0;
+            font-size: 0.78rem;
+            color: #777;
+        }
+
+        .arrow-connector .line {
+            width: 40px;
+            height: 2px;
+            background: #ccc;
+        }
+
+        .arrow-connector .line.dashed {
+            background: none;
+            border-top: 2px dashed #aaa;
+            height: 0;
+        }
+
+        .arrow-connector .arrow-label {
+            white-space: nowrap;
+            font-weight: 500;
+        }
+
+        /* 主线说明 */
+        .main-line {
+            margin-top: 28px;
+            padding: 16px 24px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid var(--accent);
+            font-size: 0.92rem;
+            color: var(--text);
+            text-align: center;
+        }
+
+        .main-line strong {
+            color: var(--accent);
+        }
+
+        .legend {
+            margin-top: 16px;
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            flex-wrap: wrap;
+            font-size: 0.82rem;
+            color: #777;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .legend-line {
+            width: 24px;
+            height: 2px;
+            background: #999;
+        }
+
+        .legend-line.dashed {
+            background: none;
+            border-top: 2px dashed #999;
+            height: 0;
+        }
+
+        /* ===== 编排逻辑列表 ===== */
+        .logic-list {
+            list-style: none;
+            padding: 0;
+            counter-reset: step;
+        }
+
+        .logic-list li {
+            counter-increment: step;
+            position: relative;
+            padding: 18px 24px 18px 64px;
+            margin-bottom: 14px;
+            background: #fafbfc;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 0.92rem;
+            color: var(--text-secondary);
+            line-height: 1.8;
+        }
+
+        .logic-list li::before {
+            content: counter(step);
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .logic-list li strong {
+            color: var(--text);
+            display: block;
+            margin-bottom: 2px;
+            font-size: 1rem;
+        }
+
+        /* ===== 学习目标卡片 ===== */
+        .goal-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .goal-card {
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            background: #fafbfc;
+            transition: all 0.3s;
+        }
+
+        .goal-card:hover {
+            box-shadow: var(--card-shadow);
+            transform: translateY(-2px);
+        }
+
+        .goal-card .goal-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            margin-bottom: 14px;
+        }
+
+        .goal-card h3 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+
+        .goal-card p {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+
+        /* ===== 页脚 ===== */
+        .footer {
+            background: var(--primary);
+            color: rgba(255,255,255,0.7);
+            padding: 32px 40px;
+            text-align: center;
+            font-size: 0.88rem;
+        }
+
+        .footer p { margin-bottom: 4px; }
+
+        /* ===== 回到顶部 ===== */
+        .back-to-top {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: var(--accent);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            cursor: pointer;
+            box-shadow: 0 3px 12px rgba(255,111,0,0.3);
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s;
+            z-index: 999;
+        }
+
+        .back-to-top.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* ===== 滚动动画 ===== */
+        .animate-on-scroll {
+            opacity: 0;
+            transform: translateY(24px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+
+        .animate-on-scroll.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ===== 响应式 ===== */
+        @media (max-width: 768px) {
+            .core-grid,
+            .goal-grid {
+                grid-template-columns: 1fr;
+            }
+            .top-nav {
+                padding: 12px 16px;
+            }
+            .top-nav .nav-links {
+                display: none;
+            }
+            .page-header {
+                padding: 30px 16px;
+            }
+            .container {
+                padding: 0 16px;
+            }
+            .relation-row {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- 顶部导航 -->
+<nav class="top-nav">
+    <div class="brand">
+        <div class="logo-icon">∑</div>
+        线性代数 · 绪论导学
+    </div>
+    <ul class="nav-links">
+        <li><a href="#core-problems">核心问题</a></li>
+        <li><a href="#chapters">章节内容</a></li>
+        <li><a href="#relation">章节联系</a></li>
+        <li><a href="#logic">编排逻辑</a></li>
+        <li><a href="#goals">学习目标</a></li>
+    </ul>
+</nav>
+
+<!-- 页面标题 -->
+<div class="page-header">
+    <div class="container">
+        <h1>线性代数绪论 · 引导学习</h1>
+        <p class="subtitle">同济大学《工程数学——线性代数》第7版 · 第1-5章全景导航</p>
+    </div>
+</div>
+
+<!-- ===== 一、核心问题 ===== -->
+<section class="section" id="core-problems">
+    <div class="container">
+        <div class="section-title animate-on-scroll">
+            <span class="dot"></span> 线性代数研究的核心问题
+        </div>
+
+        <div class="core-grid">
+            <!-- 核心问题1 -->
+            <div class="core-card animate-on-scroll">
+                <div class="card-icon icon-blue">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1565c0" stroke-width="2"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg>
+                </div>
+                <div>
+                    <h3>线性方程组的求解</h3>
+                    <p>这是线性代数最基本、最核心的问题。从二元一次方程组到 n 元线性方程组，研究解的存在性、唯一性与结构。</p>
+                </div>
+            </div>
+
+            <!-- 核心问题2 -->
+            <div class="core-card animate-on-scroll">
+                <div class="card-icon icon-gray">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#546e7a" stroke-width="2"><path d="M3 3l18 18M9 3v18M15 3v18M3 9h18M3 15h18"/></svg>
+                </div>
+                <div>
+                    <h3>向量空间的结构</h3>
+                    <p>将代数对象几何化，研究向量组的线性关系、基与维数、子空间等，建立"代数—几何"双重视角。</p>
+                </div>
+            </div>
+
+            <!-- 核心问题3 -->
+            <div class="core-card animate-on-scroll">
+                <div class="card-icon icon-green">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2e7d32" stroke-width="2"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/><path d="M10 7h4M7 10v4M17 10v4M10 17h4"/></svg>
+                </div>
+                <div>
+                    <h3>线性变换的表示</h3>
+                    <p>矩阵是线性变换的代数表示，研究特征值、相似对角化、二次型标准化，揭示矩阵的内在结构。</p>
+                </div>
+            </div>
+
+            <!-- 核心问题4 -->
+            <div class="core-card animate-on-scroll">
+                <div class="card-icon icon-pink">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#c62828" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="2" fill="#c62828"/><path d="M16 8l2-2M17 13h3"/></svg>
+                </div>
+                <div>
+                    <h3>工程与计算应用</h3>
+                    <p>为数据处理、机器学习、计算机图形学、信号处理等现代工程领域提供数学工具和理论支撑。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== 二、章节内容 ===== -->
+<section class="section" id="chapters">
+    <div class="container">
+        <div class="section-title animate-on-scroll">
+            <span class="dot"></span> 1-5 章核心内容
+        </div>
+        <p style="color: var(--text-secondary); font-size: 0.92rem; margin-bottom: 24px;" class="animate-on-scroll">
+            点击各章节卡片展开/收起详情，了解每章的研究对象、核心结论与知识点。
+        </p>
+
+        <!-- 第1章 -->
+        <div class="chapter-box animate-on-scroll" id="ch1">
+            <div class="chapter-header-bar" onclick="toggleChapter(this)">
+                <div class="chapter-num ch1-bg">1</div>
+                <div class="chapter-title-area">
+                    <h3>行列式</h3>
+                    <div class="chapter-meta">计算工具 · 可逆判定</div>
+                </div>
+                <div class="chapter-toggle">▲</div>
+            </div>
+            <div class="chapter-body">
+                <div class="chapter-body-inner">
+                    <p class="desc">
+                        行列式是一个将方阵映射到标量的函数，是线性代数中最早出现的概念之一。本章从二阶、三阶行列式出发，引入 n 阶行列式的定义，重点掌握行列式的六大性质和按行（列）展开定理，学会用化三角法、降阶法计算行列式。行列式的核心价值在于：判断矩阵是否可逆（|A|≠0）、求解线性方程组的克拉默法则、计算特征多项式。
+                    </p>
+                    <div class="tag-row">
+                        <span>排列与逆序数</span>
+                        <span>n阶行列式定义</span>
+                        <span>行列式性质</span>
+                        <span>按行展开</span>
+                        <span>克拉默法则</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 第2章 -->
+        <div class="chapter-box animate-on-scroll" id="ch2">
+            <div class="chapter-header-bar" onclick="toggleChapter(this)">
+                <div class="chapter-num ch2-bg">2</div>
+                <div class="chapter-title-area">
+                    <h3>矩阵及其运算</h3>
+                    <div class="chapter-meta">核心对象 · 运算体系</div>
+                </div>
+                <div class="chapter-toggle">▲</div>
+            </div>
+            <div class="chapter-body">
+                <div class="chapter-body-inner">
+                    <p class="desc">
+                        矩阵是线性代数最核心的研究对象，是"线性变换"的代数载体。本章建立矩阵运算体系（加法、数乘、乘法、转置），引入逆矩阵概念与求法（伴随矩阵法），并介绍分块矩阵技巧。初学者需特别注意矩阵乘法的"非交换性"（AB≠BA）和"零因子"现象（AB=0 不能推出 A=0 或 B=0）。
+                    </p>
+                    <div class="tag-row">
+                        <span>矩阵运算律</span>
+                        <span>逆矩阵定义与求法</span>
+                        <span>伴随矩阵</span>
+                        <span>分块矩阵</span>
+                        <span>矩阵方程</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 第3章 -->
+        <div class="chapter-box animate-on-scroll" id="ch3">
+            <div class="chapter-header-bar" onclick="toggleChapter(this)">
+                <div class="chapter-num ch3-bg">3</div>
+                <div class="chapter-title-area">
+                    <h3>矩阵的初等变换与线性方程组</h3>
+                    <div class="chapter-meta">核心应用 · 秩的概念</div>
+                </div>
+                <div class="chapter-toggle">▲</div>
+            </div>
+            <div class="chapter-body">
+                <div class="chapter-body-inner">
+                    <p class="desc">
+                        初等变换是线性代数中最强大的计算工具。本章以高斯消元法为线索，引入矩阵的秩这一核心概念，建立线性方程组解的判定定理：R(A)=R(A,b) 时有解；R(A)=n 时唯一解，R(A)&lt;n 时无穷多解。掌握用初等行变换求逆矩阵、求矩阵秩、解线性方程组的统一方法。
+                    </p>
+                    <div class="tag-row">
+                        <span>初等变换与初等矩阵</span>
+                        <span>矩阵的秩</span>
+                        <span>线性方程组解的判定</span>
+                        <span>解的结构（初步）</span>
+                        <span>标准形与等价</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 第4章 -->
+        <div class="chapter-box animate-on-scroll" id="ch4">
+            <div class="chapter-header-bar" onclick="toggleChapter(this)">
+                <div class="chapter-num ch4-bg">4</div>
+                <div class="chapter-title-area">
+                    <h3>向量组的线性相关性</h3>
+                    <div class="chapter-meta">理论深化 · 几何视角</div>
+                </div>
+                <div class="chapter-toggle">▲</div>
+            </div>
+            <div class="chapter-body">
+                <div class="chapter-body-inner">
+                    <p class="desc">
+                        从"数"的运算上升到"结构"的研究。本章引入线性相关/无关、极大无关组、向量组的秩等核心概念，用几何语言（向量空间、基、维数、坐标）重新诠释线性方程组。齐次方程组的基础解系对应解空间的基，非齐次方程组的通解等于特解加齐次通解——这是从"计算"走向"理论"的关键一章。
+                    </p>
+                    <div class="tag-row">
+                        <span>线性相关与无关</span>
+                        <span>极大无关组</span>
+                        <span>向量组秩</span>
+                        <span>向量空间</span>
+                        <span>基变换与坐标</span>
+                        <span>解的结构定理</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 第5章 -->
+        <div class="chapter-box animate-on-scroll" id="ch5">
+            <div class="chapter-header-bar" onclick="toggleChapter(this)">
+                <div class="chapter-num ch5-bg">5</div>
+                <div class="chapter-title-area">
+                    <h3>相似矩阵及二次型</h3>
+                    <div class="chapter-meta">高级应用 · 矩阵结构</div>
+                </div>
+                <div class="chapter-toggle">▲</div>
+            </div>
+            <div class="chapter-body">
+                <div class="chapter-body-inner">
+                    <p class="desc">
+                        本章是矩阵理论的"高潮"。通过特征值与特征向量揭示矩阵的内在结构，学习相似对角化的条件与方法，将实对称矩阵正交相似对角化。二次型的标准化（配方法、正交变换法）和正定性判定，是工程应用（如优化、振动分析）中不可或缺的工具。
+                    </p>
+                    <div class="tag-row">
+                        <span>特征值与特征向量</span>
+                        <span>相似对角化</span>
+                        <span>实对称矩阵性质</span>
+                        <span>二次型及其矩阵</span>
+                        <span>正交变换法</span>
+                        <span>正定性判定</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== 三、章节联系 ===== -->
+<section class="section" id="relation" style="background: #fafbfc;">
+    <div class="container">
+        <div class="section-title animate-on-scroll">
+            <span class="dot"></span> 章节之间的联系
+        </div>
+
+        <div class="relation-diagram animate-on-scroll">
+            <!-- 第一行：5个节点 -->
+            <div class="relation-row">
+                <div class="relation-node ch1-node">
+                    <div class="node-ch">第1章</div>
+                    <div class="node-name">行列式</div>
+                </div>
+                <div class="relation-node ch2-node">
+                    <div class="node-ch">第2章</div>
+                    <div class="node-name">矩阵运算</div>
+                </div>
+                <div class="relation-node ch3-node">
+                    <div class="node-ch">第3章</div>
+                    <div class="node-name">初等变换与方程组</div>
+                </div>
+                <div class="relation-node ch4-node">
+                    <div class="node-ch">第4章</div>
+                    <div class="node-name">向量组相关性</div>
+                </div>
+                <div class="relation-node ch5-node">
+                    <div class="node-ch">第5章</div>
+                    <div class="node-name">相似矩阵与二次型</div>
+                </div>
+            </div>
+
+            <!-- 连线与标注 -->
+            <div style="display: flex; align-items: center; gap: 10px; margin-top: 8px; flex-wrap: wrap; justify-content: center;">
+                <!-- 1→2 虚线 可逆判定 -->
+                <div class="arrow-connector">
+                    <span class="line dashed"></span>
+                    <span class="arrow-label">可逆判定</span>
+                </div>
+                <!-- 2→3 实线 运算工具 -->
+                <div class="arrow-connector">
+                    <span class="line" style="background: var(--ch2-color);"></span>
+                    <span class="arrow-label" style="color: var(--ch2-color);">运算工具</span>
+                </div>
+                <!-- 3→4 实线 秩与解结构 -->
+                <div class="arrow-connector">
+                    <span class="line" style="background: var(--ch3-color);"></span>
+                    <span class="arrow-label" style="color: #2e7d32;">秩与解结构</span>
+                </div>
+                <!-- 4→5 实线 特征值空间 -->
+                <div class="arrow-connector">
+                    <span class="line" style="background: var(--ch4-color);"></span>
+                    <span class="arrow-label" style="color: #512da8;">特征值空间</span>
+                </div>
+            </div>
+
+            <!-- 补充连线说明 -->
+            <div style="display: flex; align-items: center; gap: 10px; margin-top: 14px; flex-wrap: wrap; justify-content: center;">
+                <div class="arrow-connector">
+                    <span class="line dashed"></span>
+                    <span class="arrow-label">1→3 工具支撑</span>
+                </div>
+                <div class="arrow-connector">
+                    <span class="line" style="background: #ccc;"></span>
+                    <span class="arrow-label">3→5 内容递进</span>
+                </div>
+            </div>
+
+            <!-- 主线说明 -->
+            <div class="main-line">
+                <strong>主线：</strong>从"计算工具" → "核心对象" → "核心应用" → "理论深化" → "高级应用"
+            </div>
+
+            <!-- 图例 -->
+            <div class="legend">
+                <div class="legend-item">
+                    <span class="legend-line dashed"></span> 工具支撑关系
+                </div>
+                <div class="legend-item">
+                    <span class="legend-line"></span> 内容递进关系
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== 四、编排逻辑 ===== -->
+<section class="section" id="logic">
+    <div class="container">
+        <div class="section-title animate-on-scroll">
+            <span class="dot"></span> 为什么这样排列？
+        </div>
+
+        <ol class="logic-list">
+            <li class="animate-on-scroll">
+                <strong>第1步：先给工具（行列式）</strong>
+                从二阶、三阶的具体计算入手，建立"行列式 ≠ 0 ⟺ 可逆"的直觉，为后续判定提供最简单的判据。这是历史发展的自然顺序，也符合认知规律——先会算，再谈理解。
+            </li>
+            <li class="animate-on-scroll">
+                <strong>第2步：建立核心对象（矩阵）</strong>
+                有了行列式做铺垫，自然引入更一般的矩阵概念。矩阵是线性代数全程使用的"语言"，所有后续内容都建立在矩阵运算体系之上。注意：矩阵乘法不满足交换律，这是与数的运算最大的不同。
+            </li>
+            <li class="animate-on-scroll">
+                <strong>第3步：核心应用（初等变换与方程组）</strong>
+                有了矩阵语言，就可以用统一的方法（初等行变换）解决三大问题：求逆矩阵、求秩、解方程组。本章是全书的"脊梁"——秩的概念贯穿后续所有章节，是判断解的情况的终极工具。
+            </li>
+            <li class="animate-on-scroll">
+                <strong>第4步：理论深化（向量组·几何视角）</strong>
+                从"方程视角"切换到"向量视角"，用向量空间、基、维数等几何语言重新理解前3章的内容。线性相关/无关是全书最抽象的概念，但也是理解秩、解空间、特征向量的深层钥匙。这是从"计算"走向"理论"的转折点。
+            </li>
+            <li class="animate-on-scroll">
+                <strong>第5步：高级应用（特征值与二次型）</strong>
+                综合前4章全部工具，研究矩阵在相似变换下的不变量（特征值），将对称矩阵对角化，把二次型化为标准形。这是矩阵理论的"集大成者"，也是工程应用（振动分析、优化、PCA降维）的直接理论基础。
+            </li>
+        </ol>
+
+        <!-- 暗线说明 -->
+        <div style="margin-top: 24px; padding: 20px 28px; background: #fff3e0; border-radius: 12px; border-left: 4px solid var(--accent);" class="animate-on-scroll">
+            <strong style="color: var(--accent); font-size: 1rem;">💡 一条暗线贯穿始终</strong>
+            <p style="margin-top: 8px; font-size: 0.92rem; color: var(--text-secondary);">
+                <strong>"线性方程组的可解性"</strong>是隐形的主线——第1章用行列式判可解 → 第2章用逆矩阵求解 → 第3章用初等变换求通解 → 第4章用向量空间刻画解结构 → 第5章用特征值简化矩阵方程。五章内容看似独立，实则围绕同一个问题层层深入。
+            </p>
+        </div>
+    </div>
+</section>
+
+<!-- ===== 五、学习目标 ===== -->
+<section class="section" id="goals" style="background: #fafbfc;">
+    <div class="container">
+        <div class="section-title animate-on-scroll">
+            <span class="dot"></span> 学完后应达到的水平
+        </div>
+
+        <div class="goal-grid">
+            <!-- 熟练计算 -->
+            <div class="goal-card animate-on-scroll">
+                <div class="goal-icon" style="background: #e3f2fd;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1565c0" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 4v16M16 4v16M4 8h16M4 16h16"/></svg>
+                </div>
+                <h3>熟练计算</h3>
+                <p>能准确计算各类行列式、矩阵运算、矩阵的秩、逆矩阵，会用初等变换求解线性方程组。</p>
+            </div>
+
+            <!-- 判定分析 -->
+            <div class="goal-card animate-on-scroll">
+                <div class="goal-icon" style="background: #fce4ec;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#c62828" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+                </div>
+                <h3>判定分析</h3>
+                <p>能判定向量组的线性相关性、方程组解的情况、矩阵能否相似对角化、二次型的正定性。</p>
+            </div>
+
+            <!-- 融会贯通 -->
+            <div class="goal-card animate-on-scroll">
+                <div class="goal-icon" style="background: #e8f5e9;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2e7d32" stroke-width="2"><path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z"/></svg>
+                </div>
+                <h3>融会贯通</h3>
+                <p>理解行列式、矩阵、向量组、方程组、特征值之间的内在联系，形成完整的知识网络。</p>
+            </div>
+
+            <!-- 初步应用 -->
+            <div class="goal-card animate-on-scroll">
+                <div class="goal-icon" style="background: #fce4ec;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#c62828" stroke-width="2"><path d="M14.7 6.3a4 4 0 015.66 5.66l-1.41 1.41-5.66-5.66 1.41-1.41zM3 21l8-8M9 7l2 2"/></svg>
+                </div>
+                <h3>初步应用</h3>
+                <p>能将线性代数工具用于简单的工程问题，如坐标变换、数据降维、二次型优化等。</p>
+            </div>
+        </div>
+
+        <!-- 学习建议 -->
+        <div style="margin-top: 32px; padding: 24px 28px; background: white; border: 1px solid var(--border); border-radius: 12px;" class="animate-on-scroll">
+            <h3 style="color: var(--primary); font-size: 1.05rem; margin-bottom: 14px;">📝 学习建议</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;">
+                <div style="padding: 14px; background: #f5f6ff; border-radius: 8px;">
+                    <strong style="color: var(--primary); font-size: 0.9rem;">多动手算</strong>
+                    <p style="font-size: 0.82rem; margin-top: 4px; color: var(--text-secondary);">行列式、矩阵运算、求逆——先求"算得对"，再求"算得快"</p>
+                </div>
+                <div style="padding: 14px; background: #f5f6ff; border-radius: 8px;">
+                    <strong style="color: var(--primary); font-size: 0.9rem;">画图理解</strong>
+                    <p style="font-size: 0.82rem; margin-top: 4px; color: var(--text-secondary);">向量空间、线性相关、特征值——能用几何解释的绝不纯代数死磕</p>
+                </div>
+                <div style="padding: 14px; background: #f5f6ff; border-radius: 8px;">
+                    <strong style="color: var(--primary); font-size: 0.9rem;">建立联系</strong>
+                    <p style="font-size: 0.82rem; margin-top: 4px; color: var(--text-secondary);">每学一个新概念，问自己：它和前面哪个概念有关？怎么用？</p>
+                </div>
+                <div style="padding: 14px; background: #f5f6ff; border-radius: 8px;">
+                    <strong style="color: var(--primary); font-size: 0.9rem;">重视第3、5章</strong>
+                    <p style="font-size: 0.82rem; margin-top: 4px; color: var(--text-secondary);">第3章是计算核心，第5章是综合巅峰，这两章决定你的线代水平</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 页脚 -->
+<footer class="footer">
+    <p>同济大学《工程数学——线性代数》第7版 · 第1-5章绪论导学</p>
+    <p style="opacity: 0.5; font-size: 0.82rem; margin-top: 6px;">本页面仅供学习参考，建议配合教材、习题与课件系统学习</p>
+</footer>
+
+<!-- 回到顶部 -->
+<div class="back-to-top" onclick="scrollToTop()" id="backToTop">↑</div>
+
+<script>
+    // ===== 章节展开/折叠 =====
+    function toggleChapter(header) {
+        const box = header.parentElement;
+        const isExpanded = box.classList.contains('expanded');
+        // 关闭其他
+        document.querySelectorAll('.chapter-box.expanded').forEach(item => {
+            if (item !== box) item.classList.remove('expanded');
+        });
+        // 切换当前
+        box.classList.toggle('expanded', !isExpanded);
+    }
+
+    // 默认展开第3章
+    document.addEventListener('DOMContentLoaded', () => {
+        const ch3 = document.getElementById('ch3');
+        if (ch3) ch3.classList.add('expanded');
+    });
+
+    // ===== 滚动动画 =====
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+            }
+        });
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+    document.querySelectorAll('.animate-on-scroll').forEach(el => observer.observe(el));
+
+    // ===== 导航高亮 =====
+    const sections = ['core-problems', 'chapters', 'relation', 'logic', 'goals'];
+    const navLinks = document.querySelectorAll('.nav-links a');
+
+    window.addEventListener('scroll', () => {
+        let current = '';
+        sections.forEach(id => {
+            const section = document.getElementById(id);
+            if (section && window.scrollY >= section.offsetTop - 120) {
+                current = id;
+            }
+        });
+        navLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href') === '#' + current) {
+                link.classList.add('active');
+            }
+        });
+
+        // 回到顶部按钮
+        const btn = document.getElementById('backToTop');
+        if (window.scrollY > 300) {
+            btn.classList.add('visible');
+        } else {
+            btn.classList.remove('visible');
+        }
+    });
+
+    // ===== 平滑滚动 =====
+    document.querySelectorAll('.nav-links a').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const target = document.getElementById(link.getAttribute('href').slice(1));
+            if (target) {
+                window.scrollTo({ top: target.offsetTop - 64, behavior: 'smooth' });
+            }
+        });
+    });
+
+    function scrollToTop() {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+</script>
+
+</body>
+</html>

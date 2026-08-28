@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>三阶行列式 · 沙路法 + 3D 圆柱演示</title>
+<style>
+:root{font-size:19px}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(135deg,#f8fafc 0%,#eef2ff 50%,#f0f9ff 100%);color:#1e1b4b;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+h1{font-size:2.1rem;text-align:center;margin:.8rem 0 .3rem;letter-spacing:.02em}
+.sub{text-align:center;color:#6366f1;font-size:1.02rem;margin-bottom:.6rem}
+.card{background:#fff;border-radius:20px;padding:1.4rem 1.7rem;margin:1rem auto;max-width:1000px;box-shadow:0 8px 32px rgba(99,102,241,.10)}
+button{font-size:1rem;padding:.5rem 1.1rem;border-radius:12px;border:1.5px solid #818cf8;background:#fff;color:#4338ca;cursor:pointer;transition:.15s;font-weight:600}
+button:hover{background:#eef2ff;transform:translateY(-1px)}
+.term{font-family:"Cambria Math","Times New Roman",serif;font-size:1.45rem;background:#f1f5f9;padding:.3rem .8rem;border-radius:10px;display:inline-block;margin:.2rem 0;letter-spacing:.02em}
+.explain{background:#f0f9ff;border-left:5px solid #6366f1;padding:1rem 1.2rem;border-radius:10px;margin-top:1rem;line-height:1.75;font-size:1rem}
+canvas{display:block;margin:.5rem auto;border-radius:14px;background:#fafbff;border:1px solid #e0e7ff}
+#err{color:#dc2626;text-align:center;font-size:.9rem;min-height:1.2em}
+.ctrl{display:flex;gap:.8rem;align-items:center;flex-wrap:wrap;justify-content:center}
+.label{font-size:1rem;color:#4338ca;font-weight:600}
+input[type=range]{-webkit-appearance:none;height:6px;border-radius:3px;background:#c7d2fe;outline:none;width:240px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#6366f1;cursor:pointer;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.2)}
+.section-title{font-size:1.35rem;font-weight:700;color:#4338ca;margin:.4rem 0 .9rem;border-left:4px solid #6366f1;padding-left:.6rem}
+/* 二阶行列式：两侧竖线 + 2x2 网格 */
+.d2{display:inline-block;font-family:"Cambria Math","Times New Roman",serif;font-size:2.1rem;font-weight:700;color:#4338ca;vertical-align:middle;line-height:1.05}
+.mat2{display:inline-grid;grid-template-columns:auto auto;gap:0 10px;vertical-align:middle;font-family:"Cambria Math","Times New Roman",serif;font-size:1.25rem;color:#1e1b4b;padding:2px 4px;border-left:2.5px solid #4338ca;border-right:2.5px solid #4338ca;margin:0 2px}
+#three-wrap{position:relative;width:860px;height:560px;margin:0 auto}
+#three-wrap canvas{border-radius:14px}
+#overlay{position:absolute;top:10px;left:14px;pointer-events:none;font-size:.95rem;color:#4338ca;font-weight:600;text-shadow:0 0 6px #fff}
+</style>
+</head>
+<body>
+
+<h1>三阶行列式的计算规则</h1>
+<div class="sub">沙路法（Sarrus）图形演示 · 3D 圆柱滚动可视化</div>
+
+<div class="card">
+  <div class="ctrl">
+    <span class="label">圆柱滚动</span>
+    <input type="range" min="0" max="360" value="0" id="roll" oninput="__roll(+this.value)">
+    <button onclick="__play()">▶ 自动顺时针</button>
+    <button onclick="__stop()">■ 停</button>
+    <button onclick="__reset()">⟳ 复位</button>
+  </div>
+</div>
+
+<div class="card">
+  <div class="section-title">① 沙路法（Sarrus）· 3×5 铺开图解</div>
+  <canvas id="sarrus" width="760" height="200"></canvas>
+  <div class="explain" style="margin-top:.8rem">
+    <b>规则：</b>将 3×3 矩阵右侧复制前两列，得到 3×5 阵列。<br>
+    <span style="color:#16a34a">■ 正项（主对角方向，绿线）</span>：(1,1)(2,2)(3,3) · (1,2)(2,3)(3,4) · (1,3)(2,4)(3,5)<br>
+    <span style="color:#dc2626">■ 负项（副对角方向，红线）</span>：(3,1)(2,2)(1,3) · (3,2)(2,3)(1,4) · (3,3)(2,4)(1,5)<br>
+    <b>det =</b> (+a₁₁a₂₂a₃₃ + a₁₂a₂₃a₃₁ + a₁₃a₂₁a₃₂) − (a₁₃a₂₂a₃₁ + a₁₂a₂₁a₃₃ + a₁₁a₂₃a₃₂)
+  </div>
+</div>
+
+<div class="card">
+  <div class="section-title">② 3D 圆柱 · 元素刻于筒壁（背面消隐）</div>
+  <div id="three-wrap">
+    <div id="overlay">拖拽可旋转视角 · 滚动条绕轴自转</div>
+  </div>
+  <div id="err"></div>
+  <div class="explain">
+    <b>几何含义：</b>把写有 aᵢⱼ 的纸卷成圆筒，绕轴顺时针自转（滚动角增大，取负角）。第 1 列在 +Z 正前方，顺时针转动时第 2 列、第 3 列依次从后方跟上。<br>
+    <b>行序：</b>第一行（a₁₁ a₁₂ a₁₃）在筒顶，第三行（a₃₁ a₃₂ a₃₃）在筒底。<br>
+    <b>为何仅三阶适用：</b>n=4 需 4!=24 项，而圆筒一圈只提供 2n=8 条连续螺旋，Sarrus 失效，高阶须按行（代数余子式）展开。
+  </div>
+</div>
+
+<div class="card">
+  <div class="section-title">③ 符号展开式 · 按第一行展开（元素 × 代数余子式）</div>
+  <div id="out"></div>
+  <div class="explain" style="margin-top:.9rem;line-height:1.9">
+    <b>定义：</b>代数余子式 Aᵢⱼ = (−1)ⁱ⁺ʲ · Mᵢⱼ，其中 Mᵢⱼ 是划去第 i 行第 j 列后的二阶余子式。<br>
+    <b>按第一行展开：</b>det = a₁₁·A₁₁ + a₁₂·A₁₂ + a₁₃·A₁₃。<br>
+    <b>三个余子式：</b><br>
+    &nbsp;&nbsp;A₁₁ = (+1)·(a₂₂a₃₃ − a₂₃a₃₂) &nbsp;（划去第1行第1列）<br>
+    &nbsp;&nbsp;A₁₂ = (−1)·(a₂₁a₃₃ − a₂₃a₃₁) &nbsp;（划去第1行第2列）<br>
+    &nbsp;&nbsp;A₁₃ = (+1)·(a₂₁a₃₂ − a₂₂a₃₁) &nbsp;（划去第1行第3列）<br>
+    <b>与沙路法对照：</b>代入后即得 det = (+a₁₁a₂₂a₃₃ + a₁₂a₂₃a₃₁ + a₁₃a₂₁a₃₂) − (a₁₃a₂₂a₃₁ + a₁₂a₂₁a₃₃ + a₁₁a₂₃a₃₂)，与①中六线结果一致。
+  </div>
+</div>
+
+<!-- Three.js -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
+<script>
+/* ============ 符号数据 ============ */
+const a=[['a₁₁','a₁₂','a₁₃'],['a₂₁','a₂₂','a₂₃'],['a₃₁','a₃₂','a₃₃']];
+const ROW_Y=[1,0,-1];                 // 行0(第一行)在顶 y=+1
+function colTheta(j){return 3*Math.PI/2 - j*2*Math.PI/3;} // j=0 前方
+
+/* ============ 沙路法 2D 图解 ============ */
+(function drawSarrus(){
+  const c=document.getElementById('sarrus'),ctx=c.getContext('2d');
+  const W=c.width,H=c.height,ox=60,oy=46,dx=118,dy=46;
+  ctx.clearRect(0,0,W,H);
+  ctx.font='bold 30px "Cambria Math",serif';
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  // 3x5 阵列
+  for(let i=0;i<3;i++)for(let j=0;j<5;j++){
+    const col=j<3?j:j-3;
+    ctx.fillStyle='#1e1b4b';
+    ctx.fillText(a[i][col],ox+j*dx,oy+i*dy);
+  }
+  // 复制列分隔虚线
+  ctx.strokeStyle='#c7d2fe';ctx.setLineDash([4,4]);ctx.lineWidth=1;
+  for(let j=1;j<3;j++){ctx.beginPath();ctx.moveTo(ox+j*dx-dx/2,oy-30);ctx.lineTo(ox+j*dx-dx/2,oy+2*dy+30);ctx.stroke();}
+  ctx.setLineDash([]);
+  // 正项绿线(左上->右下)
+  const P=(r,c)=>({x:ox+(c-1)*dx,y:oy+(r-1)*dy});
+  function line(p1,p2,color){ctx.strokeStyle=color;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(p1.x,p1.y);ctx.lineTo(p2.x,p2.y);ctx.stroke();}
+  // 三条主对角(绿) (1,1)-(2,2)-(3,3) 等
+  [[1,1,3,3],[1,2,3,4],[1,3,3,5]].forEach(([r1,c1,r2,c2])=>line(P(r1,c1),P(r2,c2),'#22c55e'));
+  // 三条副对角(红) (3,1)-(2,2)-(1,3) 等
+  [[3,1,1,3],[3,2,1,4],[3,3,1,5]].forEach(([r1,c1,r2,c2])=>line(P(r1,c1),P(r2,c2),'#ef4444'));
+  // 图例
+  ctx.font='14px sans-serif';ctx.textAlign='left';
+  ctx.fillStyle='#16a34a';ctx.fillText('—— 正项（主对角方向）',ox+5*dx-40,oy-32);
+  ctx.fillStyle='#dc2626';ctx.fillText('—— 负项（副对角方向）',ox+5*dx-40,oy-12);
+})();
+
+/* ============ 符号展开式 ============ */
+(function build(){
+  const wrap=document.getElementById('out');
+  // 用 2x2 迷你行列式（竖线）表示每个余子式 Mᵢⱼ
+  const det2=(a11,a12,a21,a22)=>`<span class="d2">|</span><span class="mat2">${a11}${a12}<br>${a21}${a22}</span><span class="d2">|</span>`;
+  const M11=det2('a₂₂','a₂₃','a₃₂','a₃₃');
+  const M12=det2('a₂₁','a₂₃','a₃₁','a₃₃');
+  const M13=det2('a₂₁','a₂₂','a₃₁','a₃₂');
+  wrap.innerHTML=
+   '<div style="font-size:1.15rem;line-height:2.2">'+
+     '<span class="term">det = a₁₁·A₁₁ + a₁₂·A₁₂ + a₁₃·A₁₃</span><br>'+
+     '<span style="color:#64748b;font-size:.95rem">（按第一行展开 = 元素 × 对应代数余子式 的代数和；Aᵢⱼ=(−1)ⁱ⁺ʲ·Mᵢⱼ，Mᵢⱼ 为划去第 i 行第 j 列后的二阶行列式）</span><br><br>'+
+     '<span class="term">A₁₁ = (+1)·'+M11+' = a₂₂a₃₃ − a₂₃a₃₂</span><br>'+
+     '<span class="term">A₁₂ = (−1)·'+M12+' = −(a₂₁a₃₃ − a₂₃a₃₁)</span><br>'+
+     '<span class="term">A₁₃ = (+1)·'+M13+' = a₂₁a₃₂ − a₂₂a₃₁</span><br><br>'+
+     '<span class="term">代入 = (+a₁₁a₂₂a₃₃ + a₁₂a₂₃a₃₁ + a₁₃a₂₁a₃₂) − (a₁₃a₂₂a₃₁ + a₁₂a₂₁a₃₃ + a₁₁a₂₃a₃₂)</span>'+
+   '</div>';
+})();
+
+/* ============ Three.js 3D 圆柱 ============ */
+let scene,camera,renderer,cylGroup,raycaster,mouseDown=false,lastX=0,lastY=0,manualRotX=0,manualRotY=0;
+const R=1.9,SPRITE_SCALE=0.62;let roll=0;
+window.__timer=null;  // 挂到 window，确保内联 onclick 调用的全局 __play/__stop 一定能访问
+
+function makeTextSprite(text){
+  const cv=document.createElement('canvas');cv.width=256;cv.height=256;
+  const g=cv.getContext('2d');
+  g.clearRect(0,0,256,256);
+  g.font='bold 150px "Cambria Math","Times New Roman",serif';
+  g.textAlign='center';g.textBaseline='middle';
+  g.fillStyle='#1e1b4b';g.shadowColor='rgba(255,255,255,.9)';g.shadowBlur=8;
+  g.fillText(text,128,138);
+  const tex=new THREE.CanvasTexture(cv);tex.minFilter=THREE.LinearFilter;
+  const mat=new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:true,depthWrite:false});
+  const sp=new THREE.Sprite(mat);sp.scale.set(SPRITE_SCALE,SPRITE_SCALE,1);
+  return sp;
+}
+
+function init3D(){
+  const wrap=document.getElementById('three-wrap');
+  scene=new THREE.Scene();
+  camera=new THREE.PerspectiveCamera(38,wrap.clientWidth/wrap.clientHeight,0.1,100);
+  camera.position.set(0,1.8,9);camera.up.set(0,1,0);camera.lookAt(0,0,0);
+  renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
+  renderer.setSize(wrap.clientWidth,wrap.clientHeight);renderer.setPixelRatio(window.devicePixelRatio||1);
+  wrap.appendChild(renderer.domElement);
+
+  // 灯光
+  scene.add(new THREE.AmbientLight(0xffffff,0.85));
+  const dl=new THREE.DirectionalLight(0xffffff,0.6);dl.position.set(3,5,4);scene.add(dl);
+
+  // 半透明筒壁
+  const geom=new THREE.CylinderGeometry(R, R, 2.4, 48,1,true);
+  const mat=new THREE.MeshPhongMaterial({color:0xc7d2fe,transparent:true,opacity:0.20,side:THREE.DoubleSide,depthWrite:false});
+  const cyl=new THREE.Mesh(geom,mat);scene.add(cyl);
+  // 顶/底圆环
+  const ringGeom=new THREE.RingGeometry(R*0.96,R*1.02,48);
+  const ringMat=new THREE.MeshBasicMaterial({color:0x818cf8,side:THREE.DoubleSide,transparent:true,opacity:0.5});
+  const ringTop=new THREE.Mesh(ringGeom,ringMat);ringTop.rotation.x=Math.PI/2;ringTop.position.y=1.2;scene.add(ringTop);
+  const ringBot=new THREE.Mesh(ringGeom,ringMat);ringBot.rotation.x=-Math.PI/2;ringBot.position.y=-1.2;scene.add(ringBot);
+
+  cylGroup=new THREE.Group();scene.add(cylGroup);
+
+  // 9 个元素贴筒壁
+  for(let i=0;i<3;i++)for(let j=0;j<3;j++){
+    const sp=makeTextSprite(a[i][j]);
+    const th=colTheta(j);
+    sp.position.set(R*Math.cos(th), ROW_Y[i], R*Math.sin(th));
+    cylGroup.add(sp);
+  }
+
+  // 鼠标拖拽旋转视角
+  const dom=renderer.domElement;
+  dom.style.cursor='grab';
+  dom.addEventListener('mousedown',e=>{mouseDown=true;lastX=e.clientX;lastY=e.clientY;dom.style.cursor='grabbing';});
+  window.addEventListener('mouseup',()=>{mouseDown=false;dom.style.cursor='grab';});
+  window.addEventListener('mousemove',e=>{
+    if(!mouseDown)return;
+    const dx=e.clientX-lastX,dy=e.clientY-lastY;lastX=e.clientX;lastY=e.clientY;
+    manualRotY+=dx*0.01;manualRotX+=dy*0.01;manualRotX=Math.max(-1.2,Math.min(1.2,manualRotX));
+    camera.position.x=9*Math.sin(manualRotY)*Math.cos(manualRotX);
+    camera.position.z=9*Math.cos(manualRotY)*Math.cos(manualRotX);
+    camera.position.y=1.8+9*Math.sin(manualRotX);
+    camera.lookAt(0,0,0);
+  });
+
+  animate();
+}
+
+function animate(){
+  requestAnimationFrame(animate);
+  renderer.render(scene,camera);
+}
+
+function updateRoll(){
+  if(!cylGroup) return;                // init3D 未就绪时静默等待
+  const ang=-roll*Math.PI/180;         // 负角=顺时针(绕+Y)，与按钮"自动顺时针"一致
+  // 元素已是 cylGroup 的子对象，旋转 group 即整体（筒壁+元素）一起转，
+  // 无需逐元素重算坐标——否则会与 group 旋转叠加造成"双重旋转"导致元素错位/看似不动。
+  cylGroup.rotation.y=ang;
+}
+
+__roll=function(v){roll=v;updateRoll();};
+__play=function(){if(window.__timer)return;window.__timer=setInterval(()=>{roll=(roll+1.2)%360;document.getElementById('roll').value=roll;updateRoll();},40);};
+__stop=function(){clearInterval(window.__timer);window.__timer=null;};
+__reset=function(){roll=0;document.getElementById('roll').value=0;manualRotX=0;manualRotY=0;camera.position.set(0,1.8,9);camera.lookAt(0,0,0);updateRoll();};
+
+/* ============ 启动：立即执行 + DOMContentLoaded 双保险 ============ */
+function start(){
+  if(start.done) return; start.done=true;   // 防止双触发重复初始化
+  try{init3D();updateRoll();}
+  catch(e){document.getElementById('err').textContent='3D 初始化失败：'+e.message;}
+}
+if(document.readyState==='loading'){
+  window.addEventListener('DOMContentLoaded',start,{once:true});
+}else{
+  start();                                   // DOM 已就绪，立即初始化
+}
+</script>
+</body>
+</html>
+cript>
+</body>
+</html>
