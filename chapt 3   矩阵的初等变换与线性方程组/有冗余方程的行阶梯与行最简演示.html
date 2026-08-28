@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>高斯消元演示 —— 完全修正版</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  body{margin:0;padding:20px;background:linear-gradient(135deg,#e0f7fa 0%,#bbdefb 100%);
+       font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif}
+  .box{max-width:1300px;margin:0 auto;background:rgba(255,255,255,.85);backdrop-filter:blur(10px);
+       border-radius:16px;padding:30px;box-shadow:0 8px 32px rgba(31,38,135,.15)}
+  h1{text-align:center;color:#1565c0;margin-bottom:40px}
+  .ctrl{text-align:center;margin:25px 0}
+  button{padding:12px 28px;margin:0 8px;border:none;border-radius:50px;
+         background:linear-gradient(to right,#1976d2,#2196f3);color:#fff;font-size:16px;cursor:pointer}
+  button:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 6px 20px rgba(33,150,243,.4)}
+  button:disabled{background:#cfd8dc;color:#78909c;cursor:not-allowed}
+  .info{text-align:center;font-size:18px;color:#1565c0;margin:15px 0 25px;min-height:30px;
+        background:rgba(179,229,252,.3);border-radius:8px;padding:12px}
+  .main{display:flex;gap:40px;justify-content:center;flex-wrap:wrap;margin:40px 0}
+  .eqn-side{width:420px}
+  .card{padding:20px;border-radius:12px;background:rgba(255,255,255,.7);box-shadow:0 4px 20px rgba(0,0,0,.05)}
+  .eqn-box{font-size:18px;font-family:'Courier New',monospace;line-height:1.8}
+  .row{display:flex;justify-content:space-between;align-items:center}
+  .lhs{flex:1;text-align:center;letter-spacing:1px}
+  .rhs{width:40px;text-align:right}
+  table{margin:0 auto;border-collapse:collapse;font-family:'Courier New',monospace;font-size:20px}
+  td{padding:12px 16px;min-width:50px;height:45px;transition:all .5s;border-radius:4px}
+  .bracket{font-size:56px;color:#0d47a1;font-weight:300}
+  .pivot-col-0{background:rgba(255,87,34,.15)}
+  .pivot-col-1{background:rgba(33,150,243,.15)}
+  .pivot-col-2{background:rgba(76,175,80,.15)}
+  .pivot-col-3{background:rgba(255,193,7,.15)}
+  .pivot{background:#ff5722!important;color:#fff;font-weight:bold;border-radius:50%;transform:scale(1.1)}
+  .bad{background:#d32f2f!important;color:#fff;font-weight:bold;border-radius:6px}
+  .compare-panel{display:none;margin-top:40px}
+  .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:25px}
+  .compare-item{background:rgba(255,255,255,.7);padding:20px;border-radius:12px;box-shadow:0 4px 15px rgba(0,0,0,.05)}
+  .compare-item h3{color:#0d47a1;margin-top:0;border-bottom:2px solid #bbdefb;padding-bottom:10px}
+  .eqn-in-panel{font-size:18px;margin:10px 0;font-family:'Courier New',monospace;line-height:1.6}
+  .legend{display:flex;justify-content:center;gap:20px;margin:20px 0;flex-wrap:wrap}
+  .item{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.7);padding:6px 12px;border-radius:8px}
+  .rec{width:20px;height:20px;border-radius:4px}
+</style>
+</head>
+<body>
+<div class="box">
+  <h1>高斯消元演示 —— 完全修正版</h1>
+
+  <div class="info" id="info">点击“开始”逐步播放</div>
+
+  <div class="ctrl">
+    <button id="btnStart">开始</button>
+    <button id="btnNext" disabled>下一步</button>
+    <button id="btnReset">重置</button>
+  </div>
+
+  <div class="legend" id="legend" style="display:none">
+    <div class="item"><div class="rec" style="background:#ff5722"></div>主元</div>
+    <div class="item"><div class="rec" style="background:rgba(255,87,34,.15)"></div>主元列</div>
+    <div class="item"><div class="rec" style="background:#d32f2f"></div>主元列非零元素（REF 特有）</div>
+  </div>
+
+  <div class="main">
+    <div class="eqn-side">
+      <div class="card">
+        <div class="matrix-title">当前方程组</div>
+        <div class="eqn-box" id="eqnBox">
+          <div class="row"><div class="lhs">2x₁ - x₂ - x₃ + x₄</div><div class="rhs">= 2</div></div>
+          <div class="row"><div class="lhs">x₁ + x₂ - 2x₃ + x₄</div><div class="rhs">= 4</div></div>
+          <div class="row"><div class="lhs">4x₁ - 6x₂ + 2x₃ - 2x₄</div><div class="rhs">= 4</div></div>
+          <div class="row"><div class="lhs">3x₁ + 6x₂ - 9x₃ + 7x₄</div><div class="rhs">= 9</div></div>
+        </div>
+      </div>
+      <div class="card" id="finalEqnCard" style="display:none;margin-top:20px">
+        <div class="matrix-title">REF 与 RREF 对应方程组</div>
+        <div class="eqn-box" id="refEqnPanel"></div>
+        <hr style="margin:10px 0">
+        <div class="eqn-box" id="rrefEqnPanel"></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card" id="initCard">
+        <div class="matrix-title">初始增广矩阵</div>
+        <table id="mInit">
+          <tr><td class="bracket">[</td><td>2</td><td>-1</td><td>-1</td><td>1</td><td>|</td><td>2</td><td class="bracket">]</td></tr>
+          <tr><td class="bracket">[</td><td>1</td><td>1</td><td>-2</td><td>1</td><td>|</td><td>4</td><td class="bracket">]</td></tr>
+          <tr><td class="bracket">[</td><td>4</td><td>-6</td><td>2</td><td>-2</td><td>|</td><td>4</td><td class="bracket">]</td></tr>
+          <tr><td class="bracket">[</td><td>3</td><td>6</td><td>-9</td><td>7</td><td>|</td><td>9</td><td class="bracket">]</td></tr>
+        </table>
+      </div>
+
+      <div class="card" id="stepCard" style="display:none">
+        <div class="matrix-title" id="stepTitle">中间步骤</div>
+        <table id="mStep"></table>
+      </div>
+
+      <div class="card" id="refCard" style="display:none">
+        <div class="matrix-title">行阶梯矩阵 (REF)</div>
+        <table id="mRef"></table>
+      </div>
+
+      <div class="card" id="rrefCard" style="display:none">
+        <div class="matrix-title">行最简矩阵 (RREF)</div>
+        <table id="mRref"></table>
+      </div>
+    </div>
+  </div>
+
+  <div class="compare-panel" id="comparePanel">
+    <h2 style="text-align:center;color:#0d47a1">REF vs RREF 对比分析</h2>
+    <div class="compare-grid">
+      <div class="compare-item">
+        <h3>行阶梯矩阵 (REF) 特征</h3>
+        <ul>
+          <li>主元列用淡色背景标记</li>
+          <li>主元用红色圆圈标记</li>
+          <li>主元列中<strong>可以有非零元素</strong>（如本例第1列的&nbsp;0.5）</li>
+          <li>主元不必为1</li>
+          <li>形式可能不唯一</li>
+        </ul>
+      </div>
+      <div class="compare-item">
+        <h3>行最简矩阵 (RREF) 额外要求</h3>
+        <ul>
+          <li>每个主元<strong>必须为1</strong></li>
+          <li>主元列其余元素<strong>必为0</strong></li>
+          <li>可直接读出方程组解</li>
+          <li>形式唯一确定</li>
+          <li>满足REF全部条件</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------------- 数据（完全重算修正） ---------------- */
+const steps = [
+  {title:"步骤1：R1←R1÷2", 
+   m:[[1,-0.5,-0.5,0.5,1],
+      [1,1,-2,1,4],
+      [4,-6,2,-2,4],
+      [3,6,-9,7,9]], 
+   hlt:[[0,0]], chg:[[0,0],[0,1],[0,2],[0,3],[0,4]], piv:[0], bad:[]},
+
+  {title:"步骤2：R2←R2-R1, R3←R3-4R1, R4←R4-3R1", 
+   m:[[1,-0.5,-0.5,0.5,1],
+      [0,1.5,-1.5,0.5,3],
+      [0,-4,4,-4,0],
+      [0,7.5,-7.5,5.5,6]], 
+   hlt:[[0,0]], chg:[[1,0],[2,0],[3,0]], piv:[0], bad:[[1,1],[1,2],[1,3],[2,1],[2,2],[2,3],[3,1],[3,2],[3,3]]},
+
+  {title:"步骤3：R2←R2÷1.5", 
+   m:[[1,-0.5,-0.5,0.5,1],
+      [0,1,-1,1/3,2],
+      [0,-4,4,-4,0],
+      [0,7.5,-7.5,5.5,6]], 
+   hlt:[[1,1]], chg:[[1,1],[1,2],[1,3],[1,4]], piv:[0,1], bad:[[2,1],[2,2],[2,3],[3,1],[3,2],[3,3]]},
+
+  {title:"步骤4：R3←R3+4R2, R4←R4-7.5R2", 
+   m:[[1,-0.5,-0.5,0.5,1],
+      [0,1,-1,1/3,2],
+      [0,0,0,-8/3,8],
+      [0,0,0,3,-9]], 
+   hlt:[[1,1]], chg:[[2,1],[2,2],[2,3],[2,4],[3,1],[3,2],[3,3],[3,4]], piv:[0,1], bad:[[0,1],[0,2],[0,3]]},
+
+  {title:"步骤5：R3←R3÷(-8/3)  得到 REF", 
+   m:[[1,-0.5,-0.5,0.5,1],
+      [0,1,-1,1/3,2],
+      [0,0,0,1,-3],
+      [0,0,0,0,0]], 
+   hlt:[[2,3]], chg:[[2,3],[2,4],[3,3],[3,4]], piv:[0,1,3], bad:[[0,1],[0,2],[0,3],[1,2],[1,3]]},
+
+  {title:"步骤6：回代得到 RREF", 
+   m:[[1,0,-1,0,4],      // ✅ 修正：第一行常数项为 4
+      [0,1,-1,0,3],
+      [0,0,0,1,-3],
+      [0,0,0,0,0]], 
+   hlt:[[0,1],[0,2],[1,2]], chg:[[0,1],[0,2],[0,4],[1,3],[1,4]], piv:[0,1,3], bad:[]}
+];
+
+let cur = 0;
+
+/* ---------------- 工具函数（与原版相同） ---------------- */
+function id(x){return document.getElementById(x)}
+function clear(q,c){document.querySelectorAll(q).forEach(el=>el.classList.remove(...c.split(' ')))}
+function fmt(v){return Math.abs(v)<.001?'0':(Math.abs(v-Math.round(v))<.001?String(Math.round(v)):v.toFixed(2))}
+
+function matrixToEqn(mat){
+  return mat.map(row=>{
+    let s='', rhs=fmt(row[4]);
+    ['x₁','x₂','x₃','x₄'].forEach((ch,i)=>{
+      let c=row[i]; if(Math.abs(c)<.001) return;
+      let sign=c>0?'+':'-', abs=Math.abs(c);
+      if(Math.abs(abs-1)<.001) s+=sign+ch;
+      else s+=sign+fmt(abs)+ch;
+    });
+    s=s.replace(/^\+/,''); if(!s) s='0';
+    return '<div class="row"><div class="lhs">'+s+'</div><div class="rhs">= '+rhs+'</div></div>';
+  }).join('');
+}
+
+function paint(mid, dat, piv, bad){
+  const tb=id(mid); tb.innerHTML='';
+  dat.forEach((row,i)=>{
+    const tr=document.createElement('tr'); tr.innerHTML='<td class="bracket">[</td>';
+    row.forEach((v,j)=>{
+      if(j===4) tr.innerHTML+='<td>|</td>';
+      const td=document.createElement('td'); td.textContent=fmt(v); td.id=`${mid}-${i}-${j}`; tr.appendChild(td);
+    });
+    tr.innerHTML+='<td class="bracket">]</td>'; tb.appendChild(tr);
+  });
+  clear(`#${mid} td`,'pivot-col-0 pivot-col-1 pivot-col-2 pivot-col-3');
+  piv.forEach((c,r)=>{ for(let i=0;i<dat.length;i++) id(`${mid}-${i}-${c}`)?.classList.add(`pivot-col-${c}`); });
+  clear(`#${mid} td`,'pivot bad');
+  piv.forEach((c,r)=> id(`${mid}-${r}-${c}`)?.classList.add('pivot'));
+  bad.forEach(([r,c])=> id(`${mid}-${r}-${c}`)?.classList.add('bad'));
+}
+
+function highlight(mid, pos, cls){
+  pos.forEach(([r,c])=>{
+    const cell=id(`${mid}-${r}-${c}`);
+    if(cell){ cell.classList.add(cls,'pulsing'); setTimeout(()=>cell.classList.remove('pulsing'),600); }
+  });
+}
+
+/* ---------------- 主流程（与原版相同） ---------------- */
+function start(){
+  cur=0;
+  id('btnStart').disabled=true; id('btnNext').disabled=false;
+  id('stepCard').style.display='block'; id('legend').style.display='flex';
+  id('refCard').style.display='none'; id('rrefCard').style.display='none'; id('comparePanel').style.display='none'; id('finalEqnCard').style.display='none';
+  next();
+}
+function next(){
+  if(cur>=steps.length){
+    id('info').textContent='演示完成！下方查看 REF vs RREF 对比分析';
+    id('refCard').style.display='block'; id('rrefCard').style.display='block';
+    id('comparePanel').style.display='block'; id('finalEqnCard').style.display='block';
+    id('refEqnPanel').innerHTML=matrixToEqn(steps[4].m);
+    id('rrefEqnPanel').innerHTML=matrixToEqn(steps[5].m);
+    setTimeout(showFinalComparison,500);
+    id('btnNext').disabled=true;
+    return;
+  }
+  const s=steps[cur];
+  id('info').textContent=s.title;
+  id('eqnBox').innerHTML=matrixToEqn(s.m);
+  paint('mStep',s.m, s.piv, s.bad);
+  highlight('mStep',s.hlt,'highlight');
+  if(s.chg) setTimeout(()=>highlight('mStep',s.chg,'changed'),500);
+  cur++;
+  if(cur===5){ id('refCard').style.display='block'; paint('mRef',steps[4].m, steps[4].piv, steps[4].bad); }
+  if(cur===6){ id('rrefCard').style.display='block'; paint('mRref',steps[5].m, steps[5].piv, []); }
+}
+function reset(){
+  cur=0;
+  id('btnStart').disabled=false; id('btnNext').disabled=true;
+  id('stepCard').style.display='none'; id('refCard').style.display='none'; id('rrefCard').style.display='none';
+  id('legend').style.display='none'; id('comparePanel').style.display='none'; id('finalEqnCard').style.display='none';
+  id('info').textContent='点击“开始”逐步播放';
+  id('eqnBox').innerHTML=`<div class="row"><div class="lhs">2x₁ - x₂ - x₃ + x₄</div><div class="rhs">= 2</div></div>
+                          <div class="row"><div class="lhs">x₁ + x₂ - 2x₃ + x₄</div><div class="rhs">= 4</div></div>
+                          <div class="row"><div class="lhs">4x₁ - 6x₂ + 2x₃ - 2x₄</div><div class="rhs">= 4</div></div>
+                          <div class="row"><div class="lhs">3x₁ + 6x₂ - 9x₃ + 7x₄</div><div class="rhs">= 9</div></div>`;
+}
+function showFinalComparison(){
+  [[0,0],[1,1],[2,3]].forEach(([r,c])=>{
+    if(Math.abs(steps[4].m[r][c])>1e-12){
+      id(`mRef-${r}-${c}`)?.classList.add('pivot');
+    }
+    if(Math.abs(steps[5].m[r][c])>1e-12){
+      id(`mRref-${r}-${c}`)?.classList.add('pivot');
+    }
+  });
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  id('btnStart').addEventListener('click',start);
+  id('btnNext').addEventListener('click',next);
+  id('btnReset').addEventListener('click',reset);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>矩阵秩的八条性质 · 同济教材直观版</title>
+<style>
+:root{--bg:#f6f8fc;--card:#fff;--ink:#1a202c;--sub:#5b6b7b;--brand:#2563eb;--green:#14b8a6;--warn:#d97706;--line:#e4e9f2;}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:20px;}
+body{background:var(--bg);color:var(--ink);font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;line-height:1.8;}
+header{background:linear-gradient(135deg,#2563eb,#14b8a6);color:#fff;padding:2.8rem 1.5rem 2.2rem;text-align:center;}
+header h1{font-size:2.2rem;margin-bottom:.6rem;}
+header p{font-size:1.1rem;opacity:.95;max-width:860px;margin:0 auto;}
+main{max-width:1060px;margin:0 auto;padding:2rem 1.2rem 4rem;}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:2rem;box-shadow:0 6px 24px rgba(30,50,90,.07);margin:1.8rem 0;}
+h2{font-size:1.6rem;color:var(--brand);margin-bottom:.8rem;display:flex;align-items:center;gap:.6rem;}
+h2 .num{background:var(--brand);color:#fff;border-radius:10px;padding:.2rem .8rem;font-size:1.1rem;}
+h3{font-size:1.2rem;margin:1rem 0 .4rem;}
+p{font-size:1.05rem;margin:.4rem 0;}
+.sub{color:var(--sub);}
+.tag{display:inline-block;background:#fff7e6;color:var(--warn);border:1px solid #f2c94c;border-radius:8px;padding:.2rem .7rem;font-size:.95rem;font-weight:600;}
+.ctrl{display:flex;flex-wrap:wrap;gap:.8rem;align-items:center;margin:.8rem 0;}
+.ctrl label{font-size:1rem;font-weight:600;}
+input[type=range]{flex:1;min-width:150px;accent-color:var(--brand);}
+.val{font-size:1.1rem;font-weight:800;color:var(--brand);min-width:50px;text-align:center;}
+canvas{display:block;background:#f8fafc;border-radius:10px;width:100%;}
+.prop{display:grid;grid-template-columns:auto 1fr;gap:1rem;padding:1rem;border-radius:12px;border:1px solid var(--line);background:#f8fafc;margin:.6rem 0;}
+.prop .badge{background:var(--brand);color:#fff;border-radius:8px;padding:.4rem .8rem;font-weight:700;white-space:nowrap;}
+.prop .math{font-family:"Times New Roman",serif;font-size:1.15rem;}
+.prop .analogy{color:var(--green);font-weight:600;}
+.tip{background:#eef4ff;border-left:4px solid var(--brand);padding:1rem;border-radius:8px;margin:.8rem 0;}
+table{width:100%;border-collapse:collapse;font-size:1rem;}
+td,th{border:1px solid var(--line);padding:.7rem;text-align:center;}
+th{background:#e8f4fd;}
+@media(max-width:600px){html{font-size:18px;}header h1{font-size:1.8rem;}.card{padding:1.3rem;}.prop{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>矩阵秩的八条性质</h1>
+  <p>依据同济《工程数学·线性代数》§3.2 · 不用证明，先看懂画面 · 大一刚入校友好版</p>
+</header>
+
+<main>
+
+<!-- 教材定义 -->
+<section class="card">
+  <h2><span class="num">★</span>教材怎么定义“秩”？</h2>
+  <p>对矩阵 <code>A</code>，在它所有子式中，阶数最高且<span class="tag">不等于零</span>的那个子式的阶数，就叫 <code>R(A)</code>。</p>
+  <p>两个等价说法（§3.2 定理）：</p>
+  <ul style="padding-left:1.2rem;">
+    <li>初等行变换化成阶梯形后，<b>非零行的行数</b> = R(A)。</li>
+    <li>R(A) = R(Aᵀ)，行和列的最高非零子式阶数一样。</li>
+  </ul>
+  <div class="tip">
+    💡 直观：秩 = 矩阵里“真正有内容的行/列条数”，废话行（全零或重复）不计入。
+  </div>
+</section>
+
+<!-- 交互：拖列看阶梯形 -->
+<section class="card">
+  <h2><span class="num">0</span>动手：拖两列，看非零行怎么变</h2>
+  <p>3×2 矩阵 A = [a₁ | a₂]。两列拖到方向接近 → 行阶梯形只剩 1 行 → 秩从 2 变 1。</p>
+  <div class="ctrl">
+    <label>列1方向</label><input id="a1" type="range" min="0" max="360" step="1" value="30"><span class="val" id="v1">30°</span>
+    <label>列2方向</label><input id="a2" type="range" min="0" max="360" step="1" value="120"><span class="val" id="v2">120°</span>
+  </div>
+  <canvas id="matCanvas" height="260"></canvas>
+  <p>当前 <b>R(A) = <span id="rankVal">2</span></b> &nbsp; 阶梯形：<span id="rowDesc">两行非零</span></p>
+</section>
+
+<!-- 八条性质 -->
+<section class="card">
+  <h2><span class="num">1</span>八条性质 · 画面化解读</h2>
+
+  <div class="prop">
+    <div class="badge">①</div>
+    <div>
+      <div class="math">0 ≤ R(A) ≤ min(m, n)</div>
+      <p><span class="analogy">🎲 类比：</span>最多只能从 m 行、n 列里凑出一个非零子式，阶数不可能超过行数或列数。</p>
+    </div>
+  </div>
+
+  <div class="prop">
+    <div class="badge">②</div>
+    <div>
+      <div class="math">R(Aᵀ) = R(A)</div>
+      <p><span class="analogy">🪞 类比：</span>转置只是把矩阵翻过来，子式是否为零不变，所以行秩 = 列秩。</p>
+    </div>
+  </div>
+
+  <div class="prop">
+    <div class="badge">③</div>
+    <div>
+      <div class="math">A ∼ B（初等变换）⇒ R(A)=R(B)</div>
+      <p><span class="analogy">📷 类比：</span>初等行变换只是“换角度整理”，不会凭空造出或消灭非零子式，阶梯形行数不变。</p>
+    </div>
+  </div>
+
+  <div class="prop">
+    <div class="badge">④</div>
+    <div>
+      <div class="math">P、Q 可逆 ⇒ R(PAQ)=R(A)</div>
+      <p><span class="analogy">🕶️ 类比：</span>可逆矩阵 = 若干次初等变换，本质还是整理，不改变秩。</p>
+    </div>
+  </div>
+
+  <div class="prop">
+    <div class="badge">⑤</div>
+    <div>
+      <div class="math">R(A) ≤ R(A,b) ≤ R(A)+1</div>
+      <p><span class="analogy">🧩 类比：</span>往矩阵右边加一列 b，要么 b 能被原有列组合出来（秩不变），要么带来一个新方向（秩+1）。绝不会+2，因为只加了一列。</p>
+      <p class="sub">（这是判断方程组解的存在性的基础，第5章会细讲）</p>
+    </div>
+  </div>
+
+  <div class="prop">
+    <div class="badge">⑥</div>
+    <div>
+      <div class="math">R(A±B) ≤ R(A)+R(B)</div>
+      <p><span class="analogy">🤝 类比：</span>两矩阵相加，新矩阵的行可能互相抵消，独立行数不会超过两边独立行数之和。</p>
+    </div>
+  </div>
+
+  <div class="prop">
+    <div class="badge">⑦</div>
+    <div>
+      <div class="math">R(AB) ≤ min{R(A), R(B)}</div>
+      <p><span class="analogy">🚰 类比：</span>相乘相当于把 B 的列再组合一次，组合不出比 B 本身更多的独立列；又被 A 的行再过滤一次，也超不过 A 的行数。</p>
+      <div class="ctrl" style="margin-top:.6rem;">
+        <label>R(B)=</label><input id="rb" type="range" min="1" max="3" step="1" value="3"><span class="val" id="rbv">3</span>
+        <label>R(A)=</label><input id="ra" type="range" min="1" max="3" step="1" value="2"><span class="val" id="rav">2</span>
+      </div>
+      <p class="sub">⇒ R(AB) 最多是 <b id="rab">2</b> = min{R(A),R(B)}</p>
+    </div>
+  </div>
+
+  <div class="prop">
+    <div class="badge">⑧</div>
+    <div>
+      <div class="math">AB = O ⇒ R(A)+R(B) ≤ n</div>
+      <p><span class="analogy">🕳️ 类比：</span>B 扔出的列，全被 A 变成零。A 能“吞掉”的列数，加上 B 本身独立列数，不能超过总维数 n。</p>
+      <p class="sub">这是教材 §3.2 给出的性质⑧，也叫 Sylvester 不等式的推论。</p>
+    </div>
+  </div>
+</section>
+
+<!-- 方程组提前应用 -->
+<section class="card">
+  <h2><span class="num">2</span>性质⑤的提前应用：方程组有解吗？</h2>
+  <p class="tag">这是第5章内容，现在先直观感受</p>
+  <p>Ax=b：比较系数矩阵 A 和增广矩阵 (A,b) 的秩。</p>
+  <table>
+    <tr><th>R(A)</th><th>R(A,b)</th><th>结论</th></tr>
+    <tr><td>2</td><td>2</td><td>有唯一解（两行都独立，约束刚好）</td></tr>
+    <tr><td>1</td><td>1</td><td>有无穷多解（约束不够）</td></tr>
+    <tr><td>1</td><td>2</td><td>无解（b 带来新方向，方程矛盾）</td></tr>
+  </table>
+  <canvas id="eqn" height="180"></canvas>
+  <p class="sub" id="eqnMsg">拖动上方性质⑤，看两条直线的相对位置。</p>
+</section>
+
+<footer style="background:#eef2f7;color:var(--sub);text-align:center;padding:2rem 1rem;font-size:.95rem;">
+  矩阵秩 · 同济教材 §3.2 · 交互直观版 · 仅用子式与行阶梯形定义
+</footer>
+
+<script>
+function fit(cv,h){
+  const dpr=window.devicePixelRatio||1,rect=cv.getBoundingClientRect();
+  const w=rect.width||cv.parentElement.clientWidth||320;
+  cv.width=w*dpr;cv.height=(h||cv.height)*dpr;
+  const ctx=cv.getContext('2d');ctx.setTransform(1,0,0,1,0,0);ctx.scale(dpr,dpr);
+  return {ctx,w,h:h||cv.height/dpr};
+}
+
+// 0. 矩阵秩交互
+const a1=document.getElementById('a1'),a2=document.getElementById('a2');
+function drawMat(){
+  const t1=+a1.value,t2=+a2.value;
+  document.getElementById('v1').textContent=t1+'°';
+  document.getElementById('v2').textContent=t2+'°';
+  const v1=[Math.cos(t1*Math.PI/180),Math.sin(t1*Math.PI/180)];
+  const v2=[Math.cos(t2*Math.PI/180),Math.sin(t2*Math.PI/180)];
+  const dot=Math.abs(v1[0]*v2[0]+v1[1]*v2[1]);
+  const rank=dot>0.98?1:2;
+  document.getElementById('rankVal').textContent=rank;
+  document.getElementById('rowDesc').textContent=rank===2?'两行非零（阶梯形有2行）':'一行非零（两列共线，子式=0）';
+  const {ctx,w,h}=fit(document.getElementById('matCanvas'),260);
+  ctx.clearRect(0,0,w,h);
+  const cx=w/2,cy=h/2;
+  // 阶梯形示意
+  ctx.strokeStyle='#cdd8e6';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(0,cy);ctx.lineTo(w,cy);ctx.stroke();
+  // 列
+  const sc=w*0.3;
+  ctx.strokeStyle='#2563eb';ctx.lineWidth=3;
+  ctx.beginPath();ctx.moveTo(cx-40,cy);ctx.lineTo(cx-40-v1[0]*sc,cy+v1[1]*sc);ctx.stroke();
+  ctx.strokeStyle='#14b8a6';ctx.lineWidth=3;
+  ctx.beginPath();ctx.moveTo(cx+40,cy);ctx.lineTo(cx+40-v2[0]*sc,cy+v2[1]*sc);ctx.stroke();
+  ctx.fillStyle='#1f2a37';ctx.font='14px sans-serif';
+  ctx.fillText('a₁',cx-50-v1[0]*sc,cy+v1[1]*sc+16);
+  ctx.fillText('a₂',cx+30-v2[0]*sc,cy+v2[1]*sc+16);
+  // 矩阵显示
+  ctx.fillStyle='#5b6b7b';ctx.font='16px monospace';
+  ctx.fillText(`A = [a₁  a₂]`,20,30);
+  ctx.fillText(rank===2?'→ 子式≠0 → R=2':'→ 两列共线 → 子式=0 → R=1',20,55);
+}
+[a1,a2].forEach(x=>x.oninput=drawMat);
+
+// 性质⑦
+const rb=document.getElementById('rb'),ra=document.getElementById('ra');
+function drawPipe(){
+  const rB=+rb.value,rA=+ra.value;
+  document.getElementById('rbv').textContent=rB;
+  document.getElementById('rav').textContent=rA;
+  const r=Math.min(rA,rB);
+  document.getElementById('rab').textContent=r;
+  const {ctx,w,h}=fit(document.getElementById('pipeCanvas')||document.createElement('canvas'),140);
+  // 复用已有canvas
+}
+// 简单管道放性质⑦里，这里补画
+const pipeDiv=document.querySelector('#ra').parentElement.parentElement;
+const pipeCv=document.createElement('canvas');
+pipeCv.id='pipeCanvas';pipeCv.height=140;pipeCv.style.marginTop='8px';
+pipeDiv.appendChild(pipeCv);
+function drawPipe(){
+  const rB=+rb.value,rA=+ra.value;
+  document.getElementById('rbv').textContent=rB;
+  document.getElementById('rav').textContent=rA;
+  const r=Math.min(rA,rB);
+  document.getElementById('rab').textContent=r;
+  const {ctx,w,h}=fit(pipeCv,140);
+  ctx.clearRect(0,0,w,h);
+  const y=h/2;
+  ctx.fillStyle='#14b8a6';ctx.fillRect(20,y-10-rB*6,50,20+rB*12);
+  ctx.fillStyle='#2563eb';ctx.fillRect(w-70,y-10-r*6,50,20+r*12);
+  ctx.fillStyle='#94a3b8';ctx.beginPath();ctx.moveTo(70,y-10-rB*6);ctx.lineTo(w-70,y-10-r*6);ctx.lineTo(w-70,y+10+r*6);ctx.lineTo(70,y+10+rB*6);ctx.fill();
+  ctx.fillStyle='#fff';ctx.font='13px sans-serif';ctx.fillText('B',34,y-20-rB*6);ctx.fillText('A',w-60,y-20-r*6);
+}
+[rb,ra].forEach(x=>x.oninput=drawPipe);
+
+// 方程组
+const eqnCv=document.getElementById('eqn');
+function drawEqn(){
+  const {ctx,w,h}=fit(eqnCv,180);
+  ctx.clearRect(0,0,w,h);
+  const cx=w/2,cy=h/2;
+  ctx.strokeStyle='#cdd8e6';ctx.beginPath();ctx.moveTo(0,cy);ctx.lineTo(w,cy);ctx.stroke();
+  function line(k,bb,c){
+    ctx.strokeStyle=c;ctx.lineWidth=2.5;ctx.beginPath();
+    for(let px=20;px<w-20;px+=5){
+      const x=(px-cx)/40,y=k*x+bb;
+      const py=cy-y*40;
+      px===20?ctx.moveTo(px,py):ctx.lineTo(px,py);
+    }
+    ctx.stroke();
+  }
+  line(1,0,'#2563eb');line(-0.7,1.3,'#ef4444');
+  document.getElementById('eqnMsg').textContent='R(A)=1, R(A,b)=2 → 两线平行 → 无解（演示性质⑤）';
+}
+drawEqn();
+
+window.addEventListener('load',()=>{drawMat();drawPipe();});
+window.addEventListener('resize',()=>{drawMat();drawPipe();});
+</script>
+</body>
+</html>

@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>矩阵秩的工程意义 · 有效自由度 / 独立信息维度</title>
+<style>
+  :root{
+    --bg:#f4f7fb;--card:#fff;--ink:#1f2a37;--sub:#5b6b7b;
+    --brand:#2563eb;--brand2:#14b8a6;--warn:#ef4444;--ok:#22a06b;--line:#e5eaf0;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{font-size:20px;}
+  body{background:var(--bg);color:var(--ink);font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;line-height:1.75;}
+  header{background:linear-gradient(135deg,#2563eb,#14b8a6);color:#fff;padding:3rem 1.5rem 2.5rem;text-align:center;}
+  header h1{font-size:2.3rem;line-height:1.25;margin-bottom:1rem;}
+  header p{font-size:1.12rem;opacity:.95;max-width:900px;margin:0 auto;}
+  main{max-width:1080px;margin:0 auto;padding:2rem 1.25rem 4rem;}
+  section{margin:2.2rem 0;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:2rem;box-shadow:0 6px 24px rgba(30,50,90,.06);}
+  h2{font-size:1.6rem;color:var(--brand);margin-bottom:1rem;display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;}
+  h2 .num{background:var(--brand);color:#fff;border-radius:10px;padding:.15rem .7rem;font-size:1.1rem;}
+  h3{font-size:1.2rem;margin:1rem 0 .5rem;}
+  p{font-size:1.05rem;margin:.5rem 0;}
+  .sub{color:var(--sub);}
+  .formula{background:#eef4ff;border-left:5px solid var(--brand);padding:1rem 1.2rem;margin:1rem 0;border-radius:8px;font-family:"Times New Roman",serif;font-size:1.2rem;text-align:center;}
+  .golden{background:linear-gradient(135deg,#fff7e6,#eaf2ff);border:2px solid #f2c94c;border-radius:14px;padding:1.2rem 1.4rem;margin:1.2rem 0;font-size:1.1rem;line-height:1.85;}
+  .golden b{color:var(--brand);}
+  .ctrl{display:flex;flex-wrap:wrap;gap:.8rem;align-items:center;margin:1rem 0;}
+  .ctrl label{font-size:1.02rem;font-weight:600;}
+  input[type=range]{flex:1;min-width:160px;accent-color:var(--brand);}
+  .val{font-size:1.12rem;font-weight:700;color:var(--brand);min-width:44px;text-align:center;}
+  button{background:var(--brand);color:#fff;border:none;border-radius:10px;padding:.65rem 1.2rem;font-size:1rem;cursor:pointer;}
+  button.ghost{background:transparent;color:var(--brand);border:2px solid var(--brand);}
+  canvas{display:block;background:#f8fafc;border-radius:10px;width:100%;}
+  .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.4rem;}
+  .mini{background:#f8fafc;border:1px solid var(--line);border-radius:14px;padding:1.1rem;}
+  .mini h4{font-size:1.1rem;margin-bottom:.5rem;color:var(--brand2);}
+  .out{margin-top:.8rem;padding:.9rem;border-radius:12px;font-size:1.02rem;}
+  .out.stable{background:#e9f8f0;color:#166c45;border:1px solid #bce8d2;}
+  .out.unstable{background:#fdecec;color:#9b1c1c;border:1px solid #f5c2c2;}
+  .out.info{background:#eef4ff;color:#1e40af;border:1px solid #cfe0ff;}
+  .tip{font-size:.97rem;color:var(--sub);background:#fff8e6;border:1px solid #f2e3b3;border-radius:10px;padding:.8rem 1rem;margin:.8rem 0;}
+  table{width:100%;border-collapse:collapse;font-size:1rem;}
+  td,th{border:1px solid var(--line);padding:.55rem;text-align:left;}
+  th{background:#e3edff;}
+  /* 3D 容器 */
+  .scene{position:relative;width:100%;height:420px;border-radius:12px;overflow:hidden;background:linear-gradient(180deg,#eef4ff 0%,#f8fafc 100%);}
+  .scene canvas{width:100%!important;height:100%!important;display:block;}
+  .scene .legend{position:absolute;top:10px;left:12px;background:rgba(255,255,255,.85);border-radius:8px;padding:.5rem .8rem;font-size:.95rem;color:#1f2a37;line-height:1.5;}
+  .row3{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:1rem;}
+  footer{background:#eef2f7;color:var(--sub);text-align:center;padding:2rem 1rem;font-size:.96rem;}
+  @media(max-width:600px){html{font-size:18px;}header h1{font-size:1.75rem;}.card{padding:1.3rem;}.scene{height:320px;}}
+</style>
+</head>
+<body>
+<header>
+  <h1>矩阵的秩 rank(A) —— 工程意义解读</h1>
+  <p>面向大一新生 · 3D 列空间可视化 + 机械自由度 / 控制系统 / 图像压缩三个工程应用。<br>核心一句话：<b>秩 = 系统真正能独立支配的自由度 = 所含独立信息的维度。</b></p>
+</header>
+
+<main>
+<!-- 0. 根本原理 -->
+<section class="card">
+  <h2><span class="num">1</span>根本原理：秩是什么？</h2>
+  <div class="golden">
+    <b>rank(A)</b> = A 的列向量中<b>线性无关</b>的最大个数 = 列空间（所有 A x 能张成的向量集合）的<b>维数</b>。<br>
+    工程上可把它理解为：<b>系统的有效自由度</b>，或<b>系统所含独立信息的维度</b>。<br>
+    rank 越小，"真正独立可控/可表示"的方向越少；rank 达到最大（满秩），系统才拥有"完整的独立能力"。
+  </div>
+  <p>对映射 <code>y = A x</code>（A 是 m×n）：</p>
+  <div class="formula">rank(A) ≤ min(m, n)　；　秩 = 列空间维数 = 行空间维数 = 非零奇异值个数 = 有效自由度 / 独立信息维度</div>
+  <p class="sub">直觉：A 的每一列像一个"基地方向"。若两列共线，它们只贡献 1 个独立方向——冗余的那一列不增加任何新能力。秩就是"去冗余后剩下的方向数"。<b>满秩</b>=能力完整；<b>秩亏</b>=存在冗余或缺失的自由度/信息方向。</p>
+</section>
+
+<!-- 1. 3D 可视化 -->
+<section class="card">
+  <h2><span class="num">2</span>3D 可视化：列空间随秩的变化</h2>
+  <p>下方为 3D 场景（可鼠标拖拽旋转、滚轮缩放）。A 是 3×2，两列向量 a₁、a₂ 张成一个<b>平面（二维列空间）</b>当两列线性无关时；当它们趋于共线，平面"塌缩"成一条线（秩从 2 降为 1）。<b>列空间维数 = rank(A)</b>——这正是"有效自由度"的几何画面：两列能独立指向两个方向时，映射能覆盖一个平面（2 个独立输出方向）；一旦共线，覆盖能力只剩一条线（1 个独立方向）。</p>
+  <div class="ctrl">
+    <label>a₁ 方位角</label><input id="az" type="range" min="0" max="360" step="1" value="40"><span class="val" id="vaz">40°</span>
+    <label>a₂ 与 a₁ 夹角</label><input id="ang" type="range" min="0" max="180" step="1" value="60"><span class="val" id="vang">60°</span>
+  </div>
+  <div class="scene" id="scene3d">
+    <div class="legend" id="rankLegend">rank(A) = 2（两列线性无关，张成平面）</div>
+  </div>
+  <div class="tip">📌 拖"a₂ 与 a₁ 夹角"到 0° 或 180°，两列共线 → 平面塌成一条线，rank 降为 1。这就是"有效自由度从 2 减到 1"。</div>
+</section>
+
+<!-- 2. 应用一：机械自由度 -->
+<section class="card">
+  <h2><span class="num">3</span>工程应用一：机械系统的有效自由度</h2>
+  <p>约束方程组 <code>A q = 0</code>（q 为广义坐标）。rank(A) = 独立约束方程数，故</p>
+  <div class="formula">有效自由度 = 总坐标数 n − rank(A)</div>
+  <div class="ctrl">
+    <label>总坐标数 n</label><input id="dofN" type="range" min="2" max="6" step="1" value="4"><span class="val" id="vN">4</span>
+    <label>独立约束数 rank(A)</label><input id="dofR" type="range" min="0" max="4" step="1" value="2"><span class="val" id="vR">2</span>
+  </div>
+  <div class="mini">
+    <h4>自由度示意（n 个滑块，其中 rank(A) 个被约束锁住）</h4>
+    <canvas id="dofCanvas" height="170"></canvas>
+    <p class="sub" id="dofText"></p>
+  </div>
+  <div class="tip">📌 机构设计：工程师用秩判断"还剩几个真正可动的独立方向"。rank(A)=n 时自由度=0，机构被完全锁死（如桁架全约束）。</div>
+</section>
+
+<!-- 3. 应用二：控制系统 -->
+<section class="card">
+  <h2><span class="num">4</span>工程应用二：控制系统的可控性（rank 判据）</h2>
+  <p>线性系统 <code>ẋ = A x + B u</code>（x∈ℝⁿ）。可控性矩阵 <code>Q = [B, AB, A²B, …, A^{n−1}B]</code>（共 n 个分块列），则</p>
+  <div class="formula">系统（状态）可控 ⇔ rank(Q) = n（状态维数）</div>
+  <p>rank(Q) 就是"<b>输入 u 通过系统能独立影响到几个状态方向</b>"——即可控的有效自由度。rank(Q)=n 意味着 n 个状态方向都能被 u 独立驱动到任意位置，系统完全可控；rank(Q)&lt;n 则存在"不可控子空间"（某些状态无论如何打舵都调不动）。</p>
+  <div class="ctrl">
+    <label>状态维数 n</label><input id="ctlN" type="range" min="2" max="4" step="1" value="3"><span class="val" id="vCtlN">3</span>
+    <label>rank(Q)（拖动改变可控性）</label><input id="ctlR" type="range" min="1" max="4" step="1" value="3"><span class="val" id="vCtlR">3</span>
+  </div>
+  <div class="grid2">
+    <div class="mini">
+      <h4>可控性矩阵 Q 的"有效列方向"</h4>
+      <canvas id="ctlCanvas" height="190"></canvas>
+    </div>
+    <div class="mini">
+      <h4>状态可达区域（rank 个独立方向张成）</h4>
+      <canvas id="ctlRegion" height="190"></canvas>
+    </div>
+  </div>
+  <div class="out info" id="ctlOut">rank(Q)=3=n → 系统状态完全可控 ✓</div>
+  <div class="tip">📌 无人机/机器人：用 rank 判据验证"每个状态都能被操控到达"。rank(Q)&lt;n 说明存在"不可控子空间"（如某些姿态无论如何打舵都调不动）。</div>
+</section>
+
+<!-- 4. 应用三：图像压缩 -->
+<section class="card">
+  <h2><span class="num">5</span>工程应用三：图像压缩与独立信息维度（SVD / 低秩近似）</h2>
+  <p>把图像视为矩阵 M（m×n）。其秩 = 能用多少对"行/列方向"线性组合完全复现这张图。SVD 截断到前 k 个奇异值分量：</p>
+  <div class="formula">M ≈ Σ_{i=1}^{k} σᵢ uᵢ vᵢᵀ　；　存储节省率 = 1 − k(m+n+1)/(mn)　；　压缩比 = mn/[k(m+n+1)]</div>
+  <p>这里 k 正是"<b>保留的独立信息维度</b>"——与秩的思想一脉相承（秩=非零奇异值个数）。</p>
+  <div class="ctrl">
+    <label>保留分量 k（独立信息维度）</label><input id="svdK" type="range" min="1" max="6" step="1" value="3"><span class="val" id="vSvdK">3</span>
+  </div>
+  <div class="grid2">
+    <div class="mini">
+      <h4>合成图像（k 个秩-1 分量叠加）</h4>
+      <canvas id="imgCanvas" height="210"></canvas>
+    </div>
+    <div class="mini">
+      <h4>各分量能量 σᵢ（越大=该独立方向信息越多）</h4>
+      <canvas id="specCanvas" height="210"></canvas>
+    </div>
+  </div>
+  <p class="sub" id="svdInfo"></p>
+  <div class="tip">📌 JPEG/人脸识别(Eigenface)：低秩近似"丢冗余、保主要信息"。秩/奇异值谱告诉你"这张图真正独立的信号维度有多少"。</div>
+</section>
+
+<!-- 总结 -->
+<section class="card">
+  <h2><span class="num">6</span>一张表：秩在三个工程场景中的含义</h2>
+  <div style="background:#f0f7ff;border-radius:12px;padding:1rem;">
+    <table>
+      <tr><th>工程场景</th><th>rank 表示什么</th><th>工程结论</th></tr>
+      <tr><td>机械自由度</td><td>独立约束方程数</td><td>自由度 = n − rank(A)</td></tr>
+      <tr><td>控制系统可控性</td><td>输入能独立影响的状态方向数</td><td>rank(Q)=n ⇔ 完全可控</td></tr>
+      <tr><td>图像/数据压缩</td><td>独立信息维度（非零奇异值数）</td><td>截断到前 k 项 ≈ 低秩近似</td></tr>
+    </table>
+  </div>
+  <div class="golden" style="margin-top:1rem;">
+    <b>统一记忆</b>：rank(A) 就是"系统/数据<b>真正独立的自由度或信息维度</b>"。满秩=能力完整；秩亏=存在冗余或不可控/不可观测方向。这是贯穿力学、控制、信号处理的同一把尺子。
+  </div>
+</section>
+</main>
+<footer>交互式线性代数 · 矩阵的秩工程意义（有效自由度 / 独立信息维度）· 面向大一新生 · 3D 可视化基于 Three.js</footer>
+
+<!-- Three.js (CDN) -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script>
+/* ========== 工具：dpr 自适应 2D canvas ========== */
+function fitCanvas(cv, h){
+  const dpr = window.devicePixelRatio||1;
+  const rect = cv.getBoundingClientRect();
+  const w = rect.width || cv.parentElement.clientWidth || 320;
+  cv.width = w*dpr; cv.height = (h||cv.height)*dpr;
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.scale(dpr,dpr);
+  return {ctx, w, h:h||cv.height/dpr};
+}
+
+/* ========== 1. 3D 可视化（Three.js） ========== */
+const sceneEl = document.getElementById('scene3d');
+let renderer, scene, camera, controls3d;
+let a1Vec, a2Vec, planeMesh, lineA1, lineA2, lineCross;
+function init3D(){
+  const w = sceneEl.clientWidth, hgt = sceneEl.clientHeight;
+  renderer = new THREE.WebGLRenderer({antialias:true, alpha:true});
+  renderer.setPixelRatio(window.devicePixelRatio||1);
+  renderer.setSize(w, hgt, false);
+  sceneEl.appendChild(renderer.domElement);
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(45, w/hgt, 0.1, 100);
+  camera.position.set(4.5, 3.5, 5.5);
+  camera.lookAt(0,0,0);
+  // 坐标轴
+  const axes = new THREE.AxesHelper(2.2);
+  axes.material.linewidth = 2;
+  scene.add(axes);
+  // 网格
+  const grid = new THREE.GridHelper(4, 8, 0xbfd2ea, 0xe3ecf6);
+  grid.position.y = -0.001;
+  scene.add(grid);
+  // 列向量箭头
+  a1Vec = new THREE.Vector3(1.5,0.9,0.3);
+  a2Vec = new THREE.Vector3(0.4,1.4,1.0);
+  lineA1 = makeArrow(a1Vec, 0x2563eb, 0.08); scene.add(lineA1);
+  lineA2 = makeArrow(a2Vec, 0x14b8a6, 0.08); scene.add(lineA2);
+  // 平面（由两个向量张成）
+  const geo = new THREE.PlaneGeometry(1,1);
+  planeMesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({color:0xffd166, transparent:true, opacity:0.28, side:THREE.DoubleSide}));
+  scene.add(planeMesh);
+  updatePlane();
+  // 简易轨道控制（鼠标拖拽）
+  controls3d = {rx:0.5,ry:0.6,dist:6.5,dragging:false,lastX:0,lastY:0};
+  renderer.domElement.addEventListener('mousedown',e=>{controls3d.dragging=true;controls3d.lastX=e.clientX;controls3d.lastY=e.clientY;});
+  window.addEventListener('mouseup',()=>controls3d.dragging=false);
+  window.addEventListener('mousemove',e=>{
+    if(!controls3d.dragging) return;
+    controls3d.ry += (e.clientX-controls3d.lastX)*0.01;
+    controls3d.rx += (e.clientY-controls3d.lastY)*0.01;
+    controls3d.rx = Math.max(-1.4,Math.min(1.4,controls3d.rx));
+    controls3d.lastX=e.clientX;controls3d.lastY=e.clientY;
+    applyCam();
+  });
+  renderer.domElement.addEventListener('wheel',e=>{
+    e.preventDefault();
+    controls3d.dist *= (1 + e.deltaY*0.001);
+    controls3d.dist = Math.max(3,Math.min(14,controls3d.dist));
+    applyCam();
+  },{passive:false});
+  applyCam();
+  animate3D();
+}
+function applyCam(){
+  const r=controls3d.dist;
+  camera.position.set(r*Math.cos(controls3d.ry)*Math.cos(controls3d.rx), r*Math.sin(controls3d.rx)+2, r*Math.sin(controls3d.ry)*Math.cos(controls3d.rx));
+  camera.lookAt(0,0,0);
+}
+function makeArrow(v, color, radius){
+  const dir = v.clone().normalize();
+  const len = v.length();
+  const arr = new THREE.ArrowHelper(dir, new THREE.Vector3(0,0,0), len, color, 0.28, 0.16);
+  return arr;
+}
+function setArrow(arrow, v){
+  const dir = v.clone(); if(dir.lengthSq()<1e-6) dir.set(1,0,0);
+  dir.normalize();
+  arrow.setDirection(dir);
+  arrow.setLength(v.length(), 0.28, 0.16);
+}
+function updatePlane(){
+  // 用 a1,a2 张成的平行四边形
+  const geo = new THREE.PlaneGeometry(1,1);
+  // 把单位正方形顶点映射到 0,a1,a1+a2,a2
+  const pos = geo.attributes.position;
+  const p0=new THREE.Vector3(0,0,0), p1=a1Vec.clone(), p2=a1Vec.clone().add(a2Vec), p3=a2Vec.clone();
+  // PlaneGeometry 默认在 XY 面，顶点顺序 (-.5,-.5),(.5,-.5),(.5,.5),(-.5,.5)
+  pos.setXYZ(0,p0.x,p0.y,p0.z); pos.setXYZ(1,p1.x,p1.y,p1.z); pos.setXYZ(2,p2.x,p2.y,p2.z); pos.setXYZ(3,p3.x,p3.y,p3.z);
+  pos.needsUpdate=true;
+  geo.computeVertexNormals();
+  if(planeMesh.geometry) planeMesh.geometry.dispose();
+  planeMesh.geometry = geo;
+}
+function checkCollinear(v1,v2){
+  const c = v1.clone().cross(v2).length() / (v1.length()*v2.length()+1e-9);
+  return c < 0.06; // 接近共线
+}
+function animate3D(){
+  requestAnimationFrame(animate3D);
+  renderer.render(scene,camera);
+}
+const azIn=document.getElementById('az'), angIn=document.getElementById('ang'), rankLegend=document.getElementById('rankLegend');
+function update3D(){
+  const az = +azIn.value*Math.PI/180;
+  const ang = +angIn.value*Math.PI/180;
+  document.getElementById('vaz').textContent=azIn.value+'°';
+  document.getElementById('vang').textContent=angIn.value+'°';
+  const len1=1.7, len2=1.5;
+  a1Vec.set(len1*Math.cos(az), 0.9, len1*Math.sin(az));
+  // a2 与 a1 夹角 ang，取一垂直分量
+  const perp = new THREE.Vector3(-Math.sin(az),0,Math.cos(az));
+  a2Vec.copy(a1Vec.clone().normalize().multiplyScalar(Math.cos(ang)*len2)).add(perp.multiplyScalar(Math.sin(ang)*len2)).add(new THREE.Vector3(0,1.1*Math.sin(ang),0));
+  setArrow(lineA1,a1Vec); setArrow(lineA2,a2Vec);
+  updatePlane();
+  const col = checkCollinear(a1Vec,a2Vec);
+  const r = col ? 1 : 2;
+  rankLegend.textContent = col
+    ? 'rank(A) = 1 ⚠ 两列共线，平面塌成一条线（自由度从 2 降为 1）'
+    : 'rank(A) = 2 ✓ 两列线性无关，张成一个平面（2 个有效自由度）';
+  rankLegend.style.background = col ? 'rgba(254,226,226,.92)' : 'rgba(255,255,255,.88)';
+}
+azIn.oninput=update3D; angIn.oninput=update3D;
+
+/* ========== 2. 机械自由度 ========== */
+const dofN=document.getElementById('dofN'), dofR=document.getElementById('dofR');
+function drawDOF(){
+  const n=+dofN.value, r=Math.min(+dofR.value,n);
+  document.getElementById('vN').textContent=n;
+  dofR.max=n; document.getElementById('vR').textContent=r;
+  const {ctx,w,h}=fitCanvas(document.getElementById('dofCanvas'),170);
+  ctx.clearRect(0,0,w,h);
+  const slot= (w-30)/n, cy=h/2;
+  for(let i=0;i<n;i++){
+    const x=20+i*slot+slot/2;
+    const locked = i<r;
+    // 滑块
+    ctx.fillStyle=locked?'#94a3b8':'#2563eb';
+    ctx.beginPath();ctx.roundRect?ctx.roundRect(x-12,cy-22,24,44,6):ctx.rect(x-12,cy-22,24,44);ctx.fill();
+    ctx.fillStyle='#fff';ctx.font='13px sans-serif';ctx.textAlign='center';ctx.fillText(locked?'锁':'·',x,cy+5);
+    ctx.fillStyle='#5b6b7b';ctx.fillText('q'+i,x,cy+42);
+  }
+  ctx.textAlign='left';
+  const dof = n-r;
+  document.getElementById('dofText').textContent=`总坐标 n=${n}，独立约束 rank(A)=${r} → 有效自由度 = ${n}−${r} = ${dof}` + (dof===0?'（机构被完全锁死）':'');
+}
+dofN.oninput=drawDOF; dofR.oninput=drawDOF;
+
+/* ========== 3. 控制系统可控性 ========== */
+const ctlN=document.getElementById('ctlN'), ctlR=document.getElementById('ctlR');
+function drawCtl(){
+  const n=+ctlN.value, r=Math.min(+ctlR.value,n);
+  document.getElementById('vCtlN').textContent=n; ctlR.max=n; document.getElementById('vCtlR').textContent=r;
+  // Q 的有效列方向（堆叠条形）
+  let {ctx,w,h}=fitCanvas(document.getElementById('ctlCanvas'),190);
+  ctx.clearRect(0,0,w,h);
+  ctx.fillStyle='#5b6b7b';ctx.font='13px sans-serif';ctx.fillText('Q=[B,AB,A²B,…] 各列',10,18);
+  const total=n, cols=Math.min(r+1,n);
+  const bw=(w-30)/total, base=h-25;
+  for(let i=0;i<total;i++){
+    const x=15+i*bw;
+    const eff = i<r;
+    ctx.fillStyle=eff?'#2563eb':'#dbeafe';
+    ctx.fillRect(x,base-90,Math.max(bw-6,8),90);
+    ctx.fillStyle=eff?'#1e40af':'#94a3b8';ctx.font='12px sans-serif';ctx.fillText('c'+(i+1),x,base+14);
+  }
+  ctx.fillStyle='#5b6b7b';ctx.fillText('有效独立列 = rank(Q) = '+r,10,h-8);
+  // 可达区域
+  ({ctx,w,h}=fitCanvas(document.getElementById('ctlRegion'),190));
+  ctx.clearRect(0,0,w,h);
+  ctx.fillStyle='#14b8a6';ctx.globalAlpha=0.25;
+  if(r>=2){ ctx.beginPath();ctx.ellipse(w/2,h/2,Math.min(w,h)*0.32,Math.min(w,h)*0.22,0.4,0,7);ctx.fill(); }
+  else if(r===1){ ctx.beginPath();ctx.ellipse(w/2,h/2,Math.min(w,h)*0.34,6,0.4,0,7);ctx.fill(); }
+  else { ctx.beginPath();ctx.arc(w/2,h/2,6,0,7);ctx.fill(); }
+  ctx.globalAlpha=1;
+  ctx.strokeStyle='#14b8a6';ctx.lineWidth=2;
+  if(r>=2){ctx.beginPath();ctx.ellipse(w/2,h/2,Math.min(w,h)*0.32,Math.min(w,h)*0.22,0.4,0,7);ctx.stroke();}
+  ctx.fillStyle='#5b6b7b';ctx.font='13px sans-serif';ctx.fillText('状态可达子空间',10,18);
+  ctx.fillStyle='#1f2a37';ctx.fillText('dim = rank(Q) = '+r,10,h-10);
+  const out=document.getElementById('ctlOut');
+  if(r===n){out.className='out stable';out.style.background='#e9f8f0';out.style.color='#166c45';out.innerHTML='<b>rank(Q)='+r+' = n</b> → 系统状态<b>完全可控</b> ✓（每个状态方向都能被输入影响）';}
+  else {out.className='out unstable';out.style.background='#fdecec';out.style.color='#9b1c1c';out.innerHTML='<b>rank(Q)='+r+' &lt; n='+n+'</b> → 存在 <b>'+(n-r)+' 个不可控状态方向</b> ✗（某些状态无论如何操控都到达不了）';}
+}
+ctlN.oninput=drawCtl; ctlR.oninput=drawCtl;
+
+/* ========== 4. 图像压缩（SVD 低秩近似） ========== */
+// 构造一个 40x40 的"图案"矩阵，做 SVD 截断
+const N=40;
+function buildImage(){
+  const M=[]; for(let i=0;i<N;i++){M[i]=[];for(let j=0;j<N;j++){
+    const x=i/N-.5, y=j/N-.5;
+    let v = 0;
+    v += 1.0*Math.exp(-((x-.15)**2+(y-.1)**2)/0.05);
+    v += 0.7*Math.exp(-((x+.2)**2+(y+.15)**2)/0.07);
+    v += 0.5*Math.sin(6*x)*Math.cos(5*y);
+    v += 0.35*Math.sin(10*(x+y));
+    M[i][j]=v;
+  }}
+  return M;
+}
+function svdTopK(M,k){
+  // 简化的数值 SVD：用幂迭代求前 k 个奇异值/向量（对教学足够且稳定，因 M 较小）
+  const n=N, m=N;
+  const U=[], S=[], V=[];
+  let R=[]; for(let i=0;i<n;i++){R[i]=M[i].slice();}
+  for(let iter=0;iter<k;iter++){
+    let v=new Array(m).fill(0).map(()=>Math.random());
+    for(let p=0;p<60;p++){ // 幂迭代
+      let u=new Array(n).fill(0);
+      for(let i=0;i<n;i++) for(let j=0;j<m;j++) u[i]+=R[i][j]*v[j];
+      let norm=Math.hypot(...u)||1; for(let i=0;i<n;i++) u[i]/=norm;
+      let vt=new Array(m).fill(0);
+      for(let j=0;j<m;j++) for(let i=0;i<n;i++) vt[j]+=R[i][j]*u[i];
+      let normv=Math.hypot(...vt)||1; for(let j=0;j<m;j++) v[j]=vt[j]/normv;
+    }
+    let u=new Array(n).fill(0);
+    for(let i=0;i<n;i++) for(let j=0;j<m;j++) u[i]+=R[i][j]*v[j];
+    let sigma=Math.hypot(...u);
+    if(sigma<1e-6){break;}
+    for(let i=0;i<n;i++) u[i]/=sigma;
+    for(let j=0;j<m;j++) v[j]/=Math.hypot(...v)||1;
+    U.push(u); S.push(sigma); V.push(v);
+    //  deflation: R -= sigma * u v^T
+    for(let i=0;i<n;i++) for(let j=0;j<m;j++) R[i][j]-=sigma*u[i]*v[j];
+  }
+  return {U,S,V};
+}
+const Mimg = buildImage();
+const svd = svdTopK(Mimg, 6);
+const svdK=document.getElementById('svdK');
+function drawSVD(){
+  const k=Math.min(+svdK.value, svd.S.length);
+  document.getElementById('vSvdK').textContent=k;
+  // 重建
+  const rec=[]; for(let i=0;i<N;i++){rec[i]=new Array(N).fill(0);}
+  for(let t=0;t<k;t++){for(let i=0;i<N;i++) for(let j=0;j<N;j++) rec[i][j]+=svd.S[t]*svd.U[t][i]*svd.V[t][j];}
+  let {ctx,w,h}=fitCanvas(document.getElementById('imgCanvas'),210);
+  ctx.clearRect(0,0,w,h);
+  function drawMat(mat){
+    const im=ctx.createImageData(N,N);
+    let mx=-1e9,mn=1e9;
+    for(let i=0;i<N;i++)for(let j=0;j<N;j++){mn=Math.min(mn,mat[i][j]);mx=Math.max(mx,mat[i][j]);}
+    for(let i=0;i<N;i++)for(let j=0;j<N;j++){const t=(mat[i][j]-mn)/(mx-mn+1e-9);const idx=(i*N+j)*4;im.data[idx]=Math.round(30+t*210);im.data[idx+1]=Math.round(80+t*150);im.data[idx+2]=Math.round(160-t*60);im.data[idx+3]=255;}
+    const tmp=document.createElement('canvas');tmp.width=N;tmp.height=N;tmp.getContext('2d').putImageData(im,0,0);
+    ctx.imageSmoothingEnabled=true;ctx.drawImage(tmp,0,0,w,h);
+  }
+  drawMat(rec);
+  // 谱
+  ({ctx,w,h}=fitCanvas(document.getElementById('specCanvas'),210));
+  ctx.clearRect(0,0,w,h);
+  const maxS=svd.S[0]||1;
+  ctx.fillStyle='#5b6b7b';ctx.font='13px sans-serif';ctx.fillText('奇异值谱 σᵢ（前6个）',10,18);
+  const bw=(w-30)/svd.S.length;
+  for(let i=0;i<svd.S.length;i++){
+    const x=15+i*bw, hh=(svd.S[i]/maxS)*(h-50);
+    ctx.fillStyle=i<k?'#2563eb':'#dbeafe';
+    ctx.fillRect(x,h-30-hh,Math.max(bw-8,10),hh);
+    ctx.fillStyle='#5b6b7b';ctx.font='11px sans-serif';ctx.fillText('σ'+(i+1),x,h-16);
+  }
+  ctx.fillStyle='#1f2a37';ctx.fillText('保留 k='+k+' 个分量',10,h-6);
+  const totalE=svd.S.reduce((s,x)=>s+x*x,0);
+  const keepE=svd.S.slice(0,k).reduce((s,x)=>s+x*x,0);
+  const ratio=totalE>0?(keepE/totalE*100):0;
+  const saveRate = 1 - k*(N+N+1)/(N*N);
+  const compRatio = (N*N)/(k*(N+N+1));
+  document.getElementById('svdInfo').textContent=`保留 k=${k} 个秩-1 分量：保留能量/信息 ≈ ${ratio.toFixed(1)}%，存储节省率 ≈ ${(saveRate*100).toFixed(1)}%，压缩比 ≈ ${compRatio.toFixed(1)}×。前几个 σ 大→对应独立方向信息多；尾部 σ 小→可丢弃的冗余。`;
+}
+svdK.oninput=drawSVD;
+
+/* ========== 启动 ========== */
+function initAll(){
+  if(typeof THREE!=='undefined'){init3D();update3D();}
+  drawDOF();drawCtl();drawSVD();
+}
+window.addEventListener('load',initAll);
+window.addEventListener('resize',()=>{drawDOF();drawCtl();drawSVD();if(renderer){renderer.setSize(sceneEl.clientWidth,sceneEl.clientHeight,false);applyCam();}});
+</script>
+</body>
+</html>

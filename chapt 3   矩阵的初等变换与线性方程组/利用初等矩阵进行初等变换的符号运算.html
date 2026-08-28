@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>初等矩阵变换演示（颜色全程对应）</title>
+<style>
+body{
+    font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+    background:linear-gradient(135deg,#e0f7fa 0%,#bbdefb 100%);
+    margin:0;padding:20px;min-height:100vh;
+}
+.container{
+    max-width:1200px;margin:0 auto;background:rgba(255,255,255,.85);
+    backdrop-filter:blur(10px);padding:30px;border-radius:16px;
+    box-shadow:0 8px 32px rgba(31,38,135,.15);
+}
+h1{text-align:center;color:#1565C0;margin-bottom:40px;font-weight:600}
+.matrix-container{
+    display:flex;justify-content:center;align-items:center;
+    margin:30px 0;flex-wrap:wrap;gap:20px;
+}
+.matrix{
+    display:inline-block;position:relative;padding:15px;margin:10px;
+    background:rgba(255,255,255,.7);border-radius:8px;
+    box-shadow:0 4px 6px rgba(0,0,0,.05);
+}
+.matrix::before,.matrix::after{
+    content:"";position:absolute;top:0;bottom:0;width:3px;
+    background:#2196F3;border-radius:2px;
+}
+.matrix::before{left:0}.matrix::after{right:0}
+table{border-collapse:collapse}
+td{
+    width:60px;height:40px;text-align:center;vertical-align:middle;
+    font-size:14px;color:#0D47A1;font-weight:500;
+    border:1px solid rgba(33,150,243,.1);
+}
+/* 行颜色（左乘） */.row1{background-color:#FFCDD2}.row2{background-color:#C5E1A5}.row3{background-color:#FFE082}.row4{background-color:#B2EBF2}
+/* 列颜色（右乘） */.col1{background-color:#FFCDD2}.col2{background-color:#C5E1A5}.col3{background-color:#FFE082}.col4{background-color:#B2EBF2}
+
+.operator,.equals{font-size:24px;margin:0 15px;color:#1565C0;font-weight:bold}
+.controls{text-align:center;margin:40px 0}
+button{padding:12px 24px;margin:8px;font-size:14px;cursor:pointer;background:linear-gradient(to right,#2196F3,#21CBF3);color:white;border:none;border-radius:30px;transition:all .3s ease;box-shadow:0 4px 6px rgba(33,150,243,.3);font-weight:600}
+button:hover{transform:translateY(-2px);box-shadow:0 6px 8px rgba(33,150,243,.4)}button:active{transform:translateY(1px)}
+.description{text-align:center;margin:25px 0;font-size:16px;color:#0D47A1;font-weight:500;background:rgba(179,229,252,.3);padding:12px;border-radius:8px}
+.step{margin:30px 0;padding:25px;background:rgba(255,255,255,.7);border-radius:12px;border-left:4px solid #2196F3;box-shadow:0 4px 6px rgba(0,0,0,.03)}
+.step h3{margin-top:0;color:#1565C0;font-size:18px;margin-bottom:15px}
+.transformation-type{text-align:center;margin:20px 0;font-size:18px;color:#1565C0;font-weight:600}
+.fade-in{animation:fadeIn .8s ease-in}@keyframes fadeIn{from{opacity:0;transform:translateY(15px)}to{opacity:1;transform:translateY(0)}}
+.elementary-matrix{background:rgba(179,229,252,.4)}.result-matrix{background:rgba(200,230,201,.4)}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>初等矩阵变换演示（颜色全程对应）</h1>
+
+<div class="controls">
+    <button onclick="showTrans1()">行交换（左乘）</button>
+    <button onclick="showTrans2()">行倍乘（左乘）</button>
+    <button onclick="showTrans3()">行相加（左乘）</button>
+    <button onclick="showTrans4()">列交换（右乘）</button>
+    <button onclick="showTrans5()">列倍乘（右乘）</button>
+    <button onclick="showTrans6()">列相加（右乘）</button>
+    <button onclick="reset()">重置</button>
+</div>
+
+<div id="demo-area">
+    <div class="matrix-container">
+        <div class="matrix">
+            <table>
+                <tr><td class="row1">a₁₁</td><td class="row1">a₁₂</td><td class="row1">a₁₃</td><td class="row1">a₁₄</td></tr>
+                <tr><td class="row2">a₂₁</td><td class="row2">a₂₂</td><td class="row2">a₂₃</td><td class="row2">a₂₄</td></tr>
+                <tr><td class="row3">a₃₁</td><td class="row3">a₃₂</td><td class="row3">a₃₃</td><td class="row3">a₃₄</td></tr>
+                <tr><td class="row4">a₄₁</td><td class="row4">a₄₂</td><td class="row4">a₄₃</td><td class="row4">a₄₄</td></tr>
+            </table>
+        </div>
+    </div>
+    <div class="description">原始矩阵 A</div>
+</div>
+</div>
+
+<script>
+/* ================= 通用工具 ================= */
+function mkTable(data, rowCls=null, colCls=null){
+    let h='<table>';
+    for(let i=0;i<data.length;i++){
+        h+='<tr>';
+        for(let j=0;j<data[i].length;j++){
+            let c='';
+            if(rowCls) c=` class="${rowCls[i]}"`;
+            else if(colCls) c=` class="${colCls[j]}"`;
+            h+=`<td${c}>${data[i][j]}</td>`;
+        }
+        h+='</tr>';
+    }
+    h+='</table>';
+    return `<div class="matrix">${h}</div>`;
+}
+function mkRowMatrix(data,className=''){   // 永远带行色
+    const rc=['row1','row2','row3','row4'];
+    return `<div class="matrix ${className}">${mkTable(data,rc,null)}</div>`;
+}
+function mkRowResult(data,className='',newRowOrder){ // 结果按新行顺序着色
+    const rc=['row1','row2','row3','row4'];
+    let h='<table>';
+    for(let i=0;i<data.length;i++){
+        h+=`<tr>`;
+        for(let j=0;j<data[i].length;j++){
+            h+=`<td class="${rc[newRowOrder[i]]}">${data[i][j]}</td>`;
+        }
+        h+=`</tr>`;
+    }
+    h+='</table>';
+    return `<div class="matrix ${className}">${h}</div>`;
+}
+function mkColMatrix(data,className=''){   // 永远带列色
+    const cc=['col1','col2','col3','col4'];
+    return `<div class="matrix ${className}">${mkTable(data,null,cc)}</div>`;
+}
+function mkColResult(data,className='',newColOrder){ // 结果按新列顺序着色
+    const cc=['col1','col2','col3','col4'];
+    let h='<table>';
+    for(let i=0;i<data.length;i++){
+        h+='<tr>';
+        for(let j=0;j<data[i].length;j++){
+            h+=`<td class="${cc[newColOrder[j]]}">${data[i][j]}</td>`;
+        }
+        h+='</tr>';
+    }
+    h+='</table>';
+    return `<div class="matrix ${className}">${h}</div>`;
+}
+
+/* ================= 行变换 ================= */
+function showTrans1(){ // 行交换 1↔2
+    reset();
+    const area=document.getElementById('demo-area');
+    const elem=[ ['0','1','0','0'], ['1','0','0','0'], ['0','0','1','0'], ['0','0','0','1'] ];
+    const orig=[ ['a₁₁','a₁₂','a₁₃','a₁₄'], ['a₂₁','a₂₂','a₂₃','a₂₄'], ['a₃₁','a₃₂','a₃₃','a₃₄'], ['a₄₁','a₄₂','a₄₃','a₄₄'] ];
+    const res= [ ['a₂₁','a₂₂','a₂₃','a₂₄'], ['a₁₁','a₁₂','a₁₃','a₁₄'], ['a₃₁','a₃₂','a₃₃','a₃₄'], ['a₄₁','a₄₂','a₄₃','a₄₄'] ];
+    area.innerHTML=`
+        <div class="step fade-in">
+            <h3>变换1：交换第1行与第2行（左乘）</h3>
+            <div class="transformation-type">行变换 — 颜色跟随原行</div>
+            <div class="matrix-container">
+                ${mkTable(elem,'elementary-matrix')}
+                <span class="operator">×</span>
+                ${mkRowMatrix(orig)}
+                <span class="equals">=</span>
+                ${mkRowResult(res,'result-matrix',[1,0,2,3])}
+            </div>
+            <div class="description">结果：新第1行（绿）＝原第2行，新第2行（粉）＝原第1行</div>
+        </div>`;
+}
+function showTrans2(){ // 第2行×k
+    reset();
+    const area=document.getElementById('demo-area');
+    const elem=[ ['1','0','0','0'], ['0','k','0','0'], ['0','0','1','0'], ['0','0','0','1'] ];
+    const orig=[ ['a₁₁','a₁₂','a₁₃','a₁₄'], ['a₂₁','a₂₂','a₂₃','a₂₄'], ['a₃₁','a₃₂','a₃₃','a₃₄'], ['a₄₁','a₄₂','a₄₃','a₄₄'] ];
+    const res= [ ['a₁₁','a₁₂','a₁₃','a₁₄'], ['ka₂₁','ka₂₂','ka₂₃','ka₂₄'], ['a₃₁','a₃₂','a₃₃','a₃₄'], ['a₄₁','a₄₂','a₄₃','a₄₄'] ];
+    area.innerHTML=`
+        <div class="step fade-in">
+            <h3>变换2：第2行乘以 k（左乘）</h3>
+            <div class="matrix-container">
+                ${mkTable(elem,'elementary-matrix')}
+                <span class="operator">×</span>
+                ${mkRowMatrix(orig)}
+                <span class="equals">=</span>
+                ${mkRowResult(res,'result-matrix',[0,1,2,3])}
+            </div>
+            <div class="description">绿色行（第2行）被乘以 k，颜色保持原样</div>
+        </div>`;
+}
+function showTrans3(){ // 第1行 ← 第1行 + k×第3行
+    reset();
+    const area=document.getElementById('demo-area');
+    const elem=[ ['1','0','k','0'], ['0','1','0','0'], ['0','0','1','0'], ['0','0','0','1'] ];
+    const orig=[ ['a₁₁','a₁₂','a₁₃','a₁₄'], ['a₂₁','a₂₂','a₂₃','a₂₄'], ['a₃₁','a₃₂','a₃₃','a₃₄'], ['a₄₁','a₄₂','a₄₃','a₄₄'] ];
+    const res= [ ['a₁₁+ka₃₁','a₁₂+ka₃₂','a₁₃+ka₃₃','a₁₄+ka₃₄'], ['a₂₁','a₂₂','a₂₃','a₂₄'], ['a₃₁','a₃₂','a₃₃','a₃₄'], ['a₄₁','a₄₂','a₄₃','a₄₄'] ];
+    area.innerHTML=`
+        <div class="step fade-in">
+            <h3>变换3：第3行的 k 倍加到第1行（左乘）</h3>
+            <div class="matrix-container">
+                ${mkTable(elem,'elementary-matrix')}
+                <span class="operator">×</span>
+                ${mkRowMatrix(orig)}
+                <span class="equals">=</span>
+                ${mkRowResult(res,'result-matrix',[0,1,2,3])}
+            </div>
+            <div class="description">红色行（第1行）包含黄色行（第3行）的 k 倍，两行颜色均保持原样</div>
+        </div>`;
+}
+
+/* ================= 列变换 ================= */
+function showTrans4(){ // 列交换 1↔2
+    reset();
+    const area=document.getElementById('demo-area');
+    const elem=[ ['0','1','0','0'], ['1','0','0','0'], ['0','0','1','0'], ['0','0','0','1'] ];
+    const orig=[ ['a₁₁','a₁₂','a₁₃','a₁₄'], ['a₂₁','a₂₂','a₂₃','a₂₄'], ['a₃₁','a₃₂','a₃₃','a₃₄'], ['a₄₁','a₄₂','a₄₃','a₄₄'] ];
+    const res= [ ['a₁₂','a₁₁','a₁₃','a₁₄'], ['a₂₂','a₂₁','a₂₃','a₂₄'], ['a₃₂','a₃₁','a₃₃','a₃₄'], ['a₄₂','a₄₁','a₄₃','a₄₄'] ];
+    area.innerHTML=`
+        <div class="step fade-in">
+            <h3>变换4：交换第1列与第2列（右乘）</h3>
+            <div class="transformation-type">列变换 — 颜色跟随原列</div>
+            <div class="matrix-container">
+                ${mkColMatrix(orig)}
+                <span class="operator">×</span>
+                ${mkTable(elem,'elementary-matrix')}
+                <span class="equals">=</span>
+                ${mkColResult(res,'result-matrix',[1,0,2,3])}
+            </div>
+            <div class="description">结果：新第1列（绿）＝原第2列，新第2列（粉）＝原第1列，全程彩色对应</div>
+        </div>`;
+}
+function showTrans5(){ // 第3列×k
+    reset();
+    const area=document.getElementById('demo-area');
+    const elem=[ ['1','0','0','0'], ['0','1','0','0'], ['0','0','k','0'], ['0','0','0','1'] ];
+    const orig=[ ['a₁₁','a₁₂','a₁₃','a₁₄'], ['a₂₁','a₂₂','a₂₃','a₂₄'], ['a₃₁','a₃₂','a₃₃','a₃₄'], ['a₄₁','a₄₂','a₄₃','a₄₄'] ];
+    const res= [ ['a₁₁','a₁₂','ka₁₃','a₁₄'], ['a₂₁','a₂₂','ka₂₃','a₂₄'], ['a₃₁','a₃₂','ka₃₃','a₃₄'], ['a₄₁','a₄₂','ka₄₃','a₄₄'] ];
+    area.innerHTML=`
+        <div class="step fade-in">
+            <h3>变换5：第3列乘以 k（右乘）</h3>
+            <div class="matrix-container">
+                ${mkColMatrix(orig)}
+                <span class="operator">×</span>
+                ${mkTable(elem,'elementary-matrix')}
+                <span class="equals">=</span>
+                ${mkColResult(res,'result-matrix',[0,1,2,3])}
+            </div>
+            <div class="description">黄色列（第3列）被乘以 k，颜色仍保持原黄色</div>
+        </div>`;
+}
+function showTrans6(){ // 第4列 ← 第4列 + k×第2列（右乘）
+    reset();
+    const area=document.getElementById('demo-area');
+    const elem=[
+        ['1','0','0','0'],
+        ['0','1','0','k'], // 第2列的k倍加到第4列
+        ['0','0','1','0'],
+        ['0','0','0','1']
+    ];
+    const orig=[
+        ['a₁₁','a₁₂','a₁₃','a₁₄'],
+        ['a₂₁','a₂₂','a₂₃','a₂₄'],
+        ['a₃₁','a₃₂','a₃₃','a₃₄'],
+        ['a₄₁','a₄₂','a₄₃','a₄₄']
+    ];
+    const res=[
+        ['a₁₁','a₁₂','a₁₃','a₁₄+ka₁₂'],
+        ['a₂₁','a₂₂','a₂₃','a₂₄+ka₂₂'],
+        ['a₃₁','a₃₂','a₃₃','a₃₄+ka₃₂'],
+        ['a₄₁','a₄₂','a₄₃','a₄₄+ka₄₂']
+    ];
+    area.innerHTML=`
+        <div class="step fade-in">
+            <h3>变换6：第2列的 k 倍加到第4列（右乘）</h3>
+            <div class="matrix-container">
+                ${mkColMatrix(orig)}
+                <span class="operator">×</span>
+                ${mkTable(elem,'elementary-matrix')}
+                <span class="equals">=</span>
+                ${mkColResult(res,'result-matrix',[0,1,2,3])}
+            </div>
+            <div class="description">蓝色列（第4列）包含绿色列（第2列）的 k 倍，两列颜色均保持原样</div>
+        </div>`;
+}
+
+/* ================= 重置 ================= */
+function reset(){
+    const area=document.getElementById('demo-area');
+    area.innerHTML=`
+        <div class="matrix-container">
+            <div class="matrix">
+                <table>
+                    <tr><td class="row1">a₁₁</td><td class="row1">a₁₂</td><td class="row1">a₁₃</td><td class="row1">a₁₄</td></tr>
+                    <tr><td class="row2">a₂₁</td><td class="row2">a₂₂</td><td class="row2">a₂₃</td><td class="row2">a₂₄</td></tr>
+                    <tr><td class="row3">a₃₁</td><td class="row3">a₃₂</td><td class="row3">a₃₃</td><td class="row3">a₃₄</td></tr>
+                    <tr><td class="row4">a₄₁</td><td class="row4">a₄₂</td><td class="row4">a₄₃</td><td class="row4">a₄₄</td></tr>
+                </table>
+            </div>
+        </div>
+        <div class="description">原始矩阵 A</div>`;
+}
+</script>
+</body>
+</html>

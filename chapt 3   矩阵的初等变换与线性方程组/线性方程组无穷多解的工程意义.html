@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>无穷多解的自由变量——工程中的"设计自由度"</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Microsoft YaHei","PingFang SC",sans-serif;background:linear-gradient(135deg,#f5f7fa 0%,#e8f0fe 100%);color:#1a2b4a;line-height:1.7;padding:24px;font-size:18px}
+.wrap{max-width:1100px;margin:0 auto}
+h1{text-align:center;color:#1565c0;font-size:32px;margin-bottom:8px;text-shadow:0 2px 8px rgba(21,101,192,.12)}
+.sub{text-align:center;color:#5a6b8a;font-size:16px;margin-bottom:28px}
+.card{background:#fff;border-radius:16px;padding:26px 28px;margin-bottom:24px;box-shadow:0 4px 18px rgba(21,101,192,.08);border:1px solid rgba(21,101,192,.08)}
+h2{color:#1565c0;font-size:24px;margin-bottom:14px;border-left:5px solid #42a5f5;padding-left:12px}
+h3{color:#0d47a1;font-size:19px;margin:16px 0 8px}
+p{margin:8px 0}
+.mat{display:inline-grid;border:2px solid #1565c0;border-radius:6px;padding:4px;background:#fafcff;vertical-align:middle;margin:6px 4px}
+.mat::before,.mat::after{content:"";position:absolute;width:8px;background:#1565c0}
+.cell{width:52px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(21,101,192,.18);font-size:17px;font-weight:700;color:#1a2b4a;background:#fff;border-radius:3px}
+.cell.hl{background:linear-gradient(135deg,#fff3e0,#ffe0b2);color:#bf360c;box-shadow:inset 0 0 0 2px #fb8c00}
+.cell.fv{background:linear-gradient(135deg,#e8f5e9,#c8e6c9);color:#1b5e20;box-shadow:inset 0 0 0 2px #43a047}
+.cell.lead{background:linear-gradient(135deg,#e3f2fd,#bbdefb);color:#0d47a1;box-shadow:inset 0 0 0 2px #1e88e5}
+button{padding:11px 20px;margin:6px 4px;border:none;border-radius:30px;background:linear-gradient(135deg,#42a5f5,#1565c0);color:#fff;font-size:16px;cursor:pointer;transition:.25s;box-shadow:0 3px 12px rgba(21,101,192,.25)}
+button:hover{transform:translateY(-2px);box-shadow:0 5px 16px rgba(21,101,192,.35)}
+button:disabled{background:#b0bec5;cursor:not-allowed;transform:none;box-shadow:none}
+button.alt{background:linear-gradient(135deg,#66bb6a,#2e7d32)}
+button.warn{background:linear-gradient(135deg,#ffa726,#ef6c00)}
+input[type=range]{width:260px;vertical-align:middle;accent-color:#1565c0}
+label{font-weight:700;color:#0d47a1}
+.info{background:#e3f2fd;border-left:5px solid #1565c0;border-radius:8px;padding:14px 16px;margin:12px 0;font-size:16px}
+.ok{background:#e8f5e9;border-left-color:#2e7d32}
+.warnbg{background:#fff3e0;border-left-color:#ef6c00}
+.eq{font-family:"Cambria Math",serif;font-size:19px;margin:6px 0;color:#0d47a1}
+canvas{display:block;margin:10px auto;background:#fafcff;border:1px solid rgba(21,101,192,.18);border-radius:10px;max-width:100%}
+.legend{display:flex;gap:18px;flex-wrap:wrap;justify-content:center;margin:8px 0;font-size:15px}
+.legend i{display:inline-block;width:14px;height:14px;border-radius:3px;margin-right:5px;vertical-align:middle}
+.two{display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start}
+.two>div{flex:1 1 420px}
+.tag{display:inline-block;background:#e3f2fd;color:#0d47a1;border-radius:20px;padding:3px 12px;font-size:14px;margin:3px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>无穷多解 ≠ 解不出</h1>
+<div class="sub">自由变量：工程师手中的"设计旋钮"——给它不同的值，得到不同的可行方案，再挑最优的那个</div>
+
+<!-- 1 原理 -->
+<div class="card">
+<h2>一、先搞懂：为什么会有无穷多解？</h2>
+<p>方程组 <b>Ax = b</b> 有解的条件是 <b>rank(A) = rank([A|b])</b>。当<b>秩 &lt; 未知数个数</b>时，就会出现"方程数不够锁定全部变量"的情况——多出来的变量就是<b>自由变量</b>，它可以取任意值，每取一个值就得到一组解。</p>
+<div class="info"><b>生活类比：</b>让你"用 5 块钱买若干苹果和橘子（苹果 1 元/个、橘子 2 元/个）"。方程只有 1 个（x+2y=5），未知数有 2 个——你可以买 (1个苹果+2个橘子)、(3+1)、(5+0)……只要花够 5 块都行。<b>苹果数就是自由变量</b>，随便定，橘子数跟着确定。工程中，这种"没被方程锁死"的量，恰恰是我们可以<b>自由设计</b>的部分。</div>
+<p><b>核心结论：</b></p>
+<div class="eq">Ax = b 有解 且 rank(A) = r &lt; n  ⇒  通解 = 特解 + (n−r) 个自由变量的线性组合</div>
+<p>其中 <b>n−r</b> 就是自由变量的个数，也叫<b>解空间的维数（自由度）</b>。</p>
+</div>
+
+<!-- 2 案例：桁架 -->
+<div class="card">
+<h2>二、工程案例：桁架多算了——自由变量 = 可调节的杆力</h2>
+<p>一个由 3 根杆悬挂 1 个荷载的对称桁架（静不定结构）。平衡方程只有 2 个（竖向、水平合力为零），未知杆力有 3 个——<b>1 个自由变量</b>。</p>
+<div class="two">
+<div>
+<div class="mat" id="trussMat" style="position:relative"></div>
+<div class="eq" id="trussEq">方程：F₁+F₂=10,  F₁−F₃=0</div>
+<label>令自由变量 F₃ = t = </label>
+<input id="tSlider" type="range" min="0" max="10" step="0.5" value="4">
+<b id="tVal">4.0</b> kN
+<div style="margin-top:10px">
+<button onclick="solveTruss()">计算各组杆力</button>
+<button class="alt" onclick="optimizeTruss()">自动求"最均匀受力"方案</button>
+</div>
+<div class="info" id="trussInfo">拖动滑块改变 t=F₃，F₁、F₂ 随之确定。所有 t 都满足平衡——都是"安全"的受力方案。</div>
+</div>
+<div>
+<canvas id="trussCanvas" width="420" height="300"></canvas>
+<div class="legend"><span><i style="background:#42a5f5"></i>杆1(F₁)</span><span><i style="background:#66bb6a"></i>杆2(F₂)</span><span><i style="background:#fb8c00"></i>杆3(F₃)</span></div>
+</div>
+</div>
+<p><b>工程意义：</b>静不定结构"方程不够"不是 bug，而是给了工程师<b>优化空间</b>——可以让杆力尽量均匀（延长寿命）、让某根杆力为 0（省掉一根杆）、或让某根关键杆受力最小。自由变量就是调节旋钮。</p>
+</div>
+
+<!-- 3 案例：电网 -->
+<div class="card">
+<h2>三、工程案例：配电网功率分配——自由变量 = 可调配的潮流</h2>
+<p>一个简单环网：2 条支路分担同一负荷，节点功率平衡方程不足，出现 1 个自由变量（支路 2 的功率 p）。</p>
+<div class="two">
+<div>
+<div class="mat" id="powerMat" style="position:relative"></div>
+<div class="eq" id="powerEq">p₁+p₂ = 100 kW（负荷守恒）</div>
+<label>令支路2功率 p₂ = </label>
+<input id="pSlider" type="range" min="0" max="100" step="5" value="60">
+<b id="pVal">60</b> kW
+<div style="margin-top:10px">
+<button onclick="solvePower()">计算支路功率</button>
+<button class="alt" onclick="optimizePower()">自动求"线损最小"分配</button>
+</div>
+<div class="info" id="powerInfo">支路阻抗不同，同样的负荷下，把更多功率分给阻抗小的支路，总线路损耗更小。自由变量 p₂ 让我们能主动优化。</div>
+</div>
+<div>
+<canvas id="powerCanvas" width="420" height="300"></canvas>
+<div class="legend"><span><i style="background:#42a5f5"></i>支路1(p₁)</span><span><i style="background:#fb8c00"></i>支路2(p₂)</span><span><i style="background:#ef5350"></i>负荷100kW</span></div>
+</div>
+</div>
+<p><b>工程意义：</b>电力调度中心每天都在解"无穷多组可行潮流"——自由变量让他们能在满足负荷的前提下，按"线损最小/电价最低/备用最大"等目标挑出最优的那一组，这就是<b>经济调度（ED）</b>的本质。</p>
+</div>
+
+<!-- 4 案例：拟合 -->
+<div class="card">
+<h2>四、工程案例：传感器数据冲突——无穷多"近似解"取哪组？</h2>
+<p>两个传感器测同一距离，读数略有冲突（超定方程组无解）。工程上退而求其次：允许少量误差，得到<b>无穷多组近似解</b>，再用"最小二乘"从中挑误差平方和最小的那组。</p>
+<div class="two">
+<div>
+<div class="mat" id="fitMat" style="position:relative"></div>
+<div class="eq" id="fitEq">x = 5.0（传感器1） ,  x = 5.4（传感器2，冲突！）</div>
+<button onclick="solveFit()">演示：所有"折中"解</button>
+<button class="alt" onclick="optimizeFit()">最小二乘最优解</button>
+<div class="info" id="fitInfo">两个读数矛盾→严格无解。但引入"残差"概念后，介于 5.0~5.4 之间的任何值都是某种折中；最小二乘选 x=5.2，使总误差平方最小。</div>
+</div>
+<div>
+<canvas id="fitCanvas" width="420" height="300"></canvas>
+</div>
+</div>
+<p><b>工程意义：</b>GPS 定位、相机标定、结构健康监测都面临"传感器比未知数多、读数还带噪声"的情况。无穷多近似解 + 优化准则（最小二乘/鲁棒估计），是导航与测量工程的日常工作方式。</p>
+</div>
+
+<!-- 5 教学补充：自由度计数 -->
+<div class="card">
+<h2>五（补）、帮你看懂"自由变量有几个"</h2>
+<p>自由变量的个数 = <b>未知数个数 n − 系数矩阵的秩 r</b>。记住一句口诀：<b>"方程锁不住的量，就是你的设计旋钮。"</b></p>
+<div class="two">
+<div>
+<div class="mat" id="dofMat" style="position:relative"></div>
+<div class="eq" id="dofEq">rank(A)=r ⇒ 自由变量个数 = n−r</div>
+<div class="info" id="dofInfo">本页三个案例：① 桁架 n=3, r=2 ⇒ 1 个自由变量(F₃)；② 电网 n=2, r=1 ⇒ 1 个(p₂)；③ 拟合引入残差后变成"在 5.0~5.4 间折中"的无穷多近似解。每一个自由变量都给你一条"可任意取值"的维度。</div>
+</div>
+<div>
+<canvas id="dofCanvas" width="420" height="240"></canvas>
+<div class="legend"><span><i style="background:#42a5f5"></i>被方程锁住的维</span><span><i style="background:#43a047"></i>自由变量(可任意取值)</span></div>
+</div>
+</div>
+</div>
+
+<!-- 6 总结 -->
+<div class="card">
+<h2>六、给大一同学的"意义速记"</h2>
+<div class="info ok">
+<b>① 无穷多解 = 系统有"多余的自由度"，不是算错了。</b><br>
+<b>② 自由变量 = 没被方程锁死的量，可任意取值，每一组取值都是可行方案。</b><br>
+<b>③ 工程师的价值：</b>在无穷多组可行解里，按"最省料/最均匀/线损最小/误差最小"等目标，挑出<b>最优的那一组</b>——这就是<b>优化（线性规划/最小二乘/最优控制）</b>的起点。<br>
+<b>④ 一句话：</b>线性代数教你"看出有无穷多解"，最优化教你"从中选出最好的一个"。两者结合，才是工程真正的战斗力。
+</div>
+<div style="text-align:center;margin-top:10px">
+<span class="tag">rank &lt; n ⇒ 自由变量</span>
+<span class="tag">特解 + 齐次通解</span>
+<span class="tag">自由变量 ⇒ 设计旋钮</span>
+<span class="tag">优化目标 ⇒ 选最优解</span>
+</div>
+</div>
+</div>
+
+<script>
+/* ---------- 矩阵绘制 ---------- */
+function drawMat(domId, mat, opts={}){
+  const d=document.getElementById(domId); d.innerHTML='';
+  d.style.gridTemplateColumns=`repeat(${mat[0].length},52px)`;
+  d.style.position='relative';
+  mat.forEach(function(r,i){
+    r.forEach(function(v,j){
+      const c=document.createElement('div'); c.className='cell';
+      c.textContent=(v===Math.round(v*10)/10)? v : (+v.toFixed(2));
+      if(opts.hl&&opts.hl[0]===i&&opts.hl[1]===j) c.classList.add('hl');
+      if(opts.fv&&opts.fv[0]===i&&opts.fv[1]===j) c.classList.add('fv');
+      if(opts.lead&&opts.lead[0]===i&&opts.lead[1]===j) c.classList.add('lead');
+      d.appendChild(c);
+    });
+  });
+}
+/* ---------- 案例2 桁架 ---------- */
+const trussA=[[1,1,0],[1,0,-1]], trussb=[10,0];
+drawMat('trussMat',[ [1,1,0,10],[1,0,-1,0] ],{lead:[0,0],fv:[0,2]});
+const tS=document.getElementById('tSlider'), tV=document.getElementById('tVal');
+tS.oninput=()=>tV.textContent=(+tS.value).toFixed(1);
+function solveTruss(){
+  const t=+tS.value, F3=t, F1=F3, F2=10-F1;
+  tV.textContent=t.toFixed(1);
+  document.getElementById('trussInfo').innerHTML=
+    `t=F₃=${t.toFixed(1)} ⇒ F₁=${F1.toFixed(1)}, F₂=${F2.toFixed(1)}, F₃=${F3.toFixed(1)} kN。`+
+    (F2<0?' <span style="color:#ef6c00">⚠ F₂为负，杆2受压，仍平衡。</span>':' 三者均满足平衡方程，是一组可行受力方案。');
+  drawTruss(F1,F2,F3,false);
+}
+function optimizeTruss(){
+  // 最均匀：让三根杆力尽量接近 -> 目标 min max(|Fi|)。解析：F1=F3=t, F2=10-t，均匀时 t≈10/3
+  const t=10/3; tS.value=t; tV.textContent=t.toFixed(2);
+  const F3=t,F1=F3,F2=10-F1;
+  document.getElementById('trussInfo').innerHTML=
+    `<b>最均匀方案：</b>F₁≈${F1.toFixed(2)}, F₂≈${F2.toFixed(2)}, F₃≈${F3.toFixed(2)} kN，三杆受力最接近，结构寿命最优。`;
+  drawTruss(F1,F2,F3,true);
+}
+function drawTruss(F1,F2,F3,opt){
+  const cv=document.getElementById('trussCanvas'),ctx=cv.getContext('2d');
+  ctx.clearRect(0,0,cv.width,cv.height);
+  // 三杆节点图：顶节点(210,60) 荷载下挂；三根杆连到(80,230),(210,230),(340,230)
+  const top=[210,70], nodes=[[90,240],[210,240],[330,240]];
+  const Fs=[F1,F2,F3]; const cols=['#42a5f5','#66bb6a','#fb8c00'];
+  nodes.forEach((n,i)=>{
+    ctx.strokeStyle=cols[i]; ctx.lineWidth=4+Math.min(6,Math.abs(Fs[i])/2);
+    ctx.beginPath(); ctx.moveTo(top[0],top[1]); ctx.lineTo(n[0],n[1]); ctx.stroke();
+    ctx.fillStyle=cols[i]; ctx.font='13px sans-serif';
+    ctx.fillText('F'+String(i+1)+'='+Fs[i].toFixed(1),n[0]-18,n[1]+20);
+  });
+  // 荷载箭头
+  ctx.strokeStyle='#ef5350'; ctx.lineWidth=3; ctx.beginPath();
+  ctx.moveTo(top[0],top[1]); ctx.lineTo(top[0],top[1]+70); ctx.stroke();
+  ctx.fillStyle='#ef5350'; ctx.fillText('10kN',top[0]-22,top[1]+90);
+  nodes.forEach(n=>{ctx.beginPath();ctx.arc(n[0],n[1],6,0,6.3);ctx.fillStyle='#0d47a1';ctx.fill();});
+  ctx.beginPath();ctx.arc(top[0],top[1],8,0,6.3);ctx.fillStyle='#0d47a1';ctx.fill();
+  if(opt){ctx.fillStyle='#2e7d32';ctx.font='15px sans-serif';ctx.fillText('★ 最均匀受力方案',130,30);}
+}
+/* ---------- 案例3 电网 ---------- */
+const pS=document.getElementById('pSlider'),pV=document.getElementById('pVal');
+pS.oninput=()=>{pV.textContent=pS.value;};
+drawMat('powerMat',[[1,1,100]],{fv:[0,1]});
+function solvePower(){
+  const p2=+pS.value, p1=100-p2; pV.textContent=String(p2);
+  document.getElementById('powerInfo').innerHTML=
+    `p₂=${p2} kW ⇒ p₁=${p1} kW。支路阻抗假设 Z₁=0.5Ω、Z₂=1.0Ω，线损 P_loss = p₁²Z₁/1000 + p₂²Z₂/1000 ≈ <b>${(p1*p1*0.5/1000+p2*p2*1/1000).toFixed(2)} kW</b>。`;
+  drawPower(p1,p2,false);
+}
+function optimizePower(){
+  // 线损 L=p1^2*Z1+p2^2*Z2, Z1=0.5,Z2=1, p1=100-p2. dL/dp2=0 => -2(100-p2)*0.5+2p2*1=0 => -100+p2+2p2=0 => p2=100/3? 修正: -0.5*(100-p2)*2? 
+  // L=(100-p2)^2*0.5+p2^2*1. dL/dp2=-(100-p2)+2p2=0 => -100+p2+2p2=0 => 3p2=100 => p2=33.33,p1=66.67
+  const p2=100/3, p1=100-p2; pS.value=Math.round(p2); pV.textContent=String(Math.round(p2));
+  document.getElementById('powerInfo').innerHTML=
+    `<b>线损最小方案：</b>p₁≈${p1.toFixed(1)}, p₂≈${p2.toFixed(1)} kW（由 dL/dp₂=0 求得）。线损≈<b>${(p1*p1*0.5/1000+p2*p2*1/1000).toFixed(2)} kW</b>，为所有可行分配中的最小值。`;
+  drawPower(p1,p2,true);
+}
+function drawPower(p1,p2,opt){
+  const cv=document.getElementById('powerCanvas'),ctx=cv.getContext('2d');
+  ctx.clearRect(0,0,cv.width,cv.height);
+  // 电源节点(90,150)->支路1(210,90)、支路2(210,210)->汇流(330,150)->负荷
+  const src=[90,150],mid1=[220,90],mid2=[220,210],load=[340,150];
+  function drawLine(a,b,c){ctx.strokeStyle=c;ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();}
+  drawLine(src,mid1,'#42a5f5');drawLine(src,mid2,'#fb8c00');
+  drawLine(mid1,load,'#42a5f5');drawLine(mid2,load,'#fb8c00');
+  ctx.fillStyle='#42a5f5';ctx.fillText('p₁='+p1.toFixed(0)+'kW',115,78);
+  ctx.fillStyle='#fb8c00';ctx.fillText('p₂='+p2.toFixed(0)+'kW',115,238);
+  [src,mid1,mid2,load].forEach(p=>{ctx.beginPath();ctx.arc(p[0],p[1],8,0,6.3);ctx.fillStyle='#0d47a1';ctx.fill();});
+  ctx.fillStyle='#ef5350';ctx.beginPath();ctx.arc(load[0],load[1],10,0,6.3);ctx.fill();
+  ctx.fillStyle='#fff';ctx.fillText('100',load[0]-12,load[1]+4);
+  if(opt){ctx.fillStyle='#2e7d32';ctx.font='15px sans-serif';ctx.fillText('★ 线损最小分配',135,30);}
+}
+/* ---------- 案例4 拟合 ---------- */
+drawMat('fitMat',[[1,5.0],[1,5.4]],{hl:[1,1]});
+function solveFit(){
+  document.getElementById('fitInfo').innerHTML=
+    `严格无解（5.0≠5.4）。但若允许残差，x 取 5.0~5.4 之间任何值都是某种折中：x=5.1 时误差(-0.1,+0.3)；x=5.2 时(-0.2,+0.2)……`+
+    `<br>拖动无滑块（此处演示）：所有折中解构成一条"可行带"，最小二乘从中挑误差平方和最小者。`;
+  drawFit(5.2,false);
+}
+function optimizeFit(){
+  document.getElementById('fitInfo').innerHTML=
+    `<b>最小二乘最优解：x = (5.0+5.4)/2 = 5.2</b>。此时残差 r₁=-0.2、r₂=+0.2，误差平方和 0.08 为最小（求导可证）。这就是 GPS/测量平差的核心算法。`;
+  drawFit(5.2,true);
+}
+function drawFit(xopt,opt){
+  const cv=document.getElementById('fitCanvas'),ctx=cv.getContext('2d');
+  ctx.clearRect(0,0,cv.width,cv.height);
+  // 横轴 x，纵轴残差。画两条测量线 y=|x-5| 和 y=|x-5.4|，及平方和
+  ctx.strokeStyle='#b0bec5';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(40,260);ctx.lineTo(380,260);ctx.stroke();
+  ctx.fillStyle='#5a6b8a';ctx.fillText('x',370,278);
+  for(let i=0;i<=40;i++){let x=4+i*0.02;let y=260-(Math.abs(x-5)+Math.abs(x-5.4))*60;
+    ctx.fillStyle=(i===10?'#42a5f5':i===20?'#fb8c00':'rgba(180,180,180,.5)');
+    ctx.fillRect(40+i*8,260-1,2,2);}
+  // 残差平方和曲线
+  ctx.strokeStyle='#ef5350';ctx.lineWidth=2;ctx.beginPath();
+  for(let i=0;i<=80;i++){let x=4+i*0.025;let e=(x-5)*(x-5)+(x-5.4)*(x-5.4);
+    let px=40+i*4.1, py=250-e*40; if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);}
+  ctx.stroke();
+  ctx.fillStyle='#ef5350';ctx.fillText('误差平方和 SSE(x)',190,40);
+  ctx.fillStyle='#42a5f5';ctx.fillText('测值1: x=5.0',50,50);
+  ctx.fillStyle='#fb8c00';ctx.fillText('测值2: x=5.4',50,70);
+  if(opt){ctx.beginPath();ctx.arc(40+((xopt-4)/0.025)*4.1,250-((xopt-5)*(xopt-5)+(xopt-5.4)*(xopt-5.4))*40,7,0,6.3);ctx.fillStyle='#2e7d32';ctx.fill();
+    ctx.fillStyle='#2e7d32';ctx.fillText('★ x=5.2 最小二乘最优',150,100);}
+}
+/* 初始绘制 */
+drawTruss(4,6,4,false); drawPower(40,60,false);
+drawMat('dofMat',[[1,1,0,10],[1,0,-1,0]],{lead:[0,0],fv:[0,2]});
+(function drawDOF(){
+  const cv=document.getElementById('dofCanvas'),ctx=cv.getContext('2d');
+  ctx.clearRect(0,0,cv.width,cv.height);
+  // 示意：n=3 个未知数轴，其中 2 个被方程锁定(r=2)，1 个自由
+  const labels=['x₁','x₂','x₃'], locked=[true,true,false];
+  labels.forEach((lb,i)=>{
+    const x=80+i*110;
+    ctx.strokeStyle=locked[i]?'#42a5f5':'#43a047';ctx.lineWidth=6;
+    ctx.beginPath();ctx.moveTo(x,180);ctx.lineTo(x,70);ctx.stroke();
+    ctx.fillStyle=locked[i]?'#42a5f5':'#43a047';ctx.font='15px sans-serif';
+    ctx.fillText(lb,x-8,200);
+    ctx.fillText(locked[i]?'已锁定':'自由变量',x-30,55);
+  });
+  ctx.fillStyle='#5a6b8a';ctx.font='14px sans-serif';
+  ctx.fillText('n=3 个未知数，r=2 个独立方程 ⇒ 自由变量个数 = 3−2 = 1',30,30);
+})();
+</script>
+</body>
+</html>

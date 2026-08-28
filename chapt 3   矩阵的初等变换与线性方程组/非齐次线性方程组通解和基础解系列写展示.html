@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>行最简通解读出规律 + 同解方程组实时对照</title>
+<style>
+/* ========== 基础样式：浅色主题 + 增大字号 ========== */
+body {
+    font-family: 'Segoe UI', 'Helvetica Neue', 'Microsoft YaHei', sans-serif;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    color: #212529;
+    margin: 0;
+    padding: 20px;
+    font-size: 18px;
+    line-height: 1.6;
+}
+
+h1 {
+    text-align: center;
+    color: #0056b3;
+    text-shadow: 0 2px 4px rgba(0,86,179,0.1);
+    font-size: 36px;
+    margin-bottom: 30px;
+}
+
+h2 {
+    margin-top: 30px;
+    border-left: 6px solid #0056b3;
+    padding-left: 15px;
+    font-size: 24px;
+}
+
+/* ========== 布局容器 ========== */
+.section {
+    display: flex;
+    gap: 25px;
+    flex-wrap: wrap;
+    margin-bottom: 40px;
+}
+
+.left, .right {
+    flex: 1 1 520px;
+    background: rgba(255,255,255,0.85);
+    border: 2px solid rgba(0,86,179,0.15);
+    border-radius: 16px;
+    padding: 25px;
+    min-height: 400px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+    backdrop-filter: blur(4px);
+}
+
+/* ========== 矩阵与解向量并排容器 ========== */
+.matrix-solution-wrapper {
+    display: flex;
+    align-items: flex-start;
+    gap: 30px;
+    margin: 20px 0;
+    flex-wrap: wrap;
+}
+
+.matrix-container {
+    flex: 1;
+    min-width: 300px;
+}
+
+.solution-container {
+    flex: 1;
+    min-width: 350px;
+}
+
+/* ========== 按钮样式 ========== */
+button {
+    padding: 14px 28px;
+    margin: 8px;
+    border: none;
+    border-radius: 30px;
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    box-shadow: 0 4px 12px rgba(0,86,179,0.25);
+    font-size: 18px;
+    font-weight: 600;
+}
+
+button:hover {
+    transform: translateY(-3px) scale(1.03);
+    box-shadow: 0 6px 20px rgba(0,86,179,0.35);
+}
+
+button:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+/* ========== 矩阵样式：增大单元格 ========== */
+.matrix {
+    display: grid;
+    border: 3px solid #007bff;
+    border-radius: 8px;
+    position: relative;
+    background: #ffffff;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    margin: 15px 0;
+}
+
+.matrix::before, .matrix::after {
+    content: "";
+    position: absolute;
+    width: 12px;
+    height: 100%;
+    background: linear-gradient(to right, #007bff, #0056b3);
+    box-shadow: 0 0 8px rgba(0,86,179,0.3);
+}
+
+.matrix::before { left: -12px; border-radius: 12px 0 0 12px; }
+.matrix::after { right: -12px; border-radius: 0 12px 12px 0; }
+
+.cell {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #dee2e6;
+    font-size: 20px;
+    font-weight: 700;
+    transition: all 0.3s ease;
+    background: #ffffff;
+    color: #212529;
+}
+
+/* ========== 特殊元素高亮样式（增强版） ========== */
+.cell.pivot {
+    background: linear-gradient(135deg, #dc3545, #a71d2a);
+    animation: pulse 1s infinite;
+    color: #fff;
+    box-shadow: 0 0 15px rgba(220,53,69,0.6);
+    font-size: 22px;
+    border: 2px solid #a71d2a;
+}
+
+.cell.free {
+    background: linear-gradient(135deg, #ff9800, #f57c00);
+    color: #fff;
+    font-weight: 800;
+    box-shadow: 0 0 10px rgba(255,152,0,0.5);
+    border: 2px solid #f57c00;
+}
+
+.cell.copy {
+    background: linear-gradient(135deg, #28a745, #1e7e34);
+    color: #fff;
+    font-weight: 800;
+    box-shadow: 0 0 10px rgba(40,167,69,0.5);
+    border: 2px solid #1e7e34;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+/* ========== 解向量样式 ========== */
+.solution-vector {
+    display: inline-block;
+    margin: 10px 0;
+    padding: 15px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 22px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.particular-vector {
+    background: linear-gradient(135deg, #d4edda, #c3e6cb);
+    border: 3px solid #28a745;
+    color: #155724;
+}
+
+.basis-vector {
+    background: linear-gradient(135deg, #d1ecf1, #bee5eb);
+    border: 3px solid #17a2b8;
+    color: #0c5460;
+    margin-top: 15px;
+}
+
+.vector-element {
+    display: inline-block;
+    padding: 8px 12px;
+    margin: 0 4px;
+    border-radius: 8px;
+    font-weight: 800;
+    font-size: 24px;
+    min-width: 60px;
+    text-align: center;
+}
+
+.particular-element {
+    background: #28a745;
+    color: #fff;
+}
+
+.basis-element {
+    background: #17a2b8;
+    color: #fff;
+}
+
+.free-element {
+    background: #ff9800;
+    color: #fff;
+}
+
+.negative-element {
+    background: #dc3545;
+    color: #fff;
+}
+
+/* ========== 连接指示器 ========== */
+.connection-arrow {
+    color: #007bff;
+    font-size: 28px;
+    font-weight: bold;
+    margin: 0 15px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* ========== 信息面板 ========== */
+.bar {
+    width: 100%;
+    height: 32px;
+    border-radius: 16px;
+    margin: 12px 0;
+    background: #e9ecef;
+    display: flex;
+    overflow: hidden;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.bar div {
+    height: 100%;
+    line-height: 32px;
+    text-align: center;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.bar .ref { background: #007bff; width: 50%; }
+.bar .rref { background: #dc3545; width: 50%; }
+
+.eqsPanel {
+    background: rgba(0,86,179,0.08);
+    border-left: 6px solid #007bff;
+    border-radius: 10px;
+    padding: 18px;
+    margin-top: 12px;
+    font-size: 17px;
+    line-height: 1.8;
+}
+
+.eqsPanel .title {
+    color: #0056b3;
+    font-weight: 800;
+    font-size: 20px;
+    margin-bottom: 12px;
+    display: block;
+}
+
+/* ========== 方程组列表样式（修正等号位置） ========== */
+.eqs-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-family: 'Fira Code', 'Courier New', monospace;
+    font-size: 19px;
+    font-weight: 600;
+}
+
+.eqs-list li {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end; /* 右对齐 */
+    height: 42px; /* 增高 */
+    padding: 6px 12px;
+    border-radius: 6px;
+    transition: background 0.2s;
+}
+
+.eqs-list li:hover {
+    background: rgba(0,86,179,0.05);
+}
+
+.eqs-list .lhs {
+    text-align: right; /* 右对齐 */
+    letter-spacing: 1px;
+    color: #0056b3;
+    min-width: 300px; /* 最小宽度 */
+    margin-right: 15px; /* 等号右侧间距 */
+}
+
+.eqs-list .rhs {
+    text-align: left; /* 左对齐 */
+    color: #28a745;
+    font-weight: 700;
+    min-width: 80px; /* 右侧常数区域 */
+}
+
+/* ========== 规则面板（增强） ========== */
+.rulePanel {
+    background: linear-gradient(135deg, rgba(0,86,179,0.1) 0%, rgba(40,167,69,0.1) 100%);
+    border-left: 6px solid #28a745;
+    border-radius: 12px;
+    padding: 22px;
+    margin-top: 20px;
+    font-size: 18px;
+    line-height: 2;
+    display: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.rulePanel .title {
+    color: #0056b3;
+    font-weight: 800;
+    font-size: 22px;
+    margin-bottom: 20px;
+    display: block;
+}
+
+/* ========== 关键规律高亮样式 ========== */
+.highlight {
+    background: linear-gradient(135deg, #dc3545, #a71d2a);
+    color: #fff;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-weight: 800;
+    box-shadow: 0 2px 6px rgba(220,53,69,0.4);
+    display: inline-block;
+    margin: 0 4px;
+}
+
+.special-note {
+    background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+    border: 2px solid #ffc107;
+    border-radius: 8px;
+    padding: 12px;
+    margin: 15px 0;
+    font-weight: 700;
+    color: #856404;
+    font-size: 17px;
+}
+
+/* ========== 通解显示区域（上移） ========== */
+.solution-box {
+    background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(233,236,239,0.95));
+    border: 3px solid rgba(0,86,179,0.2);
+    border-radius: 14px;
+    padding: 25px;
+    margin: 25px 0;
+    font-size: 20px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    backdrop-filter: blur(4px);
+}
+
+.solution-box .title {
+    color: #0056b3;
+    font-weight: 800;
+    font-size: 24px;
+    margin-bottom: 20px;
+    display: block;
+}
+
+/* ========== 画布样式 ========== */
+.canvas {
+    border: 2px solid #007bff;
+    border-radius: 8px;
+    margin-top: 15px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    background: #fff;
+}
+</style>
+</head>
+<body>
+<h1>行最简通解读出规律 + 同解方程组实时对照</h1>
+
+<!-- 顶部：原始方程组 -->
+<div class="section" style="margin-bottom:10px">
+  <div class="infoBox" style="width:100%;text-align:center">
+    <div class="title">原始非齐次线性方程组</div>
+    <ul id="origEq" class="eqs-list">
+      <li><span class="lhs">x₁ + x₂ + x₃ + x₄ =</span><span class="rhs">5</span></li>
+      <li><span class="lhs">x₁ + 2x₂ + x₃ + 3x₄ =</span><span class="rhs">12</span></li>
+      <li><span class="lhs">x₁ + x₂ + 2x₃ + 2x₄ =</span><span class="rhs">8</span></li>
+    </ul>
+  </div>
+</div>
+
+<!-- 主体：左侧矩阵 + 右侧方程组对照 -->
+<div class="section">
+  <div class="left">
+    <div id="matA"></div>
+    <button id="startBtn">开始/重启</button>
+    <button id="nextBtn" disabled>下一步</button>
+    <div class="infoBox">
+      <div class="title">当前步骤：</div>
+      <div id="stepInfo">原始增广矩阵</div>
+      <div class="title">操作提示：</div>
+      <div id="hint">点击“开始”进入行初等变换</div>
+    </div>
+    <!-- 通解区域上移到此处 -->
+    <div id="solutionArea" class="solution-box" style="display:none;">
+      <div class="title">🎯 通解（随步骤更新）：</div>
+      <div id="generalSolution">尚未计算</div>
+    </div>
+  </div>
+
+  <div class="right">
+    <div class="bar">
+      <div class="ref">REF：仅识别自由变量</div>
+      <div class="rref">RREF：直接拷贝通解</div>
+    </div>
+    <!-- 同解方程组对照 -->
+    <div class="eqsPanel">
+      <div class="title">行阶梯形（REF） 同解方程组</div>
+      <ul id="refEqs" class="eqs-list"><li>尚未计算</li></ul>
+    </div>
+    <div class="eqsPanel">
+      <div class="title">行最简形（RREF） 同解方程组</div>
+      <ul id="rrefEqs" class="eqs-list"><li>尚未计算</li></ul>
+    </div>
+    <canvas id="visCanvas" class="canvas" width="520" height="180"></canvas>
+    <!-- 通解读出规律面板（RREF完成后显示） -->
+    <div id="rulePanel" class="rulePanel">
+      <div class="title">📌 行最简通解读出规律</div>
+      <div class="special-note">
+        <strong>特解列写规则：</strong>主元列对应的变量取等式右侧常数，自由变量全部取0
+      </div>
+      <div class="special-note">
+        <strong>基础解系列写规则：</strong>每个自由变量依次取1（其余自由变量取0），主元列系数拷贝后<span class="highlight">取反</span>
+      </div>
+      <ol id="ruleList"></ol>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   数据：非齐次方程组
+   A|b = [1  1  1  1 | 5]
+         [1  2  1  3 |12]
+         [1  1  2  2 | 8]
+========================================================== */
+const Ab0 = [
+  [1,1,1,1,5],
+  [1,2,1,3,12],
+  [1,1,2,2,8]
+];
+let Ab = [], step = 0, rows = 0, cols = 0;
+let basicVars = [], freeVars = [];
+let steps = [];  // 每步矩阵+说明
+let refEqsMat = []; // 保存进入RREF前一步的矩阵，用于REF方程组
+
+/* =========================================================
+   颜色映射系统
+========================================================== */
+const colorScheme = {
+  particular: '#28a745',  // 特解来源 - 绿色
+  freeVars: ['#ff9800', '#9c27b0', '#e91e63', '#00bcd4'] // 自由变量列颜色循环
+};
+
+/* =========================================================
+   工具函数
+========================================================== */
+function drawMatrix(mat, domId, opts={}){
+  const div = document.getElementById(domId); div.innerHTML = ''; div.className = 'matrix';
+  div.style.gridTemplateColumns = `repeat(${mat[0].length},60px)`;
+  mat.forEach((row,i)=>{
+    row.forEach((val,j)=>{
+      const cell = document.createElement('div'); cell.className = 'cell'; cell.textContent = val.toFixed(2);
+      if(opts.pivot && opts.pivot[0]===i && opts.pivot[1]===j) cell.classList.add('pivot');
+      if(opts.freeRows && opts.freeRows.includes(i)) cell.classList.add('free');
+      if(opts.copyRows && opts.copyRows.includes(i)) cell.classList.add('copy');
+      
+      // 特解列高亮（主元列的常数项）
+      if(opts.particularCols && opts.particularCols.includes(j) && j === mat[0].length-1){
+        cell.style.border = '3px solid ' + colorScheme.particular;
+        cell.style.boxShadow = '0 0 15px ' + colorScheme.particular + '80';
+        cell.style.transform = 'scale(1.05)';
+      }
+      
+      // 自由变量列高亮
+      if(opts.freeVarCols){
+        opts.freeVarCols.forEach((colInfo, idx) => {
+          if(j === colInfo.col){
+            const color = colorScheme.freeVars[idx % colorScheme.freeVars.length];
+            cell.style.border = '3px solid ' + color;
+            cell.style.boxShadow = '0 0 15px ' + color + '80';
+            cell.style.transform = 'scale(1.05)';
+          }
+        });
+      }
+      
+      div.appendChild(cell);
+    });
+  });
+}
+
+function vecAdd(v1,v2){return v1.map((x,i)=>x+v2[i]);}
+function scalarMul(a,v){return v.map(x=>a*x);}
+
+/* ---------------------------------------------------------
+   常规方程组输出（修正等号位置）
+---------------------------------------------------------- */
+function buildEqs(mat){
+  const rows=mat.length, cols=mat[0].length-1;
+  const arr=[];
+  mat.forEach(row=>{
+    let s='', rhs=row[cols].toFixed(2);
+    for(let j=0;j<cols;j++){
+      const v=row[j];
+      if(Math.abs(v)<1e-10) continue;
+      if(v>0 && s!=='') s+='+';
+      if(Math.abs(v-1)<1e-10) s+=`x${j+1}`;
+      else if(Math.abs(v+1)<1e-10) s+=`-x${j+1}`;
+      else s+=`${v.toFixed(2)}x${j+1}`;
+    }
+    if(s==='') s='0';
+    // 等号放在lhs中，rhs只显示常数
+    arr.push(`<li><span class="lhs">${s} =</span><span class="rhs">${rhs}</span></li>`);
+  });
+  return arr.join('');
+}
+
+/* =========================================================
+   构建带颜色映射的通解
+========================================================== */
+function buildColoredSolution(){
+  let html = '';
+  const x0 = Array(cols).fill(0);
+  basicVars.forEach((col,i)=>x0[col]=Ab[i][cols]);
+  
+  // 特解部分
+  html += `<div class="solution-part particular-vector">
+            <strong>特解 x₀ = [</strong>`;
+  x0.forEach((v,i)=>{
+    const isBasic = basicVars.includes(i);
+    const color = isBasic ? colorScheme.particular : '#6c757d';
+    html += `<span class="vector-element particular-element" style="background:${color}" title="${isBasic ? '主元列常数' : '自由变量'}">
+              ${v.toFixed(2)}
+             </span>`;
+  });
+  html += `<strong>]</strong><br>`;
+  html += `<small style="color:${colorScheme.particular};font-weight:600">
+            🟢 绿色 ← 主元列右侧常数
+          </small></div>`;
+  
+  // 基础解系部分
+  if(freeVars.length>0){
+    html += `<div class="solution-part basis-vector">
+              <strong>基础解系：</strong><br>`;
+    freeVars.forEach((col, idx)=>{
+      const color = colorScheme.freeVars[idx % colorScheme.freeVars.length];
+      html += `<strong>ξ${idx+1} = [</strong>`;
+      const xi = Array(cols).fill(0);
+      xi[col] = 1;
+      basicVars.forEach((bRow,i)=>xi[bRow] = -Ab[i][col]);
+      
+      xi.forEach((v,i)=>{
+        let bgColor = '#6c757d';
+        let title = '';
+        if(i === col){
+          bgColor = color;
+          title = '自由变量=1';
+        } else if(Math.abs(v) > 1e-10){
+          bgColor = color;
+          title = '系数取反';
+        }
+        
+        html += `<span class="vector-element basis-element" style="background:${bgColor}" title="${title}">
+                  ${v.toFixed(2)}
+                 </span>`;
+      });
+      html += `<strong>]  （x${col+1}自由）</strong><br>`;
+    });
+    html += `<small style="color:${colorScheme.freeVars[0]};font-weight:600">
+              🌈 彩色 ← 自由变量列系数（取反）
+            </small></div>`;
+  }
+  
+  return html;
+}
+
+/* =========================================================
+   右侧画布：REF vs RREF 差异高亮
+========================================================== */
+function drawVis(refPart, highlightFree=-1){
+  const cv = document.getElementById('visCanvas'), ctx = cv.getContext('2d');
+  ctx.clearRect(0,0,cv.width,cv.height);
+  ctx.font = '20px sans-serif'; ctx.fillStyle = refPart ? '#007bff' : '#dc3545';
+  ctx.fillText(refPart ? '当前：行阶梯形（REF）' : '当前：行最简形（RREF）', 20, 45);
+  ctx.font = '16px sans-serif';
+  ctx.fillText(refPart ? '• 仅识别自由变量（橙色）' : '• 主元=1，同列其余=0（绿色拷贝）', 20, 80);
+  if(highlightFree>=0){
+    ctx.fillStyle = '#ff9800'; ctx.fillText(`• x${highlightFree+1} 为自由变量`, 20, 115);
+  }
+}
+
+/* =========================================================
+   主流程：分步消元 → RREF
+========================================================== */
+function buildSteps(){
+  steps = [];
+  Ab = Ab0.map(r=>[...r]);
+  rows = Ab.length; cols = Ab[0].length - 1;
+  basicVars = []; freeVars = [];
+
+  // 0. 原始
+  steps.push({mat:Ab.map(r=>[...r]), info:'原始增广矩阵', hint:'即将开始行初等变换', ref:true, sol:'尚未计算'});
+
+  // 1. 消元 → REF
+  let r = 0, c = 0;
+  for(; r<rows && c<cols; c++){
+    // 选主元
+    let piv = -1;
+    for(let i=r; i<rows; i++) if(Math.abs(Ab[i][c])>1e-10){piv=i; break;}
+    if(piv===-1){ freeVars.push(c); continue; }  // 自由列
+    if(piv!==r){ [Ab[r],Ab[piv]]=[Ab[piv],Ab[r]]; steps.push({mat:Ab.map(r=>[...r]), info:`交换第${r+1}行与第${piv+1}行`, hint:'主元移到对角', ref:true, sol:'尚未计算'});}
+    // 归一化主元
+    const div = Ab[r][c];
+    for(let j=c; j<cols+1; j++) Ab[r][j] /= div;
+    steps.push({mat:Ab.map(r=>[...r]), info:`第${r+1}行 ÷ ${div.toFixed(2)}`, hint:'主元化为1', ref:true, sol:'尚未计算', pivot:[r,c]});
+    // 消下方
+    for(let i=r+1; i<rows; i++){
+      if(Math.abs(Ab[i][c])<1e-10) continue;
+      const f = Ab[i][c];
+      for(let j=c; j<cols+1; j++) Ab[i][j] -= f * Ab[r][j];
+      steps.push({mat:Ab.map(r=>[...r]), info:`第${i+1}行 - ${f.toFixed(2)}×第${r+1}行`, hint:'消下方', ref:true, sol:'尚未计算'});
+    }
+    basicVars.push(c); r++;
+  }
+  for(; c<cols; c++) freeVars.push(c);
+
+  // 保存进入RREF前一步的矩阵（REF最终形态）
+  refEqsMat = Ab.map(r=>[...r]);
+
+  // 2. 回代 → RREF
+  for(let k=basicVars.length-1; k>=0; k--){
+    const bv = basicVars[k];
+    for(let i=k-1; i>=0; i--){
+      if(Math.abs(Ab[i][bv])<1e-10) continue;
+      const f = Ab[i][bv];
+      for(let j=bv; j<cols+1; j++) Ab[i][j] -= f * Ab[k][j];
+      steps.push({mat:Ab.map(r=>[...r]), info:`第${i+1}行 - ${f.toFixed(2)}×第${k+1}行`, hint:'回代消上方', ref:false, sol:'尚未 calculated'});
+    }
+  }
+
+  // 3. 生成带颜色映射的通解
+  const sol = buildColoredSolution();
+  steps.push({mat:Ab.map(r=>[...r]), info:'行最简形完成', hint:'可直接读出通解', ref:false, sol, final:true});
+}
+
+/* =========================================================
+   右侧规律面板：RREF完成后逐条高亮
+========================================================== */
+function showRulePanel(){
+  const panel = document.getElementById('rulePanel');
+  panel.style.display = 'block';
+  const list = document.getElementById('ruleList');
+  list.innerHTML = '';
+  const rules = [
+    '主元所在列 = 单位向量 → 对应未知量直接取右侧常数项（<span class="highlight">特解</span>）',
+    '自由变量 = 任意实数 t₁, t₂, ...',
+    '主元行内：自由变量系数拷贝后<span class="highlight">取反</span> → 写入基础解系',
+    '通解 = 特解 + Σtᵢ·基础解系（已自动取反）'
+  ];
+  let idx = 0;
+  const tick = ()=>{
+    if(idx>=rules.length) return;
+    const li = document.createElement('li'); li.innerHTML = rules[idx]; list.appendChild(li);
+    li.style.background = '#dc3545'; li.style.color = '#fff'; li.style.padding = '10px 15px'; 
+    li.style.borderRadius = '8px'; li.style.margin = '8px 0'; li.style.fontWeight = '700';
+    setTimeout(()=>{li.style.background = 'transparent'; li.style.color = '#212529';},800);
+    idx++; setTimeout(tick,1000);
+  };
+  tick();
+}
+
+/* =========================================================
+   按钮事件
+========================================================== */
+document.getElementById('startBtn').onclick = function(){
+  buildSteps();
+  step = 0;
+  drawMatrix(steps[0].mat, 'matA');
+  document.getElementById('refEqs').innerHTML = buildEqs(steps[0].mat);
+  document.getElementById('rrefEqs').innerHTML = buildEqs(steps[0].mat);
+  drawVis(true);
+  document.getElementById('stepInfo').textContent = steps[0].info;
+  document.getElementById('hint').textContent = steps[0].hint;
+  document.getElementById('generalSolution').innerHTML = steps[0].sol;
+  document.getElementById('solutionArea').style.display = 'block'; // 显示通解区域
+  document.getElementById('nextBtn').disabled = false;
+  document.getElementById('rulePanel').style.display = 'none';
+};
+
+document.getElementById('nextBtn').onclick = function(){
+  step++;
+  if(step >= steps.length){ this.disabled = true; return; }
+  const s = steps[step];
+  
+  // 构建颜色映射
+  const opts = s.pivot ? {pivot:s.pivot} : {};
+  if(s.final){
+    opts.particularCols = basicVars; // 主元列
+    opts.freeVarCols = freeVars.map((col, idx) => ({col, idx})); // 自由变量列
+  }
+  
+  drawMatrix(s.mat, 'matA', opts);
+  document.getElementById('refEqs').innerHTML = buildEqs(refEqsMat);
+  document.getElementById('rrefEqs').innerHTML = buildEqs(s.mat);
+  drawVis(s.ref, s.ref ? -1 : (freeVars[0] ?? -1));
+  document.getElementById('stepInfo').textContent = s.info;
+  document.getElementById('hint').textContent = s.hint;
+  document.getElementById('generalSolution').innerHTML = s.sol;
+  document.getElementById('solutionArea').style.display = 'block'; // 确保显示
+  if(s.final){ 
+    this.disabled = true; 
+    setTimeout(showRulePanel, 500);
+  }
+};
+</script>
+</body>
+</html>

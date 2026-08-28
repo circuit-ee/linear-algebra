@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>线性方程组的工程意义 · 大一新生版</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body {
+    font-family:"PingFang SC","Microsoft YaHei","WenQuanYi Micro Hei",sans-serif;
+    background:linear-gradient(135deg,#f5f7fa 0%,#e8f0fe 100%);
+    color:#2c3e50; font-size:18px; line-height:1.8;
+    padding:0 0 60px;
+  }
+  .wrap { max-width:980px; margin:0 auto; padding:0 20px; }
+  header { text-align:center; padding:50px 20px 30px; }
+  header h1 { font-size:42px; color:#3a5bd9; margin-bottom:14px; letter-spacing:1px;}
+  header p { font-size:19px; color:#5a6b85; max-width:740px; margin:0 auto;}
+  .tag { display:inline-block; background:#e3eaff; color:#3a5bd9; border-radius:20px; padding:4px 16px; font-size:15px; margin-top:14px;}
+  section.card {
+    background:#fff; border-radius:18px; padding:34px 32px; margin:26px 0;
+    box-shadow:0 6px 24px rgba(60,90,200,.08);
+  }
+  section.card h2 { font-size:28px; color:#3a5bd9; margin-bottom:16px; display:flex; align-items:center; gap:10px;}
+  section.card h2 .num { background:#3a5bd9; color:#fff; border-radius:50%; width:34px; height:34px; display:inline-flex; align-items:center; justify-content:center; font-size:18px;}
+  p.lead { font-size:18px; color:#46566b; margin-bottom:14px;}
+  .matrix {
+    display:inline-block; margin:8px 6px; vertical-align:middle;
+    border-left:3px solid #3a5bd9; border-right:3px solid #3a5bd9;
+    padding:6px 12px; background:#f7f9ff; border-radius:4px;
+    font-family:"Cambria Math",serif; font-size:20px; color:#223;
+  }
+  .matrix table { border-collapse:collapse; }
+  .matrix td { padding:3px 9px; text-align:center; }
+  .eq { font-size:20px; color:#334; margin:6px 0; }
+  .btnrow { display:flex; flex-wrap:wrap; gap:12px; margin:16px 0 8px;}
+  button.b {
+    background:#3a5bd9; color:#fff; border:none; border-radius:10px;
+    padding:12px 20px; font-size:17px; cursor:pointer; transition:.2s;
+    box-shadow:0 3px 10px rgba(58,91,217,.25);
+  }
+  button.b:hover { background:#2846b8; transform:translateY(-2px);}
+  button.b.ghost { background:#e3eaff; color:#3a5bd9; box-shadow:none;}
+  button.b.ghost:hover { background:#d2ddff;}
+  button.b.active { background:#2846b8; box-shadow:0 3px 10px rgba(40,70,184,.35);}
+  .out {
+    background:#f4f7ff; border-left:4px solid #3a5bd9; border-radius:8px;
+    padding:16px 18px; margin-top:14px; font-size:17px; color:#33465f;
+    min-height:60px; white-space:pre-line;
+  }
+  .grid2 { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px; margin-top:14px;}
+  .ecard { background:#f7f9ff; border-radius:14px; padding:20px; border:1px solid #e3e8f7;}
+  .ecard h3 { font-size:20px; color:#2846b8; margin-bottom:8px;}
+  .ecard p { font-size:16.5px; color:#55657a;}
+  .pill { display:inline-block; background:#d6e2ff; color:#2846b8; border-radius:6px; padding:2px 10px; font-size:14px; margin-bottom:8px;}
+  .casebox { background:#fff8e6; border:1px solid #ffe7a3; border-radius:12px; padding:18px; margin-top:14px;}
+  .casebox h4 { color:#b7791f; font-size:19px; margin-bottom:8px;}
+  .casebox p { font-size:16.5px; color:#5a4a1f;}
+  .note { font-size:15.5px; color:#7a8a9e; margin-top:10px;}
+  .footer { text-align:center; color:#9aa6b8; font-size:15px; margin-top:30px;}
+  table.sol { border-collapse:collapse; margin:8px 0;}
+  table.sol td { border:1px solid #cdd8ee; padding:5px 12px; text-align:center; font-size:18px;}
+  .ok { color:#1f9e5e; font-weight:bold;}
+  .no { color:#d04a4a; font-weight:bold;}
+  .eng-eg { background:#f0f7ff; border:1px solid #c5dcff; border-radius:12px; padding:16px 18px; margin-top:12px;}
+  .eng-eg h4 { color:#2846b8; font-size:18px; margin-bottom:6px;}
+  .eng-eg p { font-size:16px; color:#46566b;}
+  @media(max-width:600px){
+    header h1{font-size:30px;} section.card h2{font-size:23px;}
+    body{font-size:17px;} .wrap{padding:0 12px;}
+    section.card{padding:24px 18px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>线性方程组的工程意义</h1>
+  <p>为什么大一要先学「解方程组」？因为它是一切工程建模的"普通话"——电路、结构、控制、数据，最终都翻译成同一句话：<b>Ax = b</b>。</p>
+  <span class="tag">面向大一新生 · 原理解读 · 可交互</span>
+</header>
+
+<!-- 1 直观引入 -->
+<section class="card" id="c1">
+  <h2><span class="num">1</span>先搞懂：一个方程在说什么？</h2>
+  <p class="lead">一条线性方程，本质是一个<b>「平衡约束」</b>：几个未知量按固定比例加在一起，等于一个已知结果。工程里，这往往对应一条物理定律（基尔霍夫电流/电压定律、力平衡、物料守恒）。</p>
+  <div class="eq">例：2x + 3y = 8 &nbsp;←&nbsp; 可理解为"2 份 A + 3 份 B 总共 8 个单位"。</div>
+  <p class="lead" style="margin-top:14px;">多个这样的约束<b>同时成立</b>，就组成一个<b>线性方程组</b>。求 x、y，就是求满足全部约束的那一组"工作状态"。</p>
+  <div style="text-align:center;margin-top:10px;">
+    <div class="matrix"><table><tr><td>2</td><td>3</td></tr><tr><td>1</td><td>-1</td></tr></table></div>
+    <span style="font-size:22px;vertical-align:middle;">·</span>
+    <div class="matrix"><table><tr><td>x</td></tr><tr><td>y</td></tr></table></div>
+    <span style="font-size:22px;vertical-align:middle;">=</span>
+    <div class="matrix"><table><tr><td>8</td></tr><tr><td>1</td></tr></table></div>
+  </div>
+  <p class="note">这就是矩阵写法 <b>Ax = b</b>：A 是系数（系统"规则"），x 是未知量（要求的东西），b 是已知的"目标/观测"。</p>
+</section>
+
+<!-- 2 三种结局 -->
+<section class="card" id="c2">
+  <h2><span class="num">2</span>方程组只有三种结局</h2>
+  <p class="lead">从几何上看，每个方程是一条直线（二维）或平面（高维）。解，就是所有直线/平面的<b>公共交点</b>。于是只有三种可能：</p>
+  <div class="grid2">
+    <div class="ecard"><h3>① 唯一解</h3><p>直线交于<b>一个点</b>。系统"恰好可定"，能唯一确定工作状态。工程上最理想。</p><div class="pill">适定 · 满秩</div></div>
+    <div class="ecard"><h3>② 无穷多解</h3><p>直线<b>重合</b>，约束不够。自由度多余，有无数组满足。工程上说明"条件不足 / 有冗余"。</p><div class="pill">欠定 · 秩不足</div></div>
+    <div class="ecard"><h3>③ 无解</h3><p>直线<b>平行不相交</b>。约束互相打架。工程上说明"模型或数据有冲突"。</p><div class="pill">超定 · 矛盾</div></div>
+  </div>
+  <div class="casebox"><h4>💡 核心原理：秩决定结局</h4>
+    <p>系数矩阵 A 的<b>秩 rank(A)</b> = 独立方程个数（去掉"重复/矛盾"后的有效约束数）。比较 rank(A) 与 rank([A|b])（增广矩阵）和未知数个数 n，就能判定属于哪种结局——这正是高斯消元/行阶梯形的意义。</p></div>
+  <div style="height:8px"></div>
+  <div class="casebox" style="background:#f0f7ff;border-color:#c5dcff;">
+    <h4>🛠️ 三种结局，在工程里都"天天见"</h4>
+    <p style="font-size:16px;color:#46566b;">下面三个场景，对应上面三种结局。把它们和"第 3 章动手试"的案例对照着看——切换案例后，下方会同步显示该结局的工程含义。</p>
+    <div class="grid2" style="margin-top:12px;">
+      <div class="ecard" style="border-left:4px solid #1f9e5e;">
+        <span class="pill" style="background:#d6f5e6;color:#1f7a48;">适定 · 满秩</span>
+        <h3 style="color:#1f7a48;">唯一解 → 系统"恰好可定"</h3>
+        <p><b>电路结点电压法 / MNA</b>：独立方程数 = 未知电压数，系数矩阵满秩 → 全网电压、支路电流被<b>唯一确定</b>。这是电路、结构内力求解最理想、最常见的工作状态。</p>
+        <p style="font-size:15px;color:#7a8a9e;margin-top:6px;">现实：一台正常设计的直流电路，给定电源，各点电压只有一个真实值。</p>
+      </div>
+      <div class="ecard" style="border-left:4px solid #d09a1f;">
+        <span class="pill" style="background:#fff3d6;color:#a8771a;">欠定 · 秩不足</span>
+        <h3 style="color:#a8771a;">无穷多解 → 约束不足 / 冗余</h3>
+        <p><b>机构自由度 / 静不定冗余</b>：有效约束少于未知数，系统存在<b>多余自由度</b>。如桁架少一根杆、机器人手臂可任意姿态、约束重复。</p>
+        <p style="font-size:15px;color:#7a8a9e;margin-top:6px;">处理：工程上<b>补充约束</b>（加杆/加驱动/加边界条件）使问题变为唯一解；或保留自由度用于优化设计。</p>
+      </div>
+      <div class="ecard" style="border-left:4px solid #d04a4a;">
+        <span class="pill" style="background:#ffe0e0;color:#b03a3a;">超定 · 矛盾</span>
+        <h3 style="color:#b03a3a;">无解 → 测量 / 约束冲突</h3>
+        <p><b>传感器数据冲突 / 过约束</b>：多个测量或约束互相打架——如 3 个应变片读数不一致、GPS 三边定位距离矛盾、多个相机标定误差。</p>
+        <p style="font-size:15px;color:#7a8a9e;margin-top:6px;">处理：工程上不硬求精确解，而用<b>最小二乘法</b>求"最贴合所有数据"的近似解（这也是最小二乘为何无处不在的根本原因）。</p>
+      </div>
+    </div>
+    <div id="caseOut" class="out" style="margin-top:14px;min-height:auto;background:#fff;border-left-color:#1f9e5e;">当前：唯一解案例（两线交于一点）。<b>👉 点上方「无穷多解 / 无解」按钮切换，看对应工程意义。</b></div>
+  </div>
+</section>
+
+<!-- 3 交互：自己试高斯消元 -->
+<section class="card" id="c3">
+  <h2><span class="num">3</span>动手试：高斯消元怎么"看出"解</h2>
+  <p class="lead">下面是一组 2 元方程组（每个案例都来自一个真实工程小场景）。点按钮逐步消元，观察矩阵如何变成"阶梯形"，并读出解的情况。</p>
+  <div style="text-align:center;">
+    <div class="matrix"><table><tr><td id="a11">2</td><td id="a12">3</td><td id="a13" style="color:#d04a4a;">8</td></tr><tr><td id="a21">2</td><td id="a22">1</td><td id="a23" style="color:#d04a4a;">6</td></tr></table></div>
+    <div style="font-size:15px;color:#7a8a9e;margin-top:4px;">增广矩阵 [A | b]（最后一列红字 = b）</div>
+  </div>
+  <div class="btnrow">
+    <button class="b" onclick="doStep(1)">① 第2行减第1行</button>
+    <button class="b" onclick="doStep(2)">② 回代求 y</button>
+    <button class="b" onclick="doStep(3)">③ 回代求 x</button>
+    <button class="b ghost" onclick="doReset()">↺ 重置</button>
+  </div>
+  <div class="out" id="out">点击步骤按钮，跟着看消元过程。原始方程组：2x+3y=8，2x+y=6。</div>
+  <div class="casebox" style="margin-top:16px;background:#f0f7ff;border-color:#c5dcff;">
+    <h4>🔍 亲手体验"三种结局"（各配一个工程实例）</h4>
+    <p style="font-size:16px;color:#46566b;">点下面按钮可切换案例（与第 2 章"工程意义"卡片联动），再点重置后逐步消元观察。每个案例都来自一个真实工程小场景。</p>
+    <div class="btnrow" style="margin-top:8px;">
+      <button class="b ghost active" id="btn-unique" onclick="loadCase('unique',this)">唯一解案例</button>
+      <button class="b ghost" id="btn-many" onclick="loadCase('many',this)">无穷多解案例</button>
+      <button class="b ghost" id="btn-none" onclick="loadCase('none',this)">无解案例</button>
+    </div>
+    <div id="caseOut3" class="out" style="margin-top:10px; min-height:auto;background:#fff;border-left-color:#3a5bd9;">当前：唯一解案例（两线交于一点）。切到另外两个案例，看消元后最后一行分别变成「0 0 0」（无穷解）和「0 0 非零」（无解），并同步显示对应工程意义。</div>
+  </div>
+  <div class="casebox" style="margin-top:14px;">
+    <h4>📐 唯一解的判据：行列式 ≠ 0</h4>
+    <p style="font-size:16.5px;color:#5a4a1f;">对本例系数矩阵 A，det(A) = 2×1 − 3×2 = <b>-4 ≠ 0</b>，说明两行线性无关 → rank(A)=2（满秩）= 未知数个数 → <b>唯一解</b>。这正是"秩决定结局"在 2 元情形下的具体判据。</p>
+  </div>
+</section>
+
+<!-- 4 工程意义 -->
+<section class="card" id="c4">
+  <h2><span class="num">4</span>为什么工程离不开它？</h2>
+  <p class="lead">真实工程问题，几乎都能离散化为 <b>Ax = b</b> 这一标准形式。下面四个例子，是大一后续课程会陆续遇到的"老朋友"。</p>
+  <div class="grid2">
+    <div class="ecard"><h3>⚡ 电路分析</h3><p>结点电压法 / 改进结点法（MNA）列写的就是线性方程组。未知量是结点电压、支路电流，系数来自电导与拓扑连接。求解 Ax=b 即得全网电压电流。</p></div>
+    <div class="ecard"><h3>🏗️ 结构力学</h3><p>桁架节点力平衡：每个节点"受力之和=0"是一个线性方程。组装起来就是整体平衡方程组，求解各杆内力。</p></div>
+    <div class="ecard"><h3>🎛️ 控制 / 状态估计</h3><p>系统辨识、最小二乘拟合、观测器设计，最终都落到"求一组参数使方程尽可能成立"，即解线性（或线性化）方程组。</p></div>
+    <div class="ecard"><h3>📊 数据与降维</h3><p>线性回归、PCA 主成分、有限元网格求解——核心计算都是大规模稀疏线性方程组的求解（高斯消元 / 迭代法）。</p></div>
+  </div>
+  <div class="casebox"><h4>🔧 用一个电路例子串起来</h4>
+    <p>含理想变压器的电路用<b>改进结点法</b>：把变压器绕组电流也当作未知量加入 x，得到增广矩阵。只要系数矩阵满秩（秩=未知数个数），就能唯一解出全部结点电压和绕组电流——这正是"唯一解"在工程中的价值：<b>系统的状态被唯一确定</b>。</p></div>
+</section>
+
+<!-- 5 大一学习建议 -->
+<section class="card" id="c5">
+  <h2><span class="num">5</span>给大一同学的"意义速记"</h2>
+  <div class="grid2">
+    <div class="ecard"><h3>把它当"翻译器"</h3><p>物理定律（电流/力/能量守恒）→ 列方程 → 矩阵 Ax=b → 交给计算机求解。你会"翻译"，就能解决一大类工程问题。</p></div>
+    <div class="ecard"><h3>三种结局要敏感</h3><p>唯一解=可定；无穷解=条件不足（可加约束）；无解=模型/数据冲突（需最小二乘）。这是判断"问题能不能解"的第一步。</p></div>
+    <div class="ecard"><h3>消元不是"套公式"</h3><p>高斯消元的本质是"保留等价信息、逐步减少未知量"。理解这一点，后面学 LU 分解、秩、线性空间都会轻松。</p></div>
+    <div class="ecard"><h3>矩阵是工程的普通话</h3><p>电路、结构、控制、数据——各学科表达方式不同，底层都讲同一种"矩阵语言"。学好这一门，后面各科互通。</p></div>
+  </div>
+  <p class="note" style="margin-top:18px;text-align:center;">一句话总结：<b>线性方程组 = 工程世界的"平衡约束"；解它 = 找出系统唯一（或最优）的工作状态。</b></p>
+</section>
+
+<div class="footer">面向大一新生 · 线性方程组的工程意义 · 交互式解读 · 单文件 H5</div>
+</div>
+
+<script>
+"use strict";
+// 三个案例：各配一个真实工程小场景
+//   unique : 简单直流电路 KCL（两结点电压）
+//   many   : 两杆桁架（约束重复 → 无穷解）
+//   none   : 三个传感器测同一距离（数据冲突 → 无解，需最小二乘）
+const CASES = {
+  unique: {
+    name:`唯一解（电路结点电压）`,
+    M:[[2,3,8],[2,1,6]],
+    det:-4,
+    desc:`两线交于一点 → 唯一解 x=2.5, y=1。`,
+    story:`<b>场景：简单直流电路 KCL。</b> 两个结点列写基尔霍夫电流定律，得 2x+3y=8、2x+y=6，x、y 为两结点对地电压。矩阵满秩，全网电压被唯一确定——这是电路分析最理想的工作状态。`,
+    eng:`<b>电路结点电压 / 结构内力求解</b>：MNA 列写的方程组若满秩，全网电压、杆件内力被<b>唯一确定</b>——这是工程最理想、最常见的工作状态（适定问题）。`
+  },
+  many: {
+    name:`无穷多解（桁架约束重复）`,
+    M:[[1,2,5],[2,4,10]],
+    det:0,
+    desc:`第2行 = 2×第1行 → 两线重合 → 无穷多解（一条直线上全满足）。`,
+    story:`<b>场景：两杆桁架约束重复。</b> 节点平衡方程 x+2y=5 与 2x+4y=10 本质是同一条约束（第 2 式=2×第 1 式），相当于少一根独立杆——有效约束不足，节点可沿一条直线任意位移。`,
+    eng:`<b>机构自由度 / 静不定冗余</b>：约束不足或存在冗余方程，系统有<b>多余自由度</b>（如桁架少一根杆、机器人手臂可任意姿态）。工程上需<b>补充约束</b>（加杆/加驱动/加边界条件）才能唯一确定状态。`
+  },
+  none: {
+    name:`无解（传感器数据冲突）`,
+    M:[[1,2,5],[2,4,9]],
+    det:0,
+    desc:`左端第2行=2×第1行，但右端 9≠2×5=10 → 矛盾 → 无解（两线平行不相交）。`,
+    story:`<b>场景：三个传感器测同一距离（取其中两个读数）。</b> 两个读数分别给出 x+2y=5 与 2x+4y=9。前者要求 2x+4y=10，后者却要求 =9，两个测量结果互相打架，找不到一组 (x,y) 能同时满足——数据有误差/冲突。`,
+    eng:`<b>传感器数据冲突 / 过约束矛盾</b>：多个测量或约束互相打架（如应变片读数不一致、GPS 三边定位矛盾）。工程上不硬求精确解，而用<b>最小二乘法</b>求"最贴合"的近似解。`
+  }
+};
+
+let cur = "unique";
+// 深拷贝当前案例矩阵
+function cloneM(k){ return CASES[k].M.map(r=>r.slice()); }
+let M  = cloneM(cur);
+let M0 = cloneM(cur);
+
+function draw(){
+  for(let i=0;i<2;i++) for(let j=0;j<3;j++){
+    const el=document.getElementById("a"+(i+1)+(j+1));
+    if(el) el.textContent=M[i][j];
+  }
+}
+function setActiveBtn(k){
+  ["unique","many","none"].forEach(function(key){
+    const b=document.getElementById("btn-"+key);
+    if(b) b.classList.toggle("active", key===k);
+  });
+}
+function showCaseText(k){
+  const c=CASES[k];
+  const txt="<b>当前案例："+c.name+"</b><br>"+c.story+"<br>工程意义："+c.eng+"<br>提示：点「① 第2行减第1行」观察最后一行变成什么。";
+  const out2=document.getElementById("caseOut");
+  if(out2) out2.innerHTML=txt;
+  const out3=document.getElementById("caseOut3");
+  if(out3) out3.innerHTML=txt;
+}
+function doStep(n){
+  const out=document.getElementById("out");
+  if(cur==="many"){
+    if(n===1){ M[1][0]=0;M[1][1]=0;M[1][2]=0;
+      draw();out.innerHTML="第2行 − 2×第1行 → [0,0,0]。\n⚠️ 整行变零，说明两个方程本质是同一个约束（桁架约束重复）。\n→ 无穷多解（自由度=1，节点可沿直线任意位移）。";}
+    else out.innerHTML="已是无确定解：y 可任取，x=5−2y（一组读数无法唯一确定节点位置）。";
+    return;
+  }
+  if(cur==="none"){
+    if(n===1){ M[1][0]=0;M[1][1]=0;M[1][2]=CASES.none.M[1][2]-2*CASES.none.M[0][2]; // 9-10 = -1
+      draw();out.innerHTML="第2行 − 2×第1行 → [0,0,-1]。\n⚠️ 得到「0·x+0·y = −1」，不可能成立（两个传感器读数互相矛盾）！\n→ 无解（方程组矛盾，需最小二乘求近似）。";}
+    else out.innerHTML="已是无解状态，无法回代求出 x、y（数据冲突，应改用最小二乘）。";
+    return;
+  }
+  // unique
+  if(n===1){
+    M[1][0]=M0[1][0]-M0[0][0];M[1][1]=M0[1][1]-M0[0][1];M[1][2]=M0[1][2]-M0[0][2];
+    draw();out.innerHTML="第2行 − 第1行：新第2行变为 [0, -2, -2]。\n矩阵变阶梯形：首列造出主元 2，第二行首元为 0，主元移到第 2 列。\n对应方程：2x+3y=8，−2y=−2。";
+  }else if(n===2){ const y=M[1][2]/M[1][1];
+    out.innerHTML="由 −2y = −2，得 y = 1。\n（回代：从最后一个方程倒推，逐层求未知量。）\n→ y = "+y;
+  }else{ const y=1,x=(M0[0][2]-M0[0][1]*y)/M0[0][0];
+    out.innerHTML="把 y=1 代入第1个方程 2x+3·1=8 → 2x=5 → x=2.5。\n✅ 唯一解：x = 2.5，y = 1。\n这说明原方程组「恰好可定」，两直线交于一点(2.5, 1)。";}
+}
+function doReset(){
+  M=cloneM(cur);M0=cloneM(cur);draw();
+  document.getElementById("out").textContent="已重置。当前案例："+CASES[cur].desc;
+}
+function loadCase(k,btn){
+  cur=k;
+  M=cloneM(k);M0=cloneM(k);
+  draw();setActiveBtn(k);showCaseText(k);
+  document.getElementById("out").textContent="已切换案例并重置。"+CASES[k].desc;
+}
+// 初始化
+draw();setActiveBtn(cur);showCaseText(cur);
+</script>
+</body>
+</html>

@@ -1,0 +1,1267 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>矩阵求逆交互式演示 — 初等变换法</title>
+<style>
+  :root {
+    --bg: #f5f7fa;
+    --panel: #ffffff;
+    --text: #212529;
+    --muted: #6c757d;
+    --primary: #0d6efd;
+    --primary-light: #e7f1ff;
+    --success: #198754;
+    --success-light: #d1e7dd;
+    --warning: #ffc107;
+    --warning-light: #fff3cd;
+    --danger: #dc3545;
+    --border: #dee2e6;
+    --shadow: 0 4px 24px rgba(0,0,0,0.06);
+    --radius: 16px;
+    --cell: 72px;
+    --font-base: 18px;
+    --font-lg: 1.35rem;
+    --font-xl: 1.8rem;
+    --font-title: 2.6rem;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: linear-gradient(135deg, #f5f7fa 0%, #eef2f7 100%);
+    color: var(--text);
+    font-size: var(--font-base);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  .app {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+  }
+  h1 {
+    font-size: var(--font-title);
+    font-weight: 700;
+    color: #1a1a2e;
+    letter-spacing: -0.5px;
+    margin-bottom: 0.5rem;
+  }
+  .subtitle {
+    font-size: var(--font-lg);
+    color: var(--muted);
+    font-weight: 400;
+  }
+
+  main {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 2rem;
+    align-items: start;
+  }
+
+  .panel {
+    background: var(--panel);
+    border-radius: var(--radius);
+    padding: 1.75rem;
+    box-shadow: var(--shadow);
+  }
+  .panel h2 {
+    font-size: var(--font-xl);
+    margin-bottom: 1.25rem;
+    color: #1a1a2e;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  /* 输入区 */
+  .size-toggle {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  .size-toggle button {
+    flex: 1;
+    padding: 0.6rem;
+    font-size: var(--font-lg);
+    border: 2px solid var(--border);
+    background: white;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+  .size-toggle button.active {
+    border-color: var(--primary);
+    background: var(--primary-light);
+    color: var(--primary);
+  }
+
+  .input-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  .input-grid input {
+    width: 100%;
+    height: 56px;
+    font-size: var(--font-xl);
+    text-align: center;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    transition: all 0.2s;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .input-grid input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px var(--primary-light);
+  }
+
+  .preset-btns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  .btn {
+    padding: 0.85rem 1.25rem;
+    font-size: var(--font-lg);
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-primary:hover { background: #0b5ed7; }
+  .btn-success { background: var(--success); color: white; }
+  .btn-success:hover { background: #157347; }
+  .btn-warning { background: var(--warning); color: #333; }
+  .btn-outline {
+    background: white;
+    border: 2px solid var(--border);
+    color: var(--muted);
+  }
+  .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+  .btn-block { width: 100%; margin-bottom: 0.5rem; }
+
+  /* 可视化区 */
+  .visual-panel {
+    position: sticky;
+    top: 2rem;
+    text-align: center;
+  }
+
+  .matrix-stage {
+    display: inline-flex;
+    align-items: center;
+    gap: 1.25rem;
+    margin: 2rem 0;
+    padding: 1.5rem;
+    background: #fafbfc;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+  }
+
+  .matrix-box {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    position: relative;
+    padding: 8px 12px;
+  }
+  .matrix-box::before, .matrix-box::after {
+    content: '';
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 6px;
+    border: 3px solid #343a40;
+    border-radius: 3px;
+  }
+  .matrix-box::before { left: 0; border-right: 0; }
+  .matrix-box::after { right: 0; border-left: 0; }
+
+  .m-row {
+    display: flex;
+    gap: 6px;
+  }
+  .m-cell {
+    width: var(--cell);
+    height: var(--cell);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    border-radius: 10px;
+    font-size: var(--font-xl);
+    font-weight: 600;
+    color: var(--text);
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid transparent;
+    position: relative;
+  }
+  .m-cell.dim { color: var(--muted); font-weight: 400; }
+
+  /* 高亮状态 */
+  .m-cell.hl-row { background: var(--warning-light); border-color: var(--warning); }
+  .m-cell.hl-col { background: #e0f2fe; border-color: #38bdf8; }
+  .m-cell.hl-pivot {
+    background: var(--success-light);
+    border-color: var(--success);
+    box-shadow: 0 0 0 3px rgba(25, 135, 84, 0.2);
+    color: #0f5132;
+  }
+  .m-cell.hl-source { background: #dbeafe; border-color: #60a5fa; }
+  .m-cell.updating {
+    animation: cellPop 0.4s ease;
+  }
+  @keyframes cellPop {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.15); background: var(--primary); color: white; }
+    100% { transform: scale(1); }
+  }
+
+  .augment-bar {
+    width: 3px;
+    height: calc(var(--cell) * var(--n, 3) + 24px);
+    background: #343a40;
+    border-radius: 2px;
+  }
+
+  .matrix-label {
+    font-size: var(--font-lg);
+    color: var(--muted);
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    letter-spacing: 1px;
+  }
+
+  /* 纵向增广矩阵 [A;I] */
+  .matrix-wrapper {
+    position: relative;
+    padding: 8px 16px;
+    display: inline-flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .matrix-wrapper::before, .matrix-wrapper::after {
+    content: '';
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 6px;
+    border: 3px solid #343a40;
+    border-radius: 3px;
+  }
+  .matrix-wrapper::before { left: 0; border-right: 0; }
+  .matrix-wrapper::after { right: 0; border-left: 0; }
+  .augment-divider {
+    height: 3px;
+    background: #343a40;
+    border-radius: 2px;
+    margin: 2px 0;
+    width: 100%;
+  }
+
+  /* 操作区 */
+  .operations { margin-top: 1rem; }
+  .op-group {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    background: #fafbfc;
+  }
+  .op-group h3 {
+    font-size: 1.15rem;
+    margin-bottom: 0.75rem;
+    color: #495057;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .op-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.6rem;
+    flex-wrap: wrap;
+    font-size: var(--font-lg);
+  }
+  .op-row label { min-width: 80px; color: var(--muted); }
+  .op-row select, .op-row input {
+    padding: 0.5rem 0.75rem;
+    font-size: var(--font-lg);
+    border: 1px solid #ced4da;
+    border-radius: 8px;
+    background: white;
+    color: var(--text);
+  }
+  .op-row input { width: 90px; text-align: center; }
+  .op-row .math { color: var(--primary); font-weight: 700; }
+
+  .speed-control {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 1rem 0;
+    font-size: var(--font-lg);
+  }
+  .speed-control input[type=range] { flex: 1; }
+
+  /* 步骤日志 */
+  .log-panel {
+    margin-top: 1.5rem;
+    text-align: left;
+    max-height: 260px;
+    overflow-y: auto;
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 1rem;
+    border: 1px solid var(--border);
+  }
+  .log-item {
+    padding: 0.7rem 1rem;
+    margin-bottom: 0.5rem;
+    background: white;
+    border-radius: 8px;
+    border-left: 4px solid var(--primary);
+    font-size: var(--font-lg);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    transition: all 0.3s;
+  }
+  .log-item.active {
+    border-left-color: var(--success);
+    background: var(--success-light);
+    transform: translateX(4px);
+  }
+  .log-item .step-num {
+    display: inline-block;
+    width: 28px;
+    height: 28px;
+    line-height: 28px;
+    text-align: center;
+    background: var(--primary);
+    color: white;
+    border-radius: 50%;
+    font-size: 0.9rem;
+    margin-right: 0.5rem;
+    font-weight: 700;
+  }
+  .log-item.active .step-num { background: var(--success); }
+
+  .status {
+    margin-top: 1rem;
+    padding: 1rem;
+    border-radius: 12px;
+    font-size: var(--font-lg);
+    font-weight: 600;
+    display: none;
+  }
+  .status.show { display: block; }
+  .status.success { background: var(--success-light); color: #0f5132; border: 1px solid var(--success); }
+  .status.error { background: #f8d7da; color: #842029; border: 1px solid var(--danger); }
+
+  .hint {
+    font-size: 1rem;
+    color: var(--muted);
+    margin-top: 0.75rem;
+    line-height: 1.5;
+    background: var(--primary-light);
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+    border-left: 4px solid var(--primary);
+  }
+
+  @media (max-width: 960px) {
+    main { grid-template-columns: 1fr; }
+    .visual-panel { position: static; }
+    :root { --cell: 58px; --font-title: 2rem; --font-xl: 1.5rem; }
+    .app { padding: 1rem; }
+  }
+</style>
+<base target="_blank">
+</head>
+<body>
+
+<div class="app">
+  <header>
+    <h1>方阵求逆交互演示</h1>
+    <div class="subtitle">初等行变换 · 初等列变换 · 高斯-约旦消元法</div>
+  </header>
+
+  <main>
+    <!-- 左侧面板：输入与控制 -->
+    <aside class="panel">
+      <h2>🎛️ 矩阵设定</h2>
+      
+      <div class="size-toggle">
+        <button onclick="app.setSize(2)" id="btn-size-2">2 × 2</button>
+        <button onclick="app.setSize(3)" id="btn-size-3" class="active">3 × 3</button>
+      </div>
+
+      <div class="input-grid" id="input-grid"></div>
+
+      <div class="preset-btns">
+        <button class="btn btn-outline" onclick="app.loadExample()">📘 示例矩阵</button>
+        <button class="btn btn-outline" onclick="app.loadRandom()">🎲 随机可逆</button>
+      </div>
+      <button class="btn btn-primary btn-block" onclick="app.applyInput()">✅ 应用并构造增广矩阵</button>
+      <button class="btn btn-outline btn-block" onclick="app.reset()">🔄 重置</button>
+
+      <div class="operations">
+        <h2 style="margin-top:1.5rem;">⚙️ 手动变换</h2>
+        
+        <div class="op-group">
+          <h3>初等行变换（[ A | I ]）</h3>
+          <div class="op-row">
+            <label>交换</label>
+            <select id="swap-r1"></select>
+            <span class="math">↔</span>
+            <select id="swap-r2"></select>
+            <button class="btn btn-outline" style="padding:0.5rem 1rem;font-size:1rem;" onclick="app.manualSwapRows()">执行</button>
+          </div>
+          <div class="op-row">
+            <label>数乘</label>
+            <select id="scale-r"></select>
+            <span class="math">×</span>
+            <input type="number" id="scale-v" value="2" step="any">
+            <button class="btn btn-outline" style="padding:0.5rem 1rem;font-size:1rem;" onclick="app.manualScaleRow()">执行</button>
+          </div>
+          <div class="op-row">
+            <label>倍加</label>
+            <select id="add-target"></select>
+            <span class="math">←</span>
+            <select id="add-source"></select>
+            <span class="math">×</span>
+            <input type="number" id="add-k" value="-2" step="any">
+            <button class="btn btn-outline" style="padding:0.5rem 1rem;font-size:1rem;" onclick="app.manualAddRow()">执行</button>
+          </div>
+        </div>
+
+        <div class="op-group">
+          <h3>初等列变换（[ A ; I ]）</h3>
+          <div class="op-row">
+            <label>交换</label>
+            <select id="swap-c1"></select>
+            <span class="math">↔</span>
+            <select id="swap-c2"></select>
+            <button class="btn btn-outline" style="padding:0.5rem 1rem;font-size:1rem;" onclick="app.manualSwapCols()">执行</button>
+          </div>
+          <div class="op-row">
+            <label>数乘</label>
+            <select id="scale-c"></select>
+            <span class="math">×</span>
+            <input type="number" id="scale-cv" value="2" step="any">
+            <button class="btn btn-outline" style="padding:0.5rem 1rem;font-size:1rem;" onclick="app.manualScaleCol()">执行</button>
+          </div>
+          <div class="hint">
+            💡 提示：标准求逆可用<strong>行变换</strong>将 [A|I] 化为 [I|A⁻¹]，也可用<strong>列变换</strong>将 [A;I] 化为 [I;A⁻¹]。两种方法等价，此处均可手动操作观察。
+          </div>
+        </div>
+
+        <h2 style="margin-top:1.5rem;">▶️ 自动演示</h2>
+        <div class="speed-control">
+          <span>慢</span>
+          <input type="range" id="speed" min="300" max="2500" value="1200" step="100" oninput="app.setSpeed(this.value)">
+          <span>快</span>
+        </div>
+        <button class="btn btn-success btn-block" id="btn-auto" onclick="app.toggleAuto()">▶ 自动求解（高斯-约旦行变换）</button>
+      </div>
+    </aside>
+
+    <!-- 右侧面板：可视化 -->
+    <section class="panel visual-panel">
+      <h2>📐 增广矩阵 [ A | I ] — 行变换</h2>
+      
+      <div class="matrix-stage" id="stage">
+        <div>
+          <div class="matrix-label">A</div>
+          <div class="matrix-box" id="left-mat"></div>
+        </div>
+        <div class="augment-bar" id="aug-bar"></div>
+        <div>
+          <div class="matrix-label">I</div>
+          <div class="matrix-box" id="right-mat"></div>
+        </div>
+      </div>
+
+      <div style="margin-top: 2.5rem;">
+        <div class="matrix-label">初等列变换增广矩阵 [ A ; I ]</div>
+        <div style="display: flex; justify-content: center; padding: 1rem 0;">
+          <div class="matrix-wrapper" id="vertical-mat"></div>
+        </div>
+      </div>
+
+      <div class="status" id="status"></div>
+
+      <h2 style="text-align:left;margin-top:1rem;">📝 变换步骤</h2>
+      <div class="log-panel" id="log">
+        <div style="color:var(--muted);text-align:center;padding:1rem;">点击“应用并构造”或“自动求解”开始演示</div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+const app = {
+  n: 3,
+  A: [], B: [], C: [],
+  A2: null,
+  leftCells: [], rightCells: [],
+  topCells: [], bottomCells: [],
+  history: [],
+  autoPlaying: false,
+  speed: 1200,
+  stepCount: 0,
+
+  init() {
+    this.buildInputGrid();
+    this.buildSelects();
+    this.buildMatrixDOM();
+    this.loadExample();
+    this.render();
+  },
+
+  // ---------- 构建 UI ----------
+  buildInputGrid() {
+    const g = document.getElementById('input-grid');
+    g.innerHTML = '';
+    g.style.gridTemplateColumns = `repeat(${this.n}, 1fr)`;
+    for (let i = 0; i < this.n * this.n; i++) {
+      const inp = document.createElement('input');
+      inp.type = 'number';
+      inp.step = 'any';
+      inp.id = `cell-${Math.floor(i/this.n)}-${i%this.n}`;
+      inp.value = (i % (this.n + 1) === 0) ? '1' : '0';
+      g.appendChild(inp);
+    }
+  },
+
+  buildSelects() {
+    const makeOpts = (n, prefix) => {
+      const arr = [];
+      for (let i = 0; i < n; i++) {
+        arr.push(`<<option value="${i}">${prefix}${i+1}</option>`);
+      }
+      return arr.join('');
+    };
+    const ids = ['swap-r1','swap-r2','scale-r','add-target','add-source','swap-c1','swap-c2','scale-c'];
+    ids.forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const isCol = id.includes('c');
+      el.innerHTML = makeOpts(this.n, isCol ? '第' : '第');
+    });
+  },
+
+  buildMatrixDOM() {
+    const build = (container, cellsStore) => {
+      container.innerHTML = '';
+      cellsStore.length = 0;
+      for (let i = 0; i < this.n; i++) {
+        const row = document.createElement('div');
+        row.className = 'm-row';
+        const rcells = [];
+        for (let j = 0; j < this.n; j++) {
+          const cell = document.createElement('div');
+          cell.className = 'm-cell';
+          row.appendChild(cell);
+          rcells.push(cell);
+        }
+        container.appendChild(row);
+        cellsStore.push(rcells);
+      }
+    };
+    build(document.getElementById('left-mat'), this.leftCells);
+    build(document.getElementById('right-mat'), this.rightCells);
+
+    const vContainer = document.getElementById('vertical-mat');
+    vContainer.innerHTML = '';
+    this.topCells = [];
+    this.bottomCells = [];
+
+    const topBox = document.createElement('div');
+    topBox.className = 'matrix-box';
+    for (let i = 0; i < this.n; i++) {
+      const row = document.createElement('div');
+      row.className = 'm-row';
+      const rcells = [];
+      for (let j = 0; j < this.n; j++) {
+        const cell = document.createElement('div');
+        cell.className = 'm-cell';
+        row.appendChild(cell);
+        rcells.push(cell);
+      }
+      topBox.appendChild(row);
+      this.topCells.push(rcells);
+    }
+    vContainer.appendChild(topBox);
+
+    const div = document.createElement('div');
+    div.className = 'augment-divider';
+    vContainer.appendChild(div);
+
+    const bottomBox = document.createElement('div');
+    bottomBox.className = 'matrix-box';
+    for (let i = 0; i < this.n; i++) {
+      const row = document.createElement('div');
+      row.className = 'm-row';
+      const rcells = [];
+      for (let j = 0; j < this.n; j++) {
+        const cell = document.createElement('div');
+        cell.className = 'm-cell';
+        row.appendChild(cell);
+        rcells.push(cell);
+      }
+      bottomBox.appendChild(row);
+      this.bottomCells.push(rcells);
+    }
+    vContainer.appendChild(bottomBox);
+
+    document.documentElement.style.setProperty('--n', this.n);
+    document.getElementById('aug-bar').style.height = `calc(var(--cell) * ${this.n} + 24px)`;
+  },
+
+  // ---------- 数据操作 ----------
+  setSize(n) {
+    this.n = n;
+    document.getElementById('btn-size-2').classList.toggle('active', n===2);
+    document.getElementById('btn-size-3').classList.toggle('active', n===3);
+    this.buildInputGrid();
+    this.buildSelects();
+    this.buildMatrixDOM();
+    this.reset();
+    this.loadExample();
+  },
+
+  readInput() {
+    this.A = [];
+    for (let i = 0; i < this.n; i++) {
+      const row = [];
+      for (let j = 0; j < this.n; j++) {
+        const v = parseFloat(document.getElementById(`cell-${i}-${j}`).value);
+        row.push(isNaN(v) ? 0 : v);
+      }
+      this.A.push(row);
+    }
+  },
+
+  applyInput() {
+    this.readInput();
+    this.B = this.identity(this.n);
+    this.C = this.identity(this.n);
+    this.A2 = null;
+    this.history = [];
+    this.stepCount = 0;
+    this.log('已构造增广矩阵 [ A | I ] 与 [ A ; I ]，可手动变换或点击自动求解');
+    this.render();
+    this.showStatus('');
+  },
+
+  reset() {
+    this.B = this.identity(this.n);
+    this.C = this.identity(this.n);
+    this.A2 = null;
+    this.history = [];
+    this.stepCount = 0;
+    this.autoPlaying = false;
+    this.updateAutoBtn();
+    this.clearHighlight();
+    document.getElementById('log').innerHTML = '<div style="color:var(--muted);text-align:center;padding:1rem;">已重置，等待操作</div>';
+    this.showStatus('');
+    this.render();
+  },
+
+  identity(n) {
+    return Array.from({length:n}, (_,i) => Array.from({length:n}, (_,j) => i===j ? 1 : 0));
+  },
+
+  // ---------- 示例 ----------
+  loadExample() {
+    const examples = {
+      2: [[4,7],[2,6]],
+      3: [[2,-1,3],[1,0,1],[0,2,-1]]
+    };
+    const m = examples[this.n];
+    for (let i = 0; i < this.n; i++) {
+      for (let j = 0; j < this.n; j++) {
+        document.getElementById(`cell-${i}-${j}`).value = m[i][j];
+      }
+    }
+    this.applyInput();
+  },
+
+  loadRandom() {
+    const rand = () => Math.floor(Math.random()*9) - 4;
+    const L = this.identity(this.n);
+    const U = this.identity(this.n);
+    for (let i = 0; i < this.n; i++) {
+      for (let j = 0; j < i; j++) L[i][j] = rand() || 1;
+      for (let j = i; j < this.n; j++) U[i][j] = rand() || 1;
+      U[i][i] = (rand() % 4 + 5) || 2;
+    }
+    const A = Array.from({length:this.n}, () => Array(this.n).fill(0));
+    for (let i = 0; i < this.n; i++) {
+      for (let j = 0; j < this.n; j++) {
+        let s = 0;
+        for (let k = 0; k < this.n; k++) s += L[i][k] * U[k][j];
+        A[i][j] = s;
+      }
+    }
+    for (let i = 0; i < this.n; i++) {
+      for (let j = 0; j < this.n; j++) {
+        document.getElementById(`cell-${i}-${j}`).value = A[i][j];
+      }
+    }
+    this.applyInput();
+  },
+
+  // ---------- 渲染 ----------
+  render() {
+    const fmt = (x) => {
+      if (Math.abs(x) < 1e-10) return '0';
+      if (Number.isInteger(x)) return String(x);
+      return parseFloat(x.toFixed(3)).toString();
+    };
+    const A_top = this.A2 || this.A;
+    for (let i = 0; i < this.n; i++) {
+      for (let j = 0; j < this.n; j++) {
+        this.leftCells[i][j].textContent = fmt(this.A[i][j]);
+        this.rightCells[i][j].textContent = fmt(this.B[i][j]);
+        this.topCells[i][j].textContent = fmt(A_top[i][j]);
+        this.bottomCells[i][j].textContent = fmt(this.C[i][j]);
+      }
+    }
+  },
+
+  clearHighlight() {
+    for (let i = 0; i < this.n; i++) {
+      for (let j = 0; j < this.n; j++) {
+        this.leftCells[i][j].className = 'm-cell';
+        this.rightCells[i][j].className = 'm-cell';
+        if (this.topCells[i]) this.topCells[i][j].className = 'm-cell';
+        if (this.bottomCells[i]) this.bottomCells[i][j].className = 'm-cell';
+      }
+    }
+  },
+
+  setHighlight(rows=[], cols=[], pivot=null, source=null) {
+    this.clearHighlight();
+    rows.forEach(r => {
+      for (let j = 0; j < this.n; j++) {
+        this.leftCells[r][j].classList.add('hl-row');
+        this.rightCells[r][j].classList.add('hl-row');
+      }
+    });
+    cols.forEach(c => {
+      for (let i = 0; i < this.n; i++) {
+        this.leftCells[i][c].classList.add('hl-col');
+        this.rightCells[i][c].classList.add('hl-col');
+        if (this.topCells[i]) this.topCells[i][c].classList.add('hl-col');
+        if (this.bottomCells[i]) this.bottomCells[i][c].classList.add('hl-col');
+      }
+    });
+    if (pivot !== null) {
+      const [r,c] = pivot;
+      this.leftCells[r][c].classList.add('hl-pivot');
+      this.rightCells[r][c].classList.add('hl-pivot');
+    }
+    if (source !== null) {
+      const [r,c] = source;
+      this.leftCells[r][c].classList.add('hl-source');
+      this.rightCells[r][c].classList.add('hl-source');
+    }
+  },
+
+  setColHighlight(cols=[], sourceCols=[]) {
+    this.clearHighlight();
+    cols.forEach(c => {
+      for (let i = 0; i < this.n; i++) {
+        if (this.topCells[i]) this.topCells[i][c].classList.add('hl-col');
+        if (this.bottomCells[i]) this.bottomCells[i][c].classList.add('hl-col');
+      }
+    });
+    sourceCols.forEach(c => {
+      for (let i = 0; i < this.n; i++) {
+        if (this.topCells[i]) this.topCells[i][c].classList.add('hl-source');
+        if (this.bottomCells[i]) this.bottomCells[i][c].classList.add('hl-source');
+      }
+    });
+  },
+
+  animateCells(rows=[], cols=[]) {
+    const set = new Set();
+    rows.forEach(r => { 
+      for(let j=0; j<<this.n; j++){ 
+        set.add(`L${r},${j}`); 
+        set.add(`R${r},${j}`); 
+      } 
+    });
+    cols.forEach(c => { 
+      for(let i=0; i<<this.n; i++){ 
+        set.add(`L${i},${c}`); 
+        set.add(`R${i},${c}`); 
+        if (this.topCells[i]) set.add(`T${i},${c}`);
+        if (this.bottomCells[i]) set.add(`B${i},${c}`);
+      } 
+    });
+    set.forEach(key => {
+      const side = key[0];
+      const [r, c] = key.slice(1).split(',').map(Number);
+      let cell;
+      if (side === 'L') cell = this.leftCells[r][c];
+      else if (side === 'R') cell = this.rightCells[r][c];
+      else if (side === 'T') cell = this.topCells[r][c];
+      else if (side === 'B') cell = this.bottomCells[r][c];
+      if (cell) {
+        cell.classList.remove('updating');
+        void cell.offsetWidth;
+        cell.classList.add('updating');
+      }
+    });
+  },
+
+  animateColCells(cols=[]) {
+    const set = new Set();
+    cols.forEach(c => { 
+      for(let i=0; i<<this.n; i++){ 
+        set.add(`T${i},${c}`);
+        set.add(`B${i},${c}`);
+      } 
+    });
+    set.forEach(key => {
+      const side = key[0];
+      const [r, c] = key.slice(1).split(',').map(Number);
+      let cell;
+      if (side === 'T') cell = this.topCells[r][c];
+      else if (side === 'B') cell = this.bottomCells[r][c];
+      if (cell) {
+        cell.classList.remove('updating');
+        void cell.offsetWidth;
+        cell.classList.add('updating');
+      }
+    });
+  },
+
+  // ---------- 手动变换 ----------
+  manualSwapRows() {
+    const r1 = +document.getElementById('swap-r1').value;
+    const r2 = +document.getElementById('swap-r2').value;
+    if (r1 === r2) return;
+    this.swapRows(r1, r2, true);
+    this.log(`交换第${r1+1}行与第${r2+1}行  （R${r1+1} ↔ R${r2+1}）`);
+  },
+
+  manualScaleRow() {
+    const r = +document.getElementById('scale-r').value;
+    const v = parseFloat(document.getElementById('scale-v').value);
+    if (!v || Math.abs(v) < 1e-10) { alert('倍数不能为0'); return; }
+    this.scaleRow(r, v, true);
+    this.log(`第${r+1}行乘以 ${this.fmt(v)}  （R${r+1} ← ${this.fmt(v)} R${r+1}）`);
+  },
+
+  manualAddRow() {
+    const t = +document.getElementById('add-target').value;
+    const s = +document.getElementById('add-source').value;
+    const k = parseFloat(document.getElementById('add-k').value);
+    if (t === s) return;
+    this.addRow(t, s, k, true);
+    const sign = k > 0 ? '+' : '-';
+    const absK = Math.abs(k);
+    const kstr = absK === 1 ? '' : this.fmt(absK);
+    this.log(`第${t+1}行 ← 第${t+1}行 ${sign} ${kstr}·第${s+1}行`);
+  },
+
+  manualSwapCols() {
+    const c1 = +document.getElementById('swap-c1').value;
+    const c2 = +document.getElementById('swap-c2').value;
+    if (c1 === c2) return;
+    this.swapCols(c1, c2);
+    this.log(`交换第${c1+1}列与第${c2+1}列（C${c1+1} ↔ C${c2+1}）`);
+  },
+
+  manualScaleCol() {
+    const c = +document.getElementById('scale-c').value;
+    const v = parseFloat(document.getElementById('scale-cv').value);
+    if (!v || Math.abs(v) < 1e-10) { alert('倍数不能为0'); return; }
+    this.scaleCol(c, v);
+    this.log(`第${c+1}列乘以 ${this.fmt(v)}（C${c+1} ← ${this.fmt(v)} C${c+1}）`);
+  },
+
+  // ---------- 核心变换逻辑（手动） ----------
+  swapRows(r1, r2, animate=false) {
+    [this.A[r1], this.A[r2]] = [this.A[r2], this.A[r1]];
+    [this.B[r1], this.B[r2]] = [this.B[r2], this.B[r1]];
+    if (animate) {
+      this.setHighlight([r1, r2]);
+      setTimeout(() => {
+        this.render();
+        this.animateCells([r1, r2]);
+      }, 300);
+    } else {
+      this.render();
+    }
+  },
+
+  scaleRow(r, k, animate=false) {
+    for (let j = 0; j < this.n; j++) {
+      this.A[r][j] *= k;
+      this.B[r][j] *= k;
+    }
+    if (animate) {
+      this.setHighlight([r]);
+      setTimeout(() => {
+        this.render();
+        this.animateCells([r]);
+      }, 300);
+    } else {
+      this.render();
+    }
+  },
+
+  addRow(target, source, k, animate=false) {
+    for (let j = 0; j < this.n; j++) {
+      this.A[target][j] += k * this.A[source][j];
+      this.B[target][j] += k * this.B[source][j];
+    }
+    if (animate) {
+      this.setHighlight([target], [], null, [source,0]);
+      setTimeout(() => {
+        this.render();
+        this.animateCells([target]);
+      }, 300);
+    } else {
+      this.render();
+    }
+  },
+
+  swapCols(c1, c2) {
+    for (let i = 0; i < this.n; i++) {
+      [this.A[i][c1], this.A[i][c2]] = [this.A[i][c2], this.A[i][c1]];
+      [this.C[i][c1], this.C[i][c2]] = [this.C[i][c2], this.C[i][c1]];
+    }
+    this.setHighlight([], [c1, c2]);
+    setTimeout(() => { 
+      this.render(); 
+      this.animateCells([], [c1, c2]); 
+    }, 300);
+  },
+
+  scaleCol(c, k) {
+    for (let i = 0; i < this.n; i++) {
+      this.A[i][c] *= k;
+      this.C[i][c] *= k;
+    }
+    this.setHighlight([], [c]);
+    setTimeout(() => { 
+      this.render(); 
+      this.animateCells([], [c]); 
+    }, 300);
+  },
+
+  // ---------- 自动求解（高斯-约旦） ----------
+  toggleAuto() {
+    if (this.autoPlaying) {
+      this.autoPlaying = false;
+      this.updateAutoBtn();
+    } else {
+      this.startAuto();
+    }
+  },
+
+  setSpeed(v) { this.speed = +v; },
+
+  updateAutoBtn() {
+    const btn = document.getElementById('btn-auto');
+    btn.textContent = this.autoPlaying ? '⏸ 暂停演示' : '▶ 自动求解（高斯-约旦行变换）';
+    btn.classList.toggle('btn-success', !this.autoPlaying);
+    btn.classList.toggle('btn-warning', this.autoPlaying);
+  },
+
+  async startAuto() {
+    this.readInput();
+    this.reset();
+    this.autoPlaying = true;
+    this.updateAutoBtn();
+    
+    const origA = this.A.map(r => [...r]);
+    this.A2 = origA.map(r => [...r]);
+    this.B = this.identity(this.n);
+    this.C = this.identity(this.n);
+    
+    const rowSteps = this.computeRowSteps(origA);
+    const colSteps = this.computeColSteps(origA);
+    
+    if (!rowSteps || !colSteps) {
+      this.autoPlaying = false;
+      this.updateAutoBtn();
+      return;
+    }
+    
+    const maxLen = Math.max(rowSteps.length, colSteps.length);
+    for (let i = 0; i < maxLen; i++) {
+      if (!this.autoPlaying) break;
+      if (i < rowSteps.length) await this.executeRowStep(rowSteps[i]);
+      if (i < colSteps.length) await this.executeColStep(colSteps[i]);
+      await this.sleep(this.speed);
+    }
+    
+    if (this.autoPlaying) {
+      this.checkSuccess();
+    }
+    this.A2 = null;
+    this.render();
+    this.autoPlaying = false;
+    this.updateAutoBtn();
+  },
+
+  computeRowSteps(origA) {
+    let M = origA.map(r => [...r]);
+    let I = this.identity(this.n);
+    const steps = [];
+    const n = this.n;
+
+    for (let col = 0; col < n; col++) {
+      let pivotRow = col;
+      for (let r = col; r < n; r++) {
+        if (Math.abs(M[r][col]) > Math.abs(M[pivotRow][col])) pivotRow = r;
+      }
+      if (Math.abs(M[pivotRow][col]) < 1e-10) {
+        this.showStatus('该矩阵不可逆（奇异矩阵），无法求逆！', 'error');
+        return null;
+      }
+
+      if (pivotRow !== col) {
+        steps.push({type:'swap', r1:col, r2:pivotRow});
+        [M[col], M[pivotRow]] = [M[pivotRow], M[col]];
+        [I[col], I[pivotRow]] = [I[pivotRow], I[col]];
+      }
+
+      const pivot = M[col][col];
+      if (Math.abs(pivot - 1) > 1e-10) {
+        const factor = 1 / pivot;
+        steps.push({type:'scale', row:col, factor});
+        for (let j = 0; j < n; j++) {
+          M[col][j] *= factor;
+          I[col][j] *= factor;
+        }
+      }
+
+      for (let r = 0; r < n; r++) {
+        if (r !== col && Math.abs(M[r][col]) > 1e-10) {
+          const k = -M[r][col];
+          steps.push({type:'add', target:r, source:col, k});
+          for (let j = 0; j < n; j++) {
+            M[r][j] += k * M[col][j];
+            I[r][j] += k * I[col][j];
+          }
+        }
+      }
+    }
+    return steps;
+  },
+
+  computeColSteps(origA) {
+    let M = origA.map(r => [...r]);
+    let I = this.identity(this.n);
+    const steps = [];
+    const n = this.n;
+
+    for (let row = 0; row < n; row++) {
+      let pivotCol = row;
+      for (let c = row; c < n; c++) {
+        if (Math.abs(M[row][c]) > Math.abs(M[row][pivotCol])) pivotCol = c;
+      }
+      if (Math.abs(M[row][pivotCol]) < 1e-10) {
+        this.showStatus('该矩阵不可逆（奇异矩阵），无法求逆！', 'error');
+        return null;
+      }
+
+      if (pivotCol !== row) {
+        steps.push({type:'colSwap', c1:row, c2:pivotCol});
+        for (let i = 0; i < n; i++) {
+          [M[i][row], M[i][pivotCol]] = [M[i][pivotCol], M[i][row]];
+          [I[i][row], I[i][pivotCol]] = [I[i][pivotCol], I[i][row]];
+        }
+      }
+
+      const pivot = M[row][row];
+      if (Math.abs(pivot - 1) > 1e-10) {
+        const factor = 1 / pivot;
+        steps.push({type:'colScale', col:row, factor});
+        for (let i = 0; i < n; i++) {
+          M[i][row] *= factor;
+          I[i][row] *= factor;
+        }
+      }
+
+      for (let c = 0; c < n; c++) {
+        if (c !== row && Math.abs(M[row][c]) > 1e-10) {
+          const k = -M[row][c];
+          steps.push({type:'colAdd', target:c, source:row, k});
+          for (let i = 0; i < n; i++) {
+            M[i][c] += k * M[i][row];
+            I[i][c] += k * I[i][row];
+          }
+        }
+      }
+    }
+    return steps;
+  },
+
+  async executeRowStep(step) {
+    this.stepCount++;
+    const n = this.stepCount;
+    if (step.type === 'swap') {
+      const {r1, r2} = step;
+      this.log(`第${n}步：交换第${r1+1}行与第${r2+1}行  （R${r1+1} ↔ R${r2+1}）`, true);
+      this.setHighlight([r1, r2]);
+      await this.sleep(400);
+      [this.A[r1], this.A[r2]] = [this.A[r2], this.A[r1]];
+      [this.B[r1], this.B[r2]] = [this.B[r2], this.B[r1]];
+      this.render();
+      this.animateCells([r1, r2]);
+    } else if (step.type === 'scale') {
+      const {row, factor} = step;
+      this.log(`第${n}步：第${row+1}行乘以 ${this.fmt(factor)}  （R${row+1} ← ${this.fmt(factor)} R${row+1}）`, true);
+      this.setHighlight([row], [], [row, row]);
+      await this.sleep(400);
+      for (let j = 0; j < this.n; j++) {
+        this.A[row][j] *= factor;
+        this.B[row][j] *= factor;
+      }
+      this.render();
+      this.animateCells([row]);
+    } else if (step.type === 'add') {
+      const {target, source, k} = step;
+      const sign = k > 0 ? '+' : '-';
+      const absK = Math.abs(k);
+      const kstr = absK === 1 ? '' : this.fmt(absK);
+      this.log(`第${n}步：第${target+1}行 ← 第${target+1}行 ${sign} ${kstr}·第${source+1}行`, true);
+      this.setHighlight([target], [], [target, target], [source, source]);
+      await this.sleep(400);
+      for (let j = 0; j < this.n; j++) {
+        this.A[target][j] += k * this.A[source][j];
+        this.B[target][j] += k * this.B[source][j];
+      }
+      this.render();
+      this.animateCells([target]);
+    }
+    await this.sleep(300);
+    this.clearHighlight();
+  },
+
+  async executeColStep(step) {
+    this.stepCount++;
+    const n = this.stepCount;
+    if (step.type === 'colSwap') {
+      const {c1, c2} = step;
+      this.log(`第${n}步(列)：交换第${c1+1}列与第${c2+1}列  （C${c1+1} ↔ C${c2+1}）`, true);
+      this.setColHighlight([c1, c2]);
+      await this.sleep(400);
+      for (let i = 0; i < this.n; i++) {
+        [this.A2[i][c1], this.A2[i][c2]] = [this.A2[i][c2], this.A2[i][c1]];
+        [this.C[i][c1], this.C[i][c2]] = [this.C[i][c2], this.C[i][c1]];
+      }
+      this.render();
+      this.animateColCells([c1, c2]);
+    } else if (step.type === 'colScale') {
+      const {col, factor} = step;
+      this.log(`第${n}步(列)：第${col+1}列乘以 ${this.fmt(factor)}  （C${col+1} ← ${this.fmt(factor)} C${col+1}）`, true);
+      this.setColHighlight([col]);
+      await this.sleep(400);
+      for (let i = 0; i < this.n; i++) {
+        this.A2[i][col] *= factor;
+        this.C[i][col] *= factor;
+      }
+      this.render();
+      this.animateColCells([col]);
+    } else if (step.type === 'colAdd') {
+      const {target, source, k} = step;
+      const sign = k > 0 ? '+' : '-';
+      const absK = Math.abs(k);
+      const kstr = absK === 1 ? '' : this.fmt(absK);
+      this.log(`第${n}步(列)：第${target+1}列 ← 第${target+1}列 ${sign} ${kstr}·第${source+1}列`, true);
+      this.setColHighlight([target], [source]);
+      await this.sleep(400);
+      for (let i = 0; i < this.n; i++) {
+        this.A2[i][target] += k * this.A2[i][source];
+        this.C[i][target] += k * this.C[i][source];
+      }
+      this.render();
+      this.animateColCells([target]);
+    }
+    await this.sleep(300);
+    this.clearHighlight();
+  },
+
+  checkSuccess() {
+    let isRowI = true;
+    let isColI = true;
+    for (let i = 0; i < this.n; i++) {
+      for (let j = 0; j < this.n; j++) {
+        const expect = i === j ? 1 : 0;
+        if (Math.abs(this.A[i][j] - expect) > 1e-8) isRowI = false;
+        if (this.A2 && Math.abs(this.A2[i][j] - expect) > 1e-8) isColI = false;
+      }
+    }
+    if (isRowI && isColI) {
+      this.showStatus('✅ 求逆成功！行变换 [A|I]→[I|A⁻¹] 与列变换 [A;I]→[I;A⁻¹] 均完成', 'success');
+    } else if (isRowI) {
+      this.showStatus('✅ 行变换求逆成功！左侧已化为单位矩阵 I，右侧即为 A⁻¹', 'success');
+    }
+  },
+
+  // ---------- 工具 ----------
+  log(msg, isStep=false) {
+    const logPanel = document.getElementById('log');
+    if (!isStep && logPanel.children.length === 1 && logPanel.children[0].textContent.includes('等待')) {
+      logPanel.innerHTML = '';
+    }
+    const div = document.createElement('div');
+    div.className = 'log-item' + (isStep ? ' active' : '');
+    if (isStep) {
+      div.innerHTML = `<span class="step-num">${this.stepCount}</span>${msg}`;
+    } else {
+      div.textContent = msg;
+    }
+    logPanel.appendChild(div);
+    logPanel.scrollTop = logPanel.scrollHeight;
+  },
+
+  showStatus(text, type='') {
+    const st = document.getElementById('status');
+    st.textContent = text;
+    st.className = 'status ' + (type ? type + ' show' : '');
+  },
+
+  fmt(x) {
+    if (Math.abs(x) < 1e-10) return '0';
+    if (Number.isInteger(x)) return String(x);
+    return parseFloat(x.toFixed(3)).toString();
+  },
+
+  sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+};
+
+app.init();
+</script>
+
+</body>
+</html>

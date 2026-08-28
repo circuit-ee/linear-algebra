@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<title>最终9情形修正版</title>
+<style>
+body{margin:0;padding:20px;background:#f5f7fa;color:#2d3748;font-family:'Segoe UI',Tahoma,Geneva,Verdana;}
+.container{max-width:1400px;margin:0 auto;background:rgba(255,255,255,.95);padding:30px;border-radius:15px;box-shadow:0 4px 12px rgba(0,0,0,0.1);}
+h1{text-align:center;color:#2c5282;}
+.panel{display:flex;justify-content:space-around;}
+canvas{border:1px solid #3182ce;background:#fff;}
+button{margin:8px;padding:14px 22px;font-size:16px;background:linear-gradient(45deg,#3182ce,#38b2ac);color:#fff;border:none;border-radius:20px;cursor:pointer;transition:all 0.3s ease;}
+button:hover{transform:translateY(-2px);box-shadow:0 4px 8px rgba(49,130,206,0.3);}
+.rank-info{margin-top:15px;background:rgba(66,153,225,0.1);padding:15px;border-radius:10px;border:1px solid rgba(66,153,225,0.2);}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>最终9情形修正版</h1>
+
+<div style="text-align:center">
+  <div style="margin:8px 0;">
+    <button onclick="playSwap(1,2)">交换1↔2（两行均在子式）</button>
+    <button onclick="playSwap(3,4)">交换3↔4（两行均不在子式）</button>
+    <button onclick="playSwap(1,3)">交换1↔3（仅一行在子式）</button>
+  </div>
+  <div style="margin:8px 0;">
+    <button onclick="playScale(1,2)">第1行×2（在子式内）</button>
+    <button onclick="playScale(3,2)">第3行×2（不在子式内）</button>
+    <button onclick="playScale(2,0.5)">第2行×0.5（在子式内）</button>
+  </div>
+  <div style="margin:8px 0;">
+    <button onclick="playElim(1,2,-1)">第2行←第2行+(-1)×第1行（两行均在）</button>
+    <button onclick="playElim(3,4,2)">第4行←第4行+2×第3行（两行均不在）</button>
+    <button onclick="playElim(1,3,1)">第3行←第3行+1×第1行（一行在）</button>
+  </div>
+  <div style="margin:15px 0;">
+    <button onclick="reset()">重置</button>
+  </div>
+</div>
+
+<div class="panel">
+  <div>
+    <h3 style="text-align:center;color:#2c5282">矩阵 A（符号）</h3>
+    <canvas id="cA" width="480" height="480"></canvas>
+  </div>
+  <div>
+    <h3 style="text-align:center;color:#2c5282">矩阵 B（色块跟子式）</h3>
+    <canvas id="cB" width="480" height="480"></canvas>
+  </div>
+</div>
+
+<div class="rank-info" id="rankInfo"></div>
+</div>
+
+<script>
+const N = 4, cell = 100, margin = 40;
+const colors = ['#FF6B6B','#FF9F43','#54A0FF','#5F27CD'];
+
+let A, B, rankA, rankB, animating = false;
+const cA = document.getElementById('cA'), ctxA = cA.getContext('2d');
+const cB = document.getElementById('cB'), ctxB = cB.getContext('2d');
+
+function randMatrix(){
+  const M = Array.from({length:N},()=>Array(N).fill(0));
+  M[0] = [2,1,1,1];
+  M[1] = [1,2,1,1];
+  for(let i=2;i<N;i++){
+    const c1 = Math.floor(Math.random()*3)-1, c2 = Math.floor(Math.random()*3)-1;
+    for(let j=0;j<N;j++) M[i][j] = c1*M[0][j] + c2*M[1][j];
+  }
+  return M;
+}
+function rank(M){
+  const m = M.map(r=>r.slice()); let r=0;
+  for(let col=0;col<N;col++){
+    let piv=-1;
+    for(let row=r;row<N;row++) if(Math.abs(m[row][col])>1e-9){piv=row;break;}
+    if(piv===-1) continue;
+    [m[r],m[piv]]=[m[piv],m[r]];
+    for(let row=r+1;row<N;row++){
+      const f = m[row][col]/m[r][col];
+      for(let c=col;c<N;c++) m[row][c]-=f*m[r][c];
+    }
+    r++;
+  }
+  return r;
+}
+
+function drawMat(ctx,M,highlight,fly,isB=false,symM=null){
+  ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
+  ctx.strokeStyle='rgba(49,130,206,.6)'; ctx.lineWidth=2;
+  ctx.strokeRect(margin,margin,N*cell,N*cell);
+  for(let i=0;i<=N;i++){
+    ctx.beginPath();
+    ctx.moveTo(margin,margin+i*cell); ctx.lineTo(margin+N*cell,margin+i*cell);
+    ctx.moveTo(margin+i*cell,margin); ctx.lineTo(margin+i*cell,margin+N*cell);
+    ctx.strokeStyle='rgba(49,130,206,.3)'; ctx.lineWidth=1; ctx.stroke();
+  }
+  for(let i=0;i<N;i++){
+    for(let j=0;j<N;j++){
+      const x=margin+j*cell, y=margin+i*cell;
+      if(!isB && i<2 && j<2){
+        ctx.fillStyle=colors[0]+'80';
+        ctx.fillRect(x,y,cell,cell);
+      }
+      if(isB && highlightRows.includes(i) && j<2){
+        ctx.fillStyle=colors[0]+'80';
+        ctx.fillRect(x,y,cell,cell);
+      }
+      ctx.fillStyle='#2d3748'; ctx.font='bold 24px monospace';
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      const sym = isB ? (symM?symM[i][j]:`a${i+1}${j+1}`) : `a${i+1}${j+1}`;
+      ctx.fillText(sym,x+cell/2,y+cell/2);
+    }
+  }
+  if(fly){
+    fly.forEach(f=>{
+      ctx.save();
+      ctx.globalAlpha=f.alpha;
+      ctx.fillStyle=f.color;
+      ctx.fillRect(f.x,f.y,cell,cell);
+      ctx.fillStyle='#fff';
+      ctx.fillText(f.sym,f.x+cell/2,f.y+cell/2);
+      ctx.restore();
+    });
+  }
+}
+
+let highlightRows = [0,1];
+
+function playSwap(r1,r2){
+  if(animating) return;
+  reset(); animating=true;
+  B = A.map((r,i)=>i===r1-1?A[r2-1]:i===r2-1?A[r1-1]:r);
+  rankB=rank(B);
+  let desc=`交换第${r1}行↔第${r2}行`;
+  if(r1<=2&&r2<=2) desc+=`（两行均在子式内）`;
+  else if(r1>2&&r2>2) desc+=`（两行均不在子式内）`;
+  else desc+=`（仅一行在子式内）`;
+  highlightRows = [0,1].map(i=>i===r1-1?r2-1:i===r2-1?r1-1:i);
+  const symB = A.map((r,i)=>r.map((x,j)=>{
+    if(i===r1-1) return `a${r2}${j+1}`;
+    if(i===r2-1) return `a${r1}${j+1}`;
+    return `a${i+1}${j+1}`;
+  }));
+  runFly(desc,symB);
+}
+function playScale(r,k){
+  if(animating) return;
+  reset(); animating=true;
+  B = A.map((r1,i)=>i===r-1?r1.map(x=>x*k):r1);
+  rankB=rank(B);
+  let desc=`第${r}行×${k}`;
+  desc+= r<=2 ? `（在子式内）` : `（不在子式内）`;
+  highlightRows = [0,1];
+  const symB = A.map((r1,i)=>r1.map((x,j)=>{
+    if(i===r-1) return `${k}·a${i+1}${j+1}`;
+    return `a${i+1}${j+1}`;
+  }));
+  runFly(desc,symB);
+}
+function playElim(s,t,c){
+  if(animating) return;
+  reset(); animating=true;
+  B = A.map((r,i)=>i===t-1?r.map((x,j)=>x+c*A[s-1][j]):r);
+  rankB=rank(B);
+  let desc=`第${t}行←第${t}行+(${c})×第${s}行`;
+  if(s<=2&&t<=2) desc+=`（两行均在子式内）`;
+  else if(s>2&&t>2) desc+=`（两行均不在子式内）`;
+  else desc+=`（仅一行在子式内）`;
+  highlightRows = [0,1];
+  const symB = A.map((r,i)=>r.map((x,j)=>{
+    if(i===t-1) return `a${t}${j+1}+(${c})·a${s}${j+1}`;
+    return `a${i+1}${j+1}`;
+  }));
+  runFly(desc,symB);
+}
+
+function runFly(desc,symB){
+  const fly=[];
+  const srcXY=getXY(cA,[0,1],[0,1]), dstXY=getXY(cB,highlightRows,[0,1]);
+  for(let i=0;i<2;i++){
+    for(let j=0;j<2;j++){
+      fly.push({
+        x:srcXY[i][j].x, y:srcXY[i][j].y,
+        sym:`a${i+1}${j+1}`,
+        color:colors[0]+'80'
+      });
+    }
+  }
+  let t=0, dur=60;
+  (function anim(){
+    t++;
+    const p=t/dur, q=1-p;
+    fly.forEach(f=>{
+      const src=getXY(cA,[0,1],[0,1]), dst=getXY(cB,highlightRows,[0,1]);
+      const idx=fly.indexOf(f);
+      const k=Math.floor(idx/2), l=idx%2;
+      f.x=src[k][l].x*q+dst[k][l].x*p;
+      f.y=src[k][l].y*q+dst[k][l].y*p;
+      f.alpha=Math.sin(Math.PI*p);
+    });
+    drawMat(ctxA,A,true);
+    drawMat(ctxB,B,true,fly,true,symB);
+    if(t<dur) requestAnimationFrame(anim);
+    else{
+      animating=false;
+      showRankInfo(desc);
+    }
+  })();
+}
+function getXY(canvas,rows,cols){
+  const rect=canvas.getBoundingClientRect();
+  return rows.map(i=>cols.map(j=>({
+    x:rect.left+margin+j*cell,
+    y:rect.top +margin+i*cell
+  })));
+}
+function showRankInfo(desc){
+  const div=document.getElementById('rankInfo');
+  div.innerHTML=`
+    <h3>结论</h3>
+    <p>${desc}</p>
+    <p>rank(A) = ${rankA}，rank(B) = ${rankB}</p>
+    <p>初等变换不改变矩阵秩。</p>
+  `;
+}
+
+function reset(){
+  A=randMatrix(); rankA=rank(A);
+  B=null; rankB=null;
+  animating=false;
+  highlightRows=[0,1];
+  drawMat(ctxA,A,true);
+  drawMat(ctxB,B,false);
+  document.getElementById('rankInfo').innerHTML='';
+}
+reset();
+</script>
+</body>
+</html>
