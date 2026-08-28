@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>线性代数 · 课程网页</title>
+  <style>
+    :root {
+      --bg: #0f1420;
+      --card: #1a2133;
+      --accent: #00d4ff;
+      --text: #e6edf3;
+      --sub: #9aa7b8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: linear-gradient(160deg, #0f1420, #131c2e);
+      color: var(--text);
+      line-height: 1.7;
+    }
+    header {
+      text-align: center;
+      padding: 60px 20px 40px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    header h1 {
+      font-size: 2.2rem;
+      margin: 0 0 10px;
+      background: linear-gradient(90deg, #00d4ff, #7bffcf);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    header p { color: var(--sub); margin: 4px 0; }
+    main {
+      max-width: 960px;
+      margin: 30px auto 80px;
+      padding: 0 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+    }
+    .chapter {
+      background: var(--card);
+      border: 1px solid rgba(0,212,255,0.15);
+      border-radius: 14px;
+      padding: 20px;
+      transition: transform .2s, border-color .2s;
+    }
+    .chapter:hover {
+      transform: translateY(-4px);
+      border-color: var(--accent);
+    }
+    .chapter-head {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .chapter-head .num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 38px;
+      height: 38px;
+      padding: 0 6px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #00d4ff, #0099c4);
+      color: #001018;
+      font-weight: 700;
+      font-size: 1rem;
+    }
+    .chapter-head h2 {
+      font-size: 1.05rem;
+      margin: 0;
+      color: var(--text);
+    }
+    .page-list { list-style: none; padding: 0; margin: 0; }
+    .page-list li { padding: 6px 0; border-top: 1px dashed rgba(255,255,255,0.06); }
+    .page-list a {
+      color: var(--sub);
+      text-decoration: none;
+      font-size: 0.92rem;
+      transition: color .15s;
+    }
+    .page-list a:hover { color: var(--accent); }
+    footer {
+      text-align: center;
+      color: var(--sub);
+      font-size: 0.85rem;
+      padding: 30px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>线性代数</h1>
+    <p>课程交互式网页 · 共 5 章 / 87 个页面</p>
+  </header>
+  <main>
+    <section class="chapter">
+      <div class="chapter-head">
+        <span class="num">01</span>
+        <h2>行列式</h2>
+      </div>
+      <ul class="page-list">
+          <li>
+            <a href="chapt1 行列式/V1 行列式几何意义3D交互演示.html">行列式的几何意义 · 3D 交互演示</a>
+          </li>
+          <li>
+            <a href="chapt1 行列式/V3 线性vs非线性空间 左右对比3D演示.html">线性空间 vs 非线性空间 · 3D 对比演示</a>
+          </li>
+          <li>
+            <a href="chapt1 行列式/三阶行列式计算.html">三阶行列式 · 沙路法 + 3D 圆柱演示</a>
+          </li>
+          <li>
+            <a href="chapt1 行列式/线性代数发展史.html">线性代数：从历史到课本</a>
+          </li>
+          <li>
+            <a href="chapt1 行列式/线性代数导学.html">线性代数 · 绪论导学</a>
+          </li>
+          <li>
+            <a href="chapt1 行列式/行列式几何性质放大版.html">行列式几何意义——右手螺旋/绕行圆圈</a>
+          </li>
+          <li>
+            <a href="chapt1 行列式/行列式化简过程浅色加大版.html">行列式计算动画演示（行/列变换）</a>
+          </li>
+          <li>
+            <a href="chapt1 行列式/齐次于非齐次线性方程组.html">齐次 vs 非齐次线性方程组 · 工程意义（3D 交互）</a>
+          </li>
+      </ul>
+    </section>
+    <section class="chapter">
+      <div class="chapter-head">
+        <span class="num">02</span>
+        <h2>矩阵及其运算</h2>
+      </div>
+      <ul class="page-list">
+          <li>
+            <a href="chapt 2 矩阵及其运算/V1 线性变换3D交互演示.html">线性变换 · 3D 交互演示</a>
+          </li>
+          <li>
+            <a href="chapt 2 矩阵及其运算/三维球体变换到二维平面演示.html">3D球体→2D线性变换（经纬网格+闭合形状）</a>
+          </li>
+          <li>
+            <a href="chapt 2 矩阵及其运算/三维空间初等变换动画演示可旋转.html">初等变换 3D 动画演示</a>
+          </li>
+          <li>
+            <a href="chapt 2 矩阵及其运算/三维线性变换到二维加大版.html">3D球体→2D线性变换（经纬网格+闭合形状）</a>
+          </li>
+          <li>
+            <a href="chapt 2 矩阵及其运算/二阶矩阵线性变换加大版.html">二阶矩阵线性变换（完整检查版）</a>
+          </li>
+          <li>
+            <a href="chapt 2 矩阵及其运算/伴随与对称矩阵构造加大版.html">矩阵构造规律动画演示</a>
+          </li>
+          <li>
+            <a href="chapt 2 矩阵及其运算/分块对角矩阵工程应用设计.html">分块对角矩阵：工程系统的“模块化魔法”</a>
+          </li>
+          <li>
+            <a href="chapt 2 矩阵及其运算/对称反对称矩阵工程意义.html">对称矩阵与反对称矩阵：工程意义解读</a>
+          </li>
+          <li>
+            <a href="chapt 2 矩阵及其运算/矩阵乘法分配律的工程意义.html">矩阵分配律：从几何到工程</a>
+          </li>
+          <li>
+            <a href="chapt 2 矩阵及其运算/矩阵乘法的结合律不满足交换律的工程意义.html">矩阵乘法：顺序=物理先后 · 工程视角（核查修正版）</a>
+          </li>
+          <li>
+            <a href="chapt 2 矩阵及其运算/矩阵元素的物理意义.html">矩阵的工程意义</a>
+          </li>
+          <li>
+            <a href="chapt 2 矩阵及其运算/矩阵分块乘法表达式.html">分块乘法——彩色子块表达式</a>
+          </li>
+          <li>
+            <a href="chapt 2 矩阵及其运算/矩阵分块的工程意义.html">矩阵分块：把大矩阵拆成&quot;乐高积木&quot;</a>
+          </li>
+          <li>
+            <a href="chapt 2 矩阵及其运算/矩阵分块运算加大版.html">矩阵分块运算动画演示</a>
+          </li>
+          <li>
+            <a href="chapt 2 矩阵及其运算/矩阵运算的工程意义.html">矩阵运算的工程意义</a>
+          </li>
+          <li>
+            <a href="chapt 2 矩阵及其运算/矩阵运算规则演示加大版.html">矩阵运算规则动画演示</a>
+          </li>
+          <li>
+            <a href="chapt 2 矩阵及其运算/矩阵高次幂的工程意义.html">矩阵相乘与高次幂的工程意义 · 交通换乘</a>
+          </li>
+          <li>
+            <a href="chapt 2 矩阵及其运算/线性变换与逆变换演示.html">线性变换演示</a>
+          </li>
+          <li>
+            <a href="chapt 2 矩阵及其运算/线性变换在各领域的应用解析.html">线性变换：工程世界的“透视镜”</a>
+          </li>
+          <li>
+            <a href="chapt 2 矩阵及其运算/线性映射与线性变换.html">线性映射 与 线性变换</a>
+          </li>
+          <li>
+            <a href="chapt 2 矩阵及其运算/线性系统的描述矩阵.html">线性系统的描述矩阵：元素可以是常数 / 参数表达式 / 函数</a>
+          </li>
+      </ul>
+    </section>
+    <section class="chapter">
+      <div class="chapter-head">
+        <span class="num">03</span>
+        <h2>矩阵的初等变换与线性方程组</h2>
+      </div>
+      <ul class="page-list">
+          <li>
+            <a href="chapt 3   矩阵的初等变换与线性方程组/V1 矩阵的秩3D交互演示.html">矩阵的秩 · 3D 交互演示</a>
+          </li>
+          <li>
+            <a href="chapt 3   矩阵的初等变换与线性方程组/初等变换不改变矩阵的秩浅色版.html">最终9情形修正版</a>
+          </li>
+          <li>
+            <a href="chapt 3   矩阵的初等变换与线性方程组/初等行变换与初等列变换求解逆矩阵.html">矩阵求逆交互式演示 — 初等变换法</a>
+          </li>
+          <li>
+            <a href="chapt 3   矩阵的初等变换与线性方程组/利用初等矩阵进行初等变换的符号运算.html">初等矩阵变换演示（颜色全程对应）</a>
+          </li>
+          <li>
+            <a href="chapt 3   矩阵的初等变换与线性方程组/可逆矩阵行阶梯与行最简演示.html">高斯消元法演示 – 无阶梯线 + 对比分析</a>
+          </li>
+          <li>
+            <a href="chapt 3   矩阵的初等变换与线性方程组/有冗余方程的行阶梯与行最简演示.html">高斯消元演示 —— 完全修正版</a>
+          </li>
+          <li>
+            <a href="chapt 3   矩阵的初等变换与线性方程组/矩阵的秩工程意义解读.html">矩阵秩的工程意义 · 有效自由度 / 独立信息维度</a>
+          </li>
+          <li>
+            <a href="chapt 3   矩阵的初等变换与线性方程组/矩阵秩的八条性质解析.html">矩阵秩的八条性质 · 同济教材直观版</a>
+          </li>
+          <li>
+            <a href="chapt 3   矩阵的初等变换与线性方程组/线性方程组无穷多解的工程意义.html">无穷多解的自由变量——工程中的&quot;设计自由度&quot;</a>
+          </li>
+          <li>
+            <a href="chapt 3   矩阵的初等变换与线性方程组/线性方程组的工程意义.html">线性方程组的工程意义 · 大一新生版</a>
+          </li>
+          <li>
+            <a href="chapt 3   矩阵的初等变换与线性方程组/行最简与列最简变换过程演示.html">矩阵行列变换动画演示</a>
+          </li>
+          <li>
+            <a href="chapt 3   矩阵的初等变换与线性方程组/非齐次线性方程组通解和基础解系列写展示.html">行最简通解读出规律 + 同解方程组实时对照</a>
+          </li>
+          <li>
+            <a href="chapt 3   矩阵的初等变换与线性方程组/齐次线性方程组基础解系与通解列写.html">齐次线性方程组基础解系动画演示</a>
+          </li>
+      </ul>
+    </section>
+    <section class="chapter">
+      <div class="chapter-head">
+        <span class="num">04</span>
+        <h2>向量空间</h2>
+      </div>
+      <ul class="page-list">
+          <li>
+            <a href="chapt 4  向量空间/l线性空间与非线性示意.html">线性空间和非线性曲面 · 3D 对比演示</a>
+          </li>
+          <li>
+            <a href="chapt 4  向量空间/V1 向量组线性相关性3D交互演示.html">向量组线性相关性 · 3D 交互演示</a>
+          </li>
+          <li>
+            <a href="chapt 4  向量空间/V1 矩阵的秩3D交互演示.html">矩阵的秩 · 3D 交互演示</a>
+          </li>
+          <li>
+            <a href="chapt 4  向量空间/三元一次齐次线性方程组解空间展示.html">齐次线性方程组解空间可视化</a>
+          </li>
+          <li>
+            <a href="chapt 4  向量空间/三维向量生成子空间.html">三维向量生成线与面</a>
+          </li>
+          <li>
+            <a href="chapt 4  向量空间/三维空间线性相关无关演示.html">3D 线性相关完整演示</a>
+          </li>
+          <li>
+            <a href="chapt 4  向量空间/向量及其运算的工程意义.html">向量及其运算的工程意义 · 电气工程 / 能源动力</a>
+          </li>
+          <li>
+            <a href="chapt 4  向量空间/向量空间与子空间.html">向量空间与子空间 · 3D 交互演示</a>
+          </li>
+          <li>
+            <a href="chapt 4  向量空间/向量空间概念演示.html">向量空间的数学概念动画</a>
+          </li>
+          <li>
+            <a href="chapt 4  向量空间/基变换与坐标变换易验证版.html">基变换与坐标变换动画演示</a>
+          </li>
+          <li>
+            <a href="chapt 4  向量空间/最大无关组求解本地展示.html">初等行变换寻找列向量组最大无关组</a>
+          </li>
+          <li>
+            <a href="chapt 4  向量空间/线性相关与无关的工程应用网页动画.html">线性相关与无关：从数学原理到工程稳定</a>
+          </li>
+          <li>
+            <a href="chapt 4  向量空间/线性相关无关工程实例.html">线性相关 vs 线性无关 — 工程实例交互演示</a>
+          </li>
+          <li>
+            <a href="chapt 4  向量空间/线性相关无关的工程意义.html">线性相关与线性无关 · 工程意义解读</a>
+          </li>
+          <li>
+            <a href="chapt 4  向量空间/线性表示与线性组合动画演示.html">线性组合动画演示</a>
+          </li>
+          <li>
+            <a href="chapt 4  向量空间/线性表示的工程应用.html">向量的力量：从数学基石到强国工程</a>
+          </li>
+          <li>
+            <a href="chapt 4  向量空间/非方阵的四个基本子空间.html">非方阵的四个基本子空间</a>
+          </li>
+          <li>
+            <a href="chapt 4  向量空间/非齐次线性方程组通解和基础解系列写展示.html">行最简通解读出规律 + 同解方程组实时对照</a>
+          </li>
+          <li>
+            <a href="chapt 4  向量空间/齐次线性方程组基础解系与通解列写.html">齐次线性方程组基础解系动画演示</a>
+          </li>
+      </ul>
+    </section>
+    <section class="chapter">
+      <div class="chapter-head">
+        <span class="num">05</span>
+        <h2>相似矩阵与二次型</h2>
+      </div>
+      <ul class="page-list">
+          <li>
+            <a href="chapt 5  相似矩阵与二次型/3阶矩阵特征值性质证明动画.html">3阶矩阵特征值性质证明</a>
+          </li>
+          <li>
+            <a href="chapt 5  相似矩阵与二次型/三维空间施密特正交化第三步.html">三维空间施密特正交化 · 第三步</a>
+          </li>
+          <li>
+            <a href="chapt 5  相似矩阵与二次型/三阶矩阵特征值与特征向量双图带测试向量.html">矩阵变换：球体→椭球体（高对比度增强版）</a>
+          </li>
+          <li>
+            <a href="chapt 5  相似矩阵与二次型/主成分分析介绍网页.html">协方差矩阵与 PCA · 交互直观版</a>
+          </li>
+          <li>
+            <a href="chapt 5  相似矩阵与二次型/二次型化简工程意义.html">二次型化简 · 工程意义</a>
+          </li>
+          <li>
+            <a href="chapt 5  相似矩阵与二次型/二次型在电气与能动工程中的应用.html">二次型在电气与能动工程中的应用</a>
+          </li>
+          <li>
+            <a href="chapt 5  相似矩阵与二次型/二次型矩阵表示展示.html">二次型的矩阵表示 - 交互式动画演示</a>
+          </li>
+          <li>
+            <a href="chapt 5  相似矩阵与二次型/二维向量投影.html">二维向量投影演示 - 高可见度版</a>
+          </li>
+          <li>
+            <a href="chapt 5  相似矩阵与二次型/二阶矩阵复数特征值动画演示.html">二阶矩阵复数特征值演示</a>
+          </li>
+          <li>
+            <a href="chapt 5  相似矩阵与二次型/二阶矩阵特征值特征向量与变量分解.html">特征值与特征向量 – 垂线连接正确位置</a>
+          </li>
+          <li>
+            <a href="chapt 5  相似矩阵与二次型/向量内积几何意义与性质展示.html">向量内积的动画演示</a>
+          </li>
+          <li>
+            <a href="chapt 5  相似矩阵与二次型/向量夹角与余弦定理.html">向量夹角与余弦定理公式推导</a>
+          </li>
+          <li>
+            <a href="chapt 5  相似矩阵与二次型/向量的长度夹角与正交矩阵的工程意义.html">向量的长度·夹角·正交矩阵 —— 工程意义直观解读</a>
+          </li>
+          <li>
+            <a href="chapt 5  相似矩阵与二次型/实对称矩阵正交变换对角化过程演示.html">实对称矩阵对角化动画演示</a>
+          </li>
+          <li>
+            <a href="chapt 5  相似矩阵与二次型/惯性定理演示.html">惯性定理演示 - 保留中间图形版</a>
+          </li>
+          <li>
+            <a href="chapt 5  相似矩阵与二次型/施密特正交化公式多浏览器适配.html">施密特正交化演示（教育网兼容版）</a>
+          </li>
+          <li>
+            <a href="chapt 5  相似矩阵与二次型/正交变换与非正交变换小房子.html">千里江山图·双连茅屋矩阵变换演示</a>
+          </li>
+          <li>
+            <a href="chapt 5  相似矩阵与二次型/正定、负定二次型与惯性定理的工程意义.html">二次型分类与惯性定理 · 工程意义解读</a>
+          </li>
+          <li>
+            <a href="chapt 5  相似矩阵与二次型/特征值与特征向量专业应用教育网展示.html">矩阵特征值工程应用（纯原生版）</a>
+          </li>
+          <li>
+            <a href="chapt 5  相似矩阵与二次型/特征值与特征向量的工程意义.html">特征值与特征向量 · 工程意义 + 辅助图形演示</a>
+          </li>
+          <li>
+            <a href="chapt 5  相似矩阵与二次型/特征值与特征向量的工程案例设计.html">特征值与特征向量 · 工程真矩阵</a>
+          </li>
+          <li>
+            <a href="chapt 5  相似矩阵与二次型/相似矩阵意义解读.html">相似变换：同一变换，两套尺子（全整数·双色网格叠加）</a>
+          </li>
+          <li>
+            <a href="chapt 5  相似矩阵与二次型/矩阵对角化的工程意义.html">矩阵对角化 A = P D P⁻¹ 的工程意义</a>
+          </li>
+          <li>
+            <a href="chapt 5  相似矩阵与二次型/规范正交基与基变换工程意义.html">基与基变换的工程意义 · 交互解读</a>
+          </li>
+          <li>
+            <a href="chapt 5  相似矩阵与二次型/配方法与正交变换工程应用对比动画演示（修复版）.html">配方法与正交变换工程应用对比动画演示（修复版）</a>
+          </li>
+          <li>
+            <a href="chapt 5  相似矩阵与二次型/配方法加大版.html">配方法化二次型为标准型-常规公式版</a>
+          </li>
+      </ul>
+    </section>
+  </main>
+  <footer>由 gen_index.py 自动生成 · 点击章节即可查看对应网页</footer>
+</body>
+</html>
